@@ -88,16 +88,17 @@ const Login = () => {
               <span className="input-icon">
                 <FaUser />
               </span>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-                className="login-input"
-              />
-           
+             <input
+  type="email"
+  id="email"
+  name="email"
+  value={formData.email}
+  onChange={handleChange}
+  placeholder="Enter your email"
+  className="login-input"
+  style={{ border: "none" }}
+/>
+
             </div>
             {formErrors.email && <span className="error-message">{formErrors.email}</span>}
           </div>
@@ -115,6 +116,7 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="Enter your password"
                 className="login-input"
+                  style={{ border: "none" }}
               />
              
               <span 
