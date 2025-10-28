@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 
@@ -51,6 +52,8 @@ const Login = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
@@ -63,7 +66,12 @@ const Login = () => {
         await new Promise(resolve => setTimeout(resolve, 1500));
         console.log('Login successful:', formData);
         setIsSubmitted(true);
-        // Redirect or handle successful login here
+        
+        // Store authentication status in localStorage
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
       } finally {

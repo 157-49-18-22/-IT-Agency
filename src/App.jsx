@@ -1,24 +1,36 @@
-// App.jsx
-import { useState } from 'react'
-// You can remove the viteLogo, reactLogo, and App.css imports if they are no longer needed for the login page
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
 
-// 1. Import your new Login Component
-import Login from './Components/Login'
+// Import your components
+import Login from './Components/Login';
+import Dashboard from './Components/Dashboard';
+
+// A simple protected route component
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  return isAuthenticated ? children : <Navigate to="/" replace />;
+};
 
 function App() {
-  // You can remove the state variable if you don't need it in App anymore
-  // const [count, setCount] = useState(0) 
-
   return (
-    // 2. Render the Login instead of the default starter code
-    <div className="app-main">
-      <Login />
-    </div>
-    // Note: The surrounding div is for structure, and the component itself contains the main login page logic.
-  )
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
-export default App
+export default App;
