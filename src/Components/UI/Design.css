@@ -1,0 +1,150 @@
+/* Design Container */
+.design-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header Styles */
+.design-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.design-header h1 {
+  font-size: 32px;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.design-header p {
+  color: #718096;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Tabs Navigation */
+.design-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px 8px 0 0;
+  color: #4a5568;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  background-color: #f7fafc;
+  color: #2b6cb0;
+}
+
+.tab.active {
+  color: #2b6cb0;
+  background-color: white;
+  border-color: #e2e8f0;
+  border-bottom-color: white;
+  position: relative;
+  top: 1px;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background-color: #4299e1;
+}
+
+.tab-icon {
+  font-size: 20px;
+}
+
+.tab-label {
+  font-size: 15px;
+}
+
+/* Content Area */
+.design-content {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  min-height: 400px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .design-tabs {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab {
+    white-space: nowrap;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .tab-icon {
+    font-size: 18px;
+  }
+  
+  .design-header h1 {
+    font-size: 28px;
+  }
+  
+  .design-header p {
+    font-size: 15px;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.design-content {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Tab Content Transitions */
+.tab-content-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-content-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.tab-content-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tab-content-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 200ms, transform 200ms;
+}

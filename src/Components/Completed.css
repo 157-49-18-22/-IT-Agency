@@ -1,0 +1,391 @@
+/* Completed Projects Container */
+.completed-projects {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Projects Header */
+.projects-header {
+  margin-bottom: 24px;
+}
+
+.projects-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 20px 0;
+}
+
+/* Projects Actions */
+.projects-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Search Box */
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a0aec0;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background-color: #fff;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 1px #4299e1;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-group select {
+  padding: 9px 36px 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  appearance: none;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.filter-group .filter-icon {
+  position: absolute;
+  left: 12px;
+  color: #718096;
+  pointer-events: none;
+}
+
+.filter-group .dropdown-arrow {
+  position: absolute;
+  right: 12px;
+  color: #718096;
+  pointer-events: none;
+}
+
+/* Projects List */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Project Card */
+.project-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.project-title h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.client-name {
+  color: #718096;
+  font-size: 14px;
+  margin: 0;
+}
+
+.project-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+  flex: 1;
+  min-width: 250px;
+  max-width: 100%;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a5568;
+  font-size: 13px;
+}
+
+.meta-icon {
+  color: #a0aec0;
+  font-size: 14px;
+}
+
+/* Rating */
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star {
+  color: #e2e8f0;
+  font-size: 16px;
+}
+
+.star.filled {
+  color: #f6ad55;
+  fill: #f6ad55;
+}
+
+.rating-text {
+  margin-left: 8px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+/* Project Details */
+.project-details {
+  margin: 16px 0;
+  padding: 16px 0;
+  border-top: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.project-feedback h4,
+.project-team h4 {
+  font-size: 14px;
+  color: #4a5568;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.feedback-text {
+  color: #4a5568;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  font-style: italic;
+}
+
+/* Team Section */
+.team-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.team-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.member-name {
+  font-size: 13px;
+  color: #4a5568;
+}
+
+/* Project Actions */
+.project-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background-color: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-text:hover {
+  background-color: #f7fafc;
+  color: #718096;
+}
+
+/* No Projects State */
+.no-projects {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+  margin-top: 24px;
+}
+
+.no-projects-icon {
+  width: 80px;
+  height: 80px;
+  background-color: #f7fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #a0aec0;
+}
+
+.no-projects h3 {
+  font-size: 18px;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.no-projects p {
+  color: #718096;
+  margin-bottom: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  color: #718096;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #4299e1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .project-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .project-rating {
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .projects-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .search-box {
+    max-width: 100%;
+  }
+  
+  .filters {
+    width: 100%;
+  }
+  
+  .filter-group {
+    flex: 1;
+    min-width: 140px;
+  }
+  
+  .project-actions {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+/* Light theme is the default and only theme */
