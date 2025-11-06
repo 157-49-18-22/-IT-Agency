@@ -29,6 +29,19 @@ import Cases from './Components/Testing/Cases';
 import Performance from './Components/Testing/Performance';
 import Uat from './Components/Testing/Uat';
 
+// Import Team Component
+import Team from './Components/Team';
+// Import standalone Tasks page
+import TasksPage from './Components/Task';
+// Import Calendar Component
+import Calendar from './Components/Calendar';
+import Tracking from './Components/Tracking';
+// Import Report Components
+import ProjectProgress from './Components/Reports/ProjectProgress';
+import TeamPerformance from './Components/Reports/TeamPerformance';
+import Finacial from './Components/Reports/Finacial';
+import Custom from './Components/Reports/Custom';
+
 // Layout component that includes the Sidebar
 const MainLayout = () => {
   return (
@@ -58,7 +71,7 @@ function App() {
             <Route path="/projects" element={<AllProjects />} />
             <Route path="/projects/active" element={<Active />} />
             <Route path="/projects/completed" element={<Completed />} />
-            <Route path="/team" element={<div>Team Page</div>} />
+            <Route path="/team" element={<Team />} />
             
             {/* UI/UX Design Routes */}
             <Route path="/uiux" element={<Design />}>
@@ -90,8 +103,16 @@ function App() {
               <Route path="uat" element={<Uat />} />
             </Route>
             
-            <Route path="/calendar" element={<div>Calendar Page</div>} />
-            <Route path="/time-tracking" element={<div>Time Tracking Page</div>} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/time-tracking" element={<Tracking />} />
+            {/* Reports Routes */}
+            <Route path="/reports">
+              <Route path="project-progress" element={<ProjectProgress />} />
+              <Route path="team-performance" element={<TeamPerformance />} />
+              <Route path="financial" element={<Finacial />} />
+              <Route path="custom" element={<Custom />} />
+            </Route>
             
             {/* Add other protected routes here */}
           </Route>

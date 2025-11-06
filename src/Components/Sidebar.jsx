@@ -12,7 +12,6 @@ import {
   FaTasks,
   FaCalendarAlt,
   FaFileInvoiceDollar,
-  FaCog,
   FaSignOutAlt,
   FaChevronDown,
   FaChevronRight,
@@ -31,8 +30,8 @@ const Sidebar = () => {
     uiUx: false,
     development: false,
     testing: false,
-    reports: false,
-    settings: false
+    team: false,
+    reports: false
   });
 
   const toggleSection = (section) => {
@@ -150,8 +149,8 @@ const Sidebar = () => {
           </li>
 
           {/* Team & Resources */}
-          <li className={isActive('/team')}>
-            <Link to="/team">
+          <li className={`nav-section ${expandedSections.team ? 'expanded' : ''}`}>
+            <Link to="/team" className="section-header">
               <FaUsers className="nav-icon" />
               <span>Team</span>
             </Link>
@@ -202,23 +201,7 @@ const Sidebar = () => {
             )}
           </li>
 
-          {/* Settings Section */}
-          <li className={`nav-section ${expandedSections.settings ? 'expanded' : ''}`}>
-            <div className="section-header" onClick={() => toggleSection('settings')}>
-              <FaCog className="nav-icon" />
-              <span>Settings</span>
-              {expandedSections.settings ? <FaChevronDown /> : <FaChevronRight />}
-            </div>
-            {expandedSections.settings && (
-              <ul className="submenu">
-                <li><Link to="/settings/account">Account</Link></li>
-                <li><Link to="/settings/team">Team Settings</Link></li>
-                <li><Link to="/settings/integrations">Integrations</Link></li>
-                <li><Link to="/settings/templates">Templates</Link></li>
-                <li><Link to="/settings/notifications">Notifications</Link></li>
-              </ul>
-            )}
-          </li>
+          
         </ul>
       </nav>
 

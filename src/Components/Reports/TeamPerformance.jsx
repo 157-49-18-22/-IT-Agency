@@ -1,0 +1,99 @@
+import React, { useMemo, useState } from 'react';
+import { FiFilter, FiChevronDown, FiSearch, FiTrendingUp, FiClock, FiCheckCircle } from 'react-icons/fi';
+import './TeamPerformancs.css';
+
+const members = [
+  { id: 'm1', name: 'John Doe', role: 'Frontend', velocity: 34, hours: 38, completed: 22, avgCycle: 2.4 },
+  { id: 'm2', name: 'Jane Smith', role: 'Backend', velocity: 28, hours: 41, completed: 19, avgCycle: 3.1 },
+  { id: 'm3', name: 'Alex Johnson', role: 'Mobile', velocity: 22, hours: 36, completed: 16, avgCycle: 2.9 },
+  { id: 'm4', name: 'Sarah Lee', role: 'QA', velocity: 26, hours: 35, completed: 25, avgCycle: 1.8 },
+];
+
+export default function TeamPerformance() {
+  const [q, setQ] = useState('');
+  const [role, setRole] = useState('all');
+
+  const roles = ['Frontend','Backend','Mobile','QA'];
+  const filtered = useMemo(() => members.filter(m => {
+    const okQ = !q || m.name.toLowerCase().includes(q.toLowerCase());
+    const okR = role === 'all' || m.role === role;
+    return okQ && okR;
+  }), [q, role]);
+
+  return (
+    <div className="tp-container">
+      <div className="tp-header">
+        <div>
+          <h2>Team Performance</h2>
+          <p>Measure velocity, workload, cycle time and throughput across the team.</p>
+        </div>
+        <div className="filters">
+          <div className="search">
+            <FiSearch className="icon" />
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search members..." />
+          </div>
+          <div className="select">
+            <FiFilter className="icon" />
+            <select value={role} onChange={e=>setRole(e.target.value)}>
+              <option value="all">All Roles</option>
+              {roles.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <FiChevronDown className="chev" />
+          </div>
+        </div>
+      </div>
+
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-title"><FiTrendingUp/> Team Velocity</div>
+          <div className="kpi-value">{members.reduce((s,m)=>s+m.velocity,0)} pts</div>
+          <div className="kpi-sub">This sprint</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-title"><FiClock/> Logged Hours</div>
+          <div className="kpi-value">{members.reduce((s,m)=>s+m.hours,0)} h</div>
+          <div className="kpi-sub">Week to date</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-title"><FiCheckCircle/> Completed</div>
+          <div className="kpi-value">{members.reduce((s,m)=>s+m.completed,0)}</div>
+          <div className="kpi-sub">Tasks</div>
+        </div>
+      </div>
+
+      <div className="member-list">
+        {filtered.map(m => (
+          <div className="member-card" key={m.id}>
+            <div className="head">
+              <div className="avatar">{m.name.charAt(0)}</div>
+              <div className="info">
+                <div className="name">{m.name}</div>
+                <div className="role">{m.role}</div>
+              </div>
+            </div>
+            <div className="row">
+              <span>Velocity</span>
+              <div className="bar"><div className="fill" style={{width:`${m.velocity}%`}}/></div>
+              <span className="mono">{m.velocity} pts</span>
+            </div>
+            <div className="row">
+              <span>Hours</span>
+              <div className="bar"><div className="fill blue" style={{width:`${Math.min(100, (m.hours/45)*100)}%`}}/></div>
+              <span className="mono">{m.hours} h</span>
+            </div>
+            <div className="row">
+              <span>Completed</span>
+              <div className="bar"><div className="fill green" style={{width:`${Math.min(100, (m.completed/30)*100)}%`}}/></div>
+              <span className="mono">{m.completed}</span>
+            </div>
+            <div className="row last">
+              <span>Avg Cycle</span>
+              <span className="chip">{m.avgCycle} days</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
