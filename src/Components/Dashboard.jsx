@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Sidebar from './Sidebar';
 import { 
   FaUsers, 
   FaLaptopCode,
@@ -127,10 +126,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="dashboard-container">
-      <Sidebar />
-      
-      <main className="main-content">
+    <div className="dashboard-page">
         <header className="header">
           <div className="header-left">
             <h1>Dashboard</h1>
@@ -289,7 +285,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 };

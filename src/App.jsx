@@ -41,6 +41,11 @@ import ProjectProgress from './Components/Reports/ProjectProgress';
 import TeamPerformance from './Components/Reports/TeamPerformance';
 import Finacial from './Components/Reports/Finacial';
 import Custom from './Components/Reports/Custom';
+import Approvals from './Components/Approvals';
+import Deliverables from './Components/Deliverables';
+import Activity from './Components/Activity';
+import Messages from './Components/Messages';
+import Notifications from './Components/Notifications';
 
 // Layout component that includes the Sidebar
 const MainLayout = () => {
@@ -88,6 +93,8 @@ function App() {
             {/* Development Routes */}
             <Route path="/development">
               <Route index element={<Navigate to="code" replace />} />
+              <Route path="backlog" element={<div>Backlog</div>} />
+              <Route path="sprints" element={<div>Sprints</div>} />
               <Route path="code" element={<Code />} />
               <Route path="deployment" element={<Deployment />} />
               <Route path="task" element={<Task />} />
@@ -98,20 +105,40 @@ function App() {
             <Route path="/testing">
               <Route index element={<Navigate to="bug" replace />} />
               <Route path="bug" element={<Bug />} />
+              <Route path="Bug" element={<Bug />} />
               <Route path="cases" element={<Cases />} />
+              <Route path="Cases" element={<Cases />} />
               <Route path="performance" element={<Performance />} />
+              <Route path="Performance" element={<Performance />} />
               <Route path="uat" element={<Uat />} />
+              <Route path="Uat" element={<Uat />} />
+              <Route path="Runs" element={<div>Test Runs</div>} />
             </Route>
             
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/time-tracking" element={<Tracking />} />
+            {/* New top-level routes from sidebar */}
+            <Route path="/approvals" element={<Approvals />} />
+            <Route path="/files" element={<Deliverables />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/activity" element={<Activity />} />
             {/* Reports Routes */}
             <Route path="/reports">
               <Route path="project-progress" element={<ProjectProgress />} />
               <Route path="team-performance" element={<TeamPerformance />} />
               <Route path="financial" element={<Finacial />} />
               <Route path="custom" element={<Custom />} />
+            </Route>
+
+            {/* Settings placeholders */}
+            <Route path="/settings">
+              <Route path="project" element={<div>Project Settings</div>} />
+              <Route path="organization" element={<div>Organization Settings</div>} />
+              <Route path="integrations" element={<div>Integrations & Webhooks</div>} />
+              <Route path="templates" element={<div>Templates</div>} />
+              <Route path="audit" element={<div>Audit Trail</div>} />
             </Route>
             
             {/* Add other protected routes here */}

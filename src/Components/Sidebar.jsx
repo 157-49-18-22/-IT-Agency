@@ -19,7 +19,11 @@ import {
   FaTools,
   FaFileContract,
   FaUserTie,
-  FaRegClock
+  FaRegClock,
+  FaBell,
+  FaComments,
+  FaHistory,
+  FaFolderOpen
 } from 'react-icons/fa';
 import './Sidebar.css';
 
@@ -30,7 +34,6 @@ const Sidebar = () => {
     uiUx: false,
     development: false,
     testing: false,
-    team: false,
     reports: false
   });
 
@@ -123,6 +126,8 @@ const Sidebar = () => {
             </div>
             {expandedSections.development && (
               <ul className="submenu">
+                <li className={isActive('/development/backlog')}><Link to="/development/backlog">Backlog</Link></li>
+                <li className={isActive('/development/sprints')}><Link to="/development/sprints">Sprints</Link></li>
                 <li className={isActive('/development/code')}><Link to="/development/code">Code</Link></li>
                 <li className={isActive('/development/deployment')}><Link to="/development/deployment">Deployment</Link></li>
                 <li className={isActive('/development/task')}><Link to="/development/task">Tasks</Link></li>
@@ -141,6 +146,7 @@ const Sidebar = () => {
             {expandedSections.testing && (
               <ul className="submenu">
                 <li><Link to="/testing/Cases">Test Cases</Link></li>
+                <li><Link to="/testing/Runs">Test Runs</Link></li>
                 <li><Link to="/testing/Bug">Bug Reports</Link></li>
                 <li><Link to="/testing/Uat">UAT</Link></li>
                 <li><Link to="/testing/Performance">Performance Testing</Link></li>
@@ -148,9 +154,9 @@ const Sidebar = () => {
             )}
           </li>
 
-          {/* Team & Resources */}
-          <li className={`nav-section ${expandedSections.team ? 'expanded' : ''}`}>
-            <Link to="/team" className="section-header">
+          {/* Team */}
+          <li className={isActive('/team')}>
+            <Link to="/team">
               <FaUsers className="nav-icon" />
               <span>Team</span>
             </Link>
@@ -160,6 +166,46 @@ const Sidebar = () => {
             <Link to="/clients">
               <FaUserTie className="nav-icon" />
               <span>Clients</span>
+            </Link>
+          </li>
+
+          {/* Approvals */}
+          <li className={isActive('/approvals')}>
+            <Link to="/approvals">
+              <FaClipboardCheck className="nav-icon" />
+              <span>Approvals</span>
+            </Link>
+          </li>
+
+          {/* Deliverables / Files */}
+          <li className={isActive('/files')}>
+            <Link to="/files">
+              <FaFolderOpen className="nav-icon" />
+              <span>Deliverables</span>
+            </Link>
+          </li>
+
+          {/* Messages */}
+          <li className={isActive('/messages')}>
+            <Link to="/messages">
+              <FaComments className="nav-icon" />
+              <span>Messages</span>
+            </Link>
+          </li>
+
+          {/* Notifications */}
+          <li className={isActive('/notifications')}>
+            <Link to="/notifications">
+              <FaBell className="nav-icon" />
+              <span>Notifications</span>
+            </Link>
+          </li>
+
+          {/* Activity */}
+          <li className={isActive('/activity')}>
+            <Link to="/activity">
+              <FaHistory className="nav-icon" />
+              <span>Activity</span>
             </Link>
           </li>
 
@@ -200,6 +246,8 @@ const Sidebar = () => {
               </ul>
             )}
           </li>
+
+          
 
           
         </ul>

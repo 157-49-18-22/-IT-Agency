@@ -1,0 +1,313 @@
+.notifications {
+    padding: 20px;
+}
+
+.notifications .head,
+.notifications .layout {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.tools {
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #fff
+}
+
+.search input {
+    border: none;
+    outline: none;
+    font-size: 14px
+}
+
+.mark {
+    background: #111827;
+    color: #fff;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin: 8px auto 12px;
+    max-width: 760px;
+    justify-content: center;
+    flex-wrap: wrap
+}
+
+.tab {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    color: #374151
+}
+
+.tab.active {
+    background: #111827;
+    color: #fff;
+    border-color: #111827
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    justify-content: center;
+    align-items: start
+}
+
+.center {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .04);
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto
+}
+
+.item {
+    display: grid;
+    grid-template-columns: 56px 1fr 120px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    position: relative
+}
+
+.item:hover {
+    background: #f9fafb
+}
+
+.item:last-child {
+    border-bottom: none
+}
+
+.item.unread {
+    background: #fbfbff
+}
+
+.icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #eef2ff;
+    color: #3730a3;
+    display: flex;
+    align-items: center;
+    justify-content: center
+}
+
+.content .row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.content .title {
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.2
+}
+
+.content .time {
+    color: #6b7280;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px
+}
+
+.content .row2 {
+    color: #6b7280;
+    margin-top: 4px
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end
+}
+
+.actions .ghost {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer
+}
+
+.empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 24px
+}
+
+.side .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    padding: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .04)
+}
+
+.card+.card {
+    margin-top: 10px
+}
+
+.card-title {
+    font-weight: 800;
+    margin-bottom: 10px
+}
+
+.pref {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #f3f4f6
+}
+
+.pref:last-child {
+    border-bottom: none
+}
+
+.hint {
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 12px
+}
+
+@media(max-width:1000px) {
+    .layout {
+        grid-template-columns: 1fr
+    }
+}
+
+@media (min-width: 1024px){
+  .layout{ grid-template-columns: minmax(700px,760px) 300px; }
+}
+
+@media (max-width: 1023px){
+  .layout{ grid-template-columns: 1fr; }
+  .side{ display:none; }
+}
+
+@media (max-width: 900px){
+  .notifications .item{ grid-template-columns:48px 1fr; }
+  .notifications .actions{ display:none; }
+}
+
+/* Type accents (left border) */
+.item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+    background: transparent
+}
+
+.item.type-approval::before {
+    background: #111827
+}
+
+.item.type-message::before {
+    background: #e5e7eb
+}
+
+.item.type-mention::before {
+    background: #dbeafe
+}
+
+.item.type-system::before {
+    background: #f3f4f6
+}
+
+.item.type-alert::before {
+    background: #fee2e2
+}
+
+/* ===== Premium polish overrides ===== */
+.notifications {
+  background: radial-gradient(1200px 600px at 0% 0%, rgba(17,24,39,.02), transparent 60%);
+}
+
+.notifications .center { padding: 6px; }
+
+.notifications .item {
+  margin: 8px 10px;
+  border: 1px solid #eceff3;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(17,24,39,.06);
+}
+
+.notifications .item.unread {
+  background: linear-gradient(180deg,#ffffff 0%, #fbfbff 100%);
+  border-color: #e6e9ff;
+  box-shadow: 0 10px 24px rgba(67,97,238,.10);
+}
+
+.notifications .icon {
+  border: 1px solid #e8eaf0;
+}
+
+/* Type-specific icon fills */
+.notifications .item.type-approval .icon{ background:#111827; color:#fff; }
+.notifications .item.type-message .icon{ background:#f3f4f6; color:#111827; }
+.notifications .item.type-mention .icon{ background:#dbeafe; color:#1e3a8a; }
+.notifications .item.type-system .icon{ background:#eef2ff; color:#3730a3; }
+.notifications .item.type-alert .icon{ background:#fee2e2; color:#991b1b; }
+
+.notifications .content .title{ font-size:16px; letter-spacing:.2px; }
+.notifications .content .row2{ font-size:13px; }
+
+/* Unread dot after title */
+.notifications .item.unread .content .title::after{
+  content:""; display:inline-block; width:8px; height:8px; border-radius:999px; background:#111827; margin-left:8px; vertical-align:middle;
+}
+
+.notifications .actions .ghost{
+  border:1px solid #e2e8f0; padding:8px 12px; border-radius:999px; font-weight:700;
+}
+.notifications .actions .ghost:hover{ background:#111827; color:#fff; border-color:#111827; }
+
+.notifications .tab{ box-shadow:0 3px 10px rgba(0,0,0,.04); }
+.notifications .tab:hover{ transform: translateY(-1px); }
