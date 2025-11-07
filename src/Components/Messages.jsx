@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiSend, FiPaperclip, FiUser, FiCheckCircle } from 'react-icons/fi';
 import './Messages.css';
+import { messageAPI } from '../services/api';
 
 const seedThreads = [
   { id: 'T-1', title: 'Website Revamp • Client', last: 'Approved: Mockups v2', unread: 2, participants: ['You','Client Approver'] },
@@ -24,12 +25,47 @@ const seedMessages = {
 };
 
 export default function Messages(){
-  const [threads, setThreads] = useState(seedThreads);
-  const [activeId, setActiveId] = useState('T-1');
+  const [threads, setThreads] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [q, setQ] = useState('');
   const [text, setText] = useState('');
-  const [store, setStore] = useState(seedMessages);
+  const [store, setStore] = useState({});
+  const [loading, setLoading] = useState(true);
   const endRef = useRef(null);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await messageAPI.getAll();
+      const messages = response.data || [];
+      setThreads(messages);
+      if (messages.length > 0) setActiveId(messages[0].id);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!text.trim()) return;
+    try {
+      await messageAPI.send({
+        content: text,
+        thread: activeId
+      });
+      fetchMessages();
+      setText('');
+    } catch (error) {
+      alert('Error sending message');
+    }
+  };
+
+  if (loading) return <div className="loading">Loading messages...</div>;
 
   const filteredThreads = useMemo(()=> threads.filter(t => t.title.toLowerCase().includes(q.toLowerCase())), [threads, q]);
   const activeMsgs = store[activeId] || [];

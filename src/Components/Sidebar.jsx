@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
   FaChartLine, 
@@ -23,18 +23,22 @@ import {
   FaBell,
   FaComments,
   FaHistory,
-  FaFolderOpen
+  FaFolderOpen,
+  FaExchangeAlt,
+  FaUserCircle
 } from 'react-icons/fa';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [expandedSections, setExpandedSections] = useState({
     projects: false,
     uiUx: false,
     development: false,
     testing: false,
-    reports: false
+    reports: false,
+    client: false
   });
 
   const toggleSection = (section) => {
@@ -46,6 +50,13 @@ const Sidebar = () => {
 
   const isActive = (path) => {
     return location.pathname === path ? 'active' : '';
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   return (
@@ -247,14 +258,35 @@ const Sidebar = () => {
             )}
           </li>
 
-          
+          {/* Stage Management */}
+          <li className={isActive('/stage-transition')}>
+            <Link to="/stage-transition">
+              <FaExchangeAlt className="nav-icon" />
+              <span>Stage Transition</span>
+            </Link>
+          </li>
+
+          {/* Client Portal Section */}
+          <li className={`nav-section ${expandedSections.client ? 'expanded' : ''}`}>
+            <div className="section-header" onClick={() => toggleSection('client')}>
+              <FaUserCircle className="nav-icon" />
+              <span>Client Portal</span>
+              {expandedSections.client ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+            {expandedSections.client && (
+              <ul className="submenu">
+                <li><Link to="/client/dashboard">Client Dashboard</Link></li>
+                <li><Link to="/client/approvals">Client Approvals</Link></li>
+              </ul>
+            )}
+          </li>
 
           
         </ul>
       </nav>
 
       <div className="sidebar-footer">
-        <button className="logout-btn">
+        <button className="logout-btn" onClick={handleLogout}>
           <FaSignOutAlt className="logout-icon" />
           Logout
         </button>

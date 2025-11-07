@@ -15,6 +15,7 @@ import {
   FiGrid
 } from 'react-icons/fi';
 import './Task.css';
+import { taskAPI, projectAPI, userAPI } from '../services/api';
 
 const STATUSES = [
   { key: 'todo', label: 'To Do' },
@@ -25,89 +26,94 @@ const STATUSES = [
 
 const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 };
 
-const initialTasks = [
-  {
-    id: 't-101',
-    title: 'Setup CI/CD pipeline',
-    description: 'Add GitHub Actions workflow for build and tests',
-    status: 'in-progress',
-    priority: 'high',
-    assignee: 'John Doe',
-    dueDate: '2025-11-12',
-    tags: ['devops', 'automation'],
-    comments: 3
-  },
-  {
-    id: 't-102',
-    title: 'Create task board UI',
-    description: 'Implement kanban and list views with filters',
-    status: 'review',
-    priority: 'medium',
-    assignee: 'Jane Smith',
-    dueDate: '2025-11-10',
-    tags: ['frontend'],
-    comments: 1
-  },
-  {
-    id: 't-103',
-    title: 'Write unit tests',
-    description: 'Increase coverage for utils and hooks',
-    status: 'todo',
-    priority: 'low',
-    assignee: 'Alex Johnson',
-    dueDate: '2025-11-20',
-    tags: ['testing'],
-    comments: 0
-  },
-  {
-    id: 't-104',
-    title: 'Fix responsive sidebar',
-    description: 'Resolve overflow on small screens',
-    status: 'completed',
-    priority: 'medium',
-    assignee: 'Sarah Lee',
-    dueDate: '2025-11-01',
-    tags: ['bugfix', 'ui'],
-    comments: 2
-  }
-];
-
-export default function Task() {
-  const [view, setView] = useState('board'); // 'board' | 'list'
+const Task = () => {
   const [tasks, setTasks] = useState([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('dueDate'); // dueDate | priority | title
-  const [sortOrder, setSortOrder] = useState('asc');
-
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('kanban');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    status: 'todo',
-    priority: 'medium',
-    assignee: '',
-    dueDate: ''
-  });
+  const [editingTask, setEditingTask] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    // simulate API
-    const timer = setTimeout(() => setTasks(initialTasks), 200);
-    return () => clearTimeout(timer);
+    fetchData();
   }, []);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [tasksRes, projectsRes, usersRes] = await Promise.all([
+        taskAPI.getAll(),
+        projectAPI.getAll(),
+        userAPI.getAll()
+      ]);
+      setTasks(tasksRes.data || []);
+      setProjects(projectsRes.data || []);
+      setUsers(usersRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTask = async (taskData) => {
+    try {
+      await taskAPI.create(taskData);
+      fetchData();
+      setShowModal(false);
+    } catch (error) {
+      alert('Error creating task');
+    }
+  };
+
+  const handleUpdateTask = async (id, taskData) => {
+    try {
+      await taskAPI.update(id, taskData);
+      fetchData();
+      setEditingTask(null);
+    } catch (error) {
+      alert('Error updating task');
+    }
+  };
+
+  const handleDeleteTask = async (id) => {
+    if (window.confirm('Delete this task?')) {
+      try {
+        await taskAPI.delete(id);
+        fetchData();
+      } catch (error) {
+        alert('Error deleting task');
+      }
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await taskAPI.updateStatus(id, newStatus);
+      fetchData();
+    } catch (error) {
+      alert('Error updating status');
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading tasks...</div>;
+  }
+
+
   const assignees = useMemo(
-    () => Array.from(new Set(tasks.map(t => t.assignee))).sort(),
+    () => Array.from(new Set(tasks.map(t => t.assignee?.name || t.assignee))).sort(),
     [tasks]
   );
 
   const filtered = useMemo(() => {
     let list = [...tasks];
-    if (search) {
-      const q = search.toLowerCase();
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
       list = list.filter(t =>
         t.title.toLowerCase().includes(q) ||
         t.description.toLowerCase().includes(q) ||
@@ -115,9 +121,8 @@ export default function Task() {
         (t.tags || []).some(tag => tag.toLowerCase().includes(q))
       );
     }
-    if (statusFilter !== 'all') list = list.filter(t => t.status === statusFilter);
-    if (priorityFilter !== 'all') list = list.filter(t => t.priority === priorityFilter);
-    if (assigneeFilter !== 'all') list = list.filter(t => t.assignee === assigneeFilter);
+    if (filterStatus !== 'all') list = list.filter(t => t.status === filterStatus);
+    if (filterPriority !== 'all') list = list.filter(t => t.priority === filterPriority);
 
     list.sort((a, b) => {
       if (sortBy === 'dueDate') {

@@ -47,6 +47,13 @@ import Activity from './Components/Activity';
 import Messages from './Components/Messages';
 import Notifications from './Components/Notifications';
 
+// Import NEW Components
+import Backlog from './Components/Development/Backlog';
+import Sprints from './Components/Development/Sprints';
+import StageTransition from './Components/StageManagement/StageTransition';
+import ClientDashboard from './Components/ClientPortal/ClientDashboard';
+import ClientApprovals from './Components/ClientPortal/ClientApprovals';
+
 // Layout component that includes the Sidebar
 const MainLayout = () => {
   return (
@@ -93,8 +100,8 @@ function App() {
             {/* Development Routes */}
             <Route path="/development">
               <Route index element={<Navigate to="code" replace />} />
-              <Route path="backlog" element={<div>Backlog</div>} />
-              <Route path="sprints" element={<div>Sprints</div>} />
+              <Route path="backlog" element={<Backlog />} />
+              <Route path="sprints" element={<Sprints />} />
               <Route path="code" element={<Code />} />
               <Route path="deployment" element={<Deployment />} />
               <Route path="task" element={<Task />} />
@@ -130,6 +137,15 @@ function App() {
               <Route path="team-performance" element={<TeamPerformance />} />
               <Route path="financial" element={<Finacial />} />
               <Route path="custom" element={<Custom />} />
+            </Route>
+
+            {/* Stage Management */}
+            <Route path="/stage-transition" element={<StageTransition />} />
+
+            {/* Client Portal Routes */}
+            <Route path="/client">
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="approvals" element={<ClientApprovals />} />
             </Route>
 
             {/* Settings placeholders */}

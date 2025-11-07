@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FaUsers, 
   FaLaptopCode,
@@ -15,29 +15,63 @@ import {
   FaInfoCircle
 } from 'react-icons/fa';
 import './Dashboard.css';
+import { projectAPI, userAPI, clientAPI, activityAPI } from '../services/api';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
 
-  // IT Agency specific metrics
-  const stats = [
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [projectsRes, usersRes, clientsRes, activitiesRes] = await Promise.all([
+        projectAPI.getAll({ status: 'In Progress' }),
+        userAPI.getAll(),
+        clientAPI.getAll(),
+        activityAPI.getAll({ limit: 10 })
+      ]);
+      
+      setDashboardData({
+        projects: projectsRes.data || [],
+        users: usersRes.data || [],
+        clients: clientsRes.data || [],
+        activities: activitiesRes.data || []
+      });
+    } catch (error) {
+      console.error('Dashboard fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="dashboard-loading">Loading...</div>;
+  }
+
+  // IT Agency specific metrics - using real data
+  const stats = dashboardData ? [
     { 
       title: 'Active Projects', 
-      value: '24', 
+      value: dashboardData.projects.length.toString(), 
       icon: <FaProjectDiagram className="stat-icon" />, 
       color: '#3498db',
       change: '+3 this week'
     },
     { 
       title: 'Team Members', 
-      value: '18', 
+      value: dashboardData.users.length.toString(), 
       icon: <FaUsers className="stat-icon" />, 
       color: '#2ecc71',
       change: '+2 this month'
     },
     { 
       title: 'Active Clients', 
-      value: '42', 
+      value: dashboardData.clients.length.toString(), 
       icon: <FaUsers className="stat-icon" />, 
       color: '#9b59b6',
       change: '+5 this month'
@@ -49,81 +83,16 @@ const Dashboard = () => {
       color: '#e74c3c',
       change: '12.5% from last month'
     },
-  ];
+  ] : [];
 
-  // Active Projects
-  const activeProjects = [
-    { 
-      id: 1, 
-      name: 'E-commerce Platform', 
-      client: 'TechNova Inc.',
-      progress: 75,
-      deadline: '2023-12-15',
-      status: 'In Progress',
-      team: ['JD', 'MS', 'AR'],
-      tech: ['React', 'Node.js', 'MongoDB']
-    },
-    { 
-      id: 2, 
-      name: 'Mobile App Redesign', 
-      client: 'UrbanFit',
-      progress: 35,
-      deadline: '2024-01-20',
-      status: 'In Progress',
-      team: ['AK', 'LP', 'SM'],
-      tech: ['React Native', 'Firebase']
-    },
-    { 
-      id: 3, 
-      name: 'Cloud Migration', 
-      client: 'Global Finance',
-      progress: 90,
-      deadline: '2023-11-30',
-      status: 'Final Testing',
-      team: ['TB', 'RJ', 'KW'],
-      tech: ['AWS', 'Docker', 'Kubernetes']
-    },
-  ];
+  // Active Projects - using real data from backend
+  const activeProjects = dashboardData ? dashboardData.projects.slice(0, 3) : [];
 
-  // Recent Activities
-  const recentActivities = [
-    { 
-      id: 1, 
-      user: 'John Doe', 
-      action: 'completed the payment gateway integration', 
-      time: '2 hours ago',
-      type: 'success'
-    },
-    { 
-      id: 2, 
-      user: 'Sarah Wilson', 
-      action: 'requested new features for the dashboard', 
-      time: '5 hours ago',
-      type: 'info'
-    },
-    { 
-      id: 3, 
-      user: 'Mike Johnson', 
-      action: 'reported an issue with the login page', 
-      time: '1 day ago',
-      type: 'warning'
-    },
-    { 
-      id: 4, 
-      user: 'Emma Davis', 
-      action: 'signed a new contract for mobile app development', 
-      time: '2 days ago',
-      type: 'success'
-    },
-  ];
+  // Recent Activities - using real data from backend
+  const recentActivities = dashboardData ? dashboardData.activities.slice(0, 5) : [];
 
-  // Team Members
-  const teamMembers = [
-    { id: 1, name: 'Alex Johnson', role: 'Lead Developer', status: 'online', avatar: 'AJ' },
-    { id: 2, name: 'Maria Garcia', role: 'UI/UX Designer', status: 'online', avatar: 'MG' },
-    { id: 3, name: 'David Kim', role: 'DevOps Engineer', status: 'away', avatar: 'DK' },
-    { id: 4, name: 'Sarah Wilson', role: 'Project Manager', status: 'offline', avatar: 'SW' },
-  ];
+  // Team Members - using real data from backend
+  const teamMembers = dashboardData ? dashboardData.users.slice(0, 4) : [];
 
   return (
     <div className="dashboard-page">

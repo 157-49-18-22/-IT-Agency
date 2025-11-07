@@ -11,104 +11,55 @@ import {
   FaExclamationTriangle
 } from 'react-icons/fa';
 import './AllProjects.css';
-
-// Mock data for projects
-const mockProjects = [
-  {
-    id: 1,
-    name: 'E-commerce Website Redesign',
-    client: 'FashionHub',
-    status: 'In Progress',
-    progress: 65,
-    startDate: '2023-10-15',
-    endDate: '2023-12-30',
-    priority: 'High',
-    team: ['JD', 'AS', 'MK'],
-    phase: 'Development'
-  },
-  {
-    id: 2,
-    name: 'Mobile Banking App',
-    client: 'Global Bank',
-    status: 'On Hold',
-    progress: 30,
-    startDate: '2023-11-01',
-    endDate: '2024-02-15',
-    priority: 'High',
-    team: ['AS', 'RK', 'PM'],
-    phase: 'UI/UX Design'
-  },
-  {
-    id: 3,
-    name: 'Corporate Website',
-    client: 'TechSolutions Inc.',
-    status: 'Completed',
-    progress: 100,
-    startDate: '2023-09-10',
-    endDate: '2023-10-25',
-    priority: 'Medium',
-    team: ['MK', 'PM'],
-    phase: 'Completed'
-  },
-  {
-    id: 4,
-    name: 'Inventory Management System',
-    client: 'RetailPro',
-    status: 'In Progress',
-    progress: 45,
-    startDate: '2023-10-20',
-    endDate: '2024-01-15',
-    priority: 'High',
-    team: ['JD', 'RK'],
-    phase: 'Development'
-  },
-  {
-    id: 5,
-    name: 'Fitness App',
-    client: 'FitLife',
-    status: 'Planning',
-    progress: 10,
-    startDate: '2023-11-15',
-    endDate: '2024-03-01',
-    priority: 'Medium',
-    team: ['AS', 'MK'],
-    phase: 'Planning'
-  },
-  {
-    id: 6,
-    name: 'Restaurant Booking System',
-    client: 'DineEasy',
-    status: 'In Progress',
-    progress: 80,
-    startDate: '2023-10-01',
-    endDate: '2023-11-30',
-    priority: 'Low',
-    team: ['PM', 'RK'],
-    phase: 'Testing'
-  }
-];
+import { projectAPI } from '../services/api';
 
 const AllProjects = () => {
   const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
-  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setProjects(mockProjects);
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    fetchProjects();
   }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await projectAPI.getAll();
+      setProjects(response.data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (id) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectAPI.delete(id);
+        fetchProjects();
+      } catch (error) {
+        alert('Error deleting project');
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading projects...</div>;
+  }
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
     
+    if (statusFilter === 'All') return matchesSearch;
+    if (statusFilter === 'In Progress') return project.status === 'In Progress' && matchesSearch;
+    if (statusFilter === 'Completed') return project.status === 'Completed' && matchesSearch;
+    if (statusFilter === 'On Hold') return project.status === 'On Hold' && matchesSearch;
+    if (statusFilter === 'Planning') return project.status === 'Planning' && matchesSearch;
     if (filter === 'all') return matchesSearch;
     if (filter === 'in-progress') return project.status === 'In Progress' && matchesSearch;
     if (filter === 'completed') return project.status === 'Completed' && matchesSearch;

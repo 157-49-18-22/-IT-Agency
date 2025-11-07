@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, FiEdit2, FiTrash2, FiChevronDown } from 'react-icons/fi';
 import './Team.css';
+import { userAPI, teamAPI } from '../services/api';
 
 const Team = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,9 +17,42 @@ const Team = () => {
     { id: 5, name: 'Support', count: 0 },
   ]);
 
-  // Mock data for team members
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const mockMembers = [
+    fetchTeamMembers();
+  }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      setLoading(true);
+      const response = await userAPI.getAll();
+      setMembers(response.data || []);
+      setFilteredMembers(response.data || []);
+    } catch (error) {
+      console.error('Error fetching team:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMember = async (id) => {
+    if (window.confirm('Remove this team member?')) {
+      try {
+        await userAPI.delete(id);
+        fetchTeamMembers();
+      } catch (error) {
+        alert('Error removing member');
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading team...</div>;
+  }
+
+  // OLD Mock data
+  const oldMockMembers = [
       {
         id: 1,
         name: 'John Doe',

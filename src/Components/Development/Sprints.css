@@ -1,0 +1,373 @@
+.sprints-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sprints-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.sprints-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.sprints-header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.active-sprint-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+  color: white;
+}
+
+.sprint-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.sprint-header-row h2 {
+  font-size: 24px;
+  margin: 0 0 8px 0;
+}
+
+.sprint-goal {
+  opacity: 0.9;
+  margin: 0;
+}
+
+.sprint-status-badge {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.sprint-status-badge.active {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+}
+
+.sprint-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon {
+  font-size: 28px;
+  opacity: 0.9;
+}
+
+.stat-label {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stat-value-small {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.progress-section {
+  margin-bottom: 24px;
+}
+
+.progress-bar {
+  height: 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.sprint-tasks h3 {
+  font-size: 18px;
+  margin: 0 0 16px 0;
+}
+
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.task-card {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.task-points {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.task-status {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sprints-list {
+  margin-top: 32px;
+}
+
+.sprints-list h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 20px 0;
+}
+
+.sprints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.sprint-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sprint-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+}
+
+.sprint-card.active {
+  border-color: #3b82f6;
+  background: linear-gradient(to bottom, #eff6ff, white);
+}
+
+.sprint-card.completed {
+  border-color: #10b981;
+}
+
+.sprint-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.sprint-card-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.sprint-dates {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sprint-goal-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.sprint-metrics {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sprint-progress-bar {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.sprint-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Modal */
+.sprint-modal {
+  max-width: 800px;
+}
+
+.modal-dates {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.modal-section {
+  margin-bottom: 24px;
+}
+
+.modal-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.metric-card {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.metric-big-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 8px;
+}
+
+.modal-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.modal-task-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.modal-task-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-task-points {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.modal-task-status {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .sprint-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tasks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sprints-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

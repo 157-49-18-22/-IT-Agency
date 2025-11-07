@@ -1,0 +1,221 @@
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth APIs
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
+  refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
+  getProfile: () => api.get('/auth/profile'),
+};
+
+// User APIs
+export const userAPI = {
+  getAll: (params) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  updateProfile: (data) => api.put('/users/profile', data),
+};
+
+// Project APIs
+export const projectAPI = {
+  getAll: (params) => api.get('/projects', { params }),
+  getById: (id) => api.get(`/projects/${id}`),
+  create: (data) => api.post('/projects', data),
+  update: (id, data) => api.put(`/projects/${id}`, data),
+  delete: (id) => api.delete(`/projects/${id}`),
+  getStats: (id) => api.get(`/projects/${id}/stats`),
+  updatePhase: (id, phase) => api.put(`/projects/${id}/phase`, { phase }),
+};
+
+// Task APIs
+export const taskAPI = {
+  getAll: (params) => api.get('/tasks', { params }),
+  getById: (id) => api.get(`/tasks/${id}`),
+  create: (data) => api.post('/tasks', data),
+  update: (id, data) => api.put(`/tasks/${id}`, data),
+  delete: (id) => api.delete(`/tasks/${id}`),
+  updateStatus: (id, status) => api.put(`/tasks/${id}/status`, { status }),
+  assignUser: (id, userId) => api.put(`/tasks/${id}/assign`, { userId }),
+};
+
+// Client APIs
+export const clientAPI = {
+  getAll: (params) => api.get('/clients', { params }),
+  getById: (id) => api.get(`/clients/${id}`),
+  create: (data) => api.post('/clients', data),
+  update: (id, data) => api.put(`/clients/${id}`, data),
+  delete: (id) => api.delete(`/clients/${id}`),
+};
+
+// Team APIs
+export const teamAPI = {
+  getAll: (params) => api.get('/team', { params }),
+  getById: (id) => api.get(`/team/${id}`),
+  addMember: (data) => api.post('/team', data),
+  removeMember: (id) => api.delete(`/team/${id}`),
+  updateRole: (id, role) => api.put(`/team/${id}/role`, { role }),
+};
+
+// Approval APIs
+export const approvalAPI = {
+  getAll: (params) => api.get('/approvals', { params }),
+  getById: (id) => api.get(`/approvals/${id}`),
+  create: (data) => api.post('/approvals', data),
+  approve: (id, data) => api.put(`/approvals/${id}/approve`, data),
+  reject: (id, data) => api.put(`/approvals/${id}/reject`, data),
+  getPending: () => api.get('/approvals/pending'),
+};
+
+// Deliverable APIs
+export const deliverableAPI = {
+  getAll: (params) => api.get('/deliverables', { params }),
+  getById: (id) => api.get(`/deliverables/${id}`),
+  create: (data) => api.post('/deliverables', data),
+  update: (id, data) => api.put(`/deliverables/${id}`, data),
+  delete: (id) => api.delete(`/deliverables/${id}`),
+  approve: (id) => api.put(`/deliverables/${id}/approve`),
+};
+
+// Message APIs
+export const messageAPI = {
+  getAll: (params) => api.get('/messages', { params }),
+  getById: (id) => api.get(`/messages/${id}`),
+  send: (data) => api.post('/messages', data),
+  markAsRead: (id) => api.put(`/messages/${id}/read`),
+  delete: (id) => api.delete(`/messages/${id}`),
+  getThreads: () => api.get('/messages/threads'),
+};
+
+// Notification APIs
+export const notificationAPI = {
+  getAll: (params) => api.get('/notifications', { params }),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+};
+
+// Activity APIs
+export const activityAPI = {
+  getAll: (params) => api.get('/activity', { params }),
+  getByProject: (projectId) => api.get(`/activity/project/${projectId}`),
+  getByUser: (userId) => api.get(`/activity/user/${userId}`),
+};
+
+// Calendar APIs
+export const calendarAPI = {
+  getAll: (params) => api.get('/calendar', { params }),
+  getById: (id) => api.get(`/calendar/${id}`),
+  create: (data) => api.post('/calendar', data),
+  update: (id, data) => api.put(`/calendar/${id}`, data),
+  delete: (id) => api.delete(`/calendar/${id}`),
+};
+
+// Time Tracking APIs
+export const timeTrackingAPI = {
+  getAll: (params) => api.get('/time-tracking', { params }),
+  start: (data) => api.post('/time-tracking/start', data),
+  stop: (id) => api.put(`/time-tracking/${id}/stop`),
+  create: (data) => api.post('/time-tracking', data),
+  update: (id, data) => api.put(`/time-tracking/${id}`, data),
+  delete: (id) => api.delete(`/time-tracking/${id}`),
+  getByProject: (projectId) => api.get(`/time-tracking/project/${projectId}`),
+};
+
+// Report APIs
+export const reportAPI = {
+  getProjectProgress: (params) => api.get('/reports/project-progress', { params }),
+  getTeamPerformance: (params) => api.get('/reports/team-performance', { params }),
+  getFinancial: (params) => api.get('/reports/financial', { params }),
+  getCustom: (params) => api.get('/reports/custom', { params }),
+  export: (type, params) => api.get(`/reports/export/${type}`, { params, responseType: 'blob' }),
+};
+
+// Sprint APIs
+export const sprintAPI = {
+  getAll: (params) => api.get('/sprints', { params }),
+  getById: (id) => api.get(`/sprints/${id}`),
+  create: (data) => api.post('/sprints', data),
+  update: (id, data) => api.put(`/sprints/${id}`, data),
+  delete: (id) => api.delete(`/sprints/${id}`),
+  start: (id) => api.put(`/sprints/${id}/start`),
+  complete: (id, data) => api.put(`/sprints/${id}/complete`, data),
+};
+
+// Upload APIs
+export const uploadAPI = {
+  single: (file, onProgress) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/upload/single', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+    });
+  },
+  multiple: (files, onProgress) => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return api.post('/upload/multiple', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+    });
+  },
+  delete: (filename) => api.delete(`/upload/${filename}`),
+};
+
+// Audit Log APIs
+export const auditLogAPI = {
+  getAll: (params) => api.get('/audit-logs', { params }),
+  getByEntity: (entityType, entityId) => api.get(`/audit-logs/entity/${entityType}/${entityId}`),
+  export: () => api.get('/audit-logs/export', { responseType: 'blob' }),
+};
+
+// Dashboard APIs
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard/stats'),
+  getRecentActivity: () => api.get('/dashboard/recent-activity'),
+  getActiveProjects: () => api.get('/dashboard/active-projects'),
+  getTeamMembers: () => api.get('/dashboard/team-members'),
+};
+
+export default api;

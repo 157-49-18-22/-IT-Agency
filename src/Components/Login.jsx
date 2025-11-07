@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
+import { authAPI } from '../services/api';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -61,19 +62,28 @@ const Login = () => {
     if (Object.keys(errors).length === 0) {
       setIsLoading(true);
       
-      // Simulate API call
+      // Real API call to backend
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Login successful:', formData);
+        const response = await authAPI.login({
+          email: formData.email,
+          password: formData.password
+        });
+        
+        console.log('Login successful:', response.data);
         setIsSubmitted(true);
         
-        // Store authentication status in localStorage
+        // Store authentication data in localStorage
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         
         // Redirect to dashboard
         navigate('/dashboard');
       } catch (error) {
         console.error('Login error:', error);
+        setFormErrors({
+          password: error.response?.data?.message || 'Invalid email or password'
+        });
       } finally {
         setIsLoading(false);
       }
