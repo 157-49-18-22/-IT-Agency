@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiUploadCloud, FiGrid, FiList, FiSearch, FiFilter, FiDownload, FiEye, FiShare2, FiFile, FiFolder } from 'react-icons/fi';
 import './Deliverables.css';
+import { deliverableAPI, uploadAPI } from '../services/api';
 
 const seed = [
   { id: 'DL-1001', name: 'Wireframes.zip', project: 'Website Revamp', stage: 'UI/UX', type: 'Archive', size: '12.4 MB', version: 'v3', status: 'Submitted', date: '2025-11-02' },
@@ -10,11 +11,48 @@ const seed = [
 ];
 
 export default function Deliverables() {
-  const [items, setItems] = useState(seed);
+  const [deliverables, setDeliverables] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState([]);
   const [q, setQ] = useState('');
   const [stage, setStage] = useState('All');
   const [type, setType] = useState('All');
   const [view, setView] = useState('grid');
+
+  useEffect(() => {
+    fetchDeliverables();
+  }, []);
+
+  const fetchDeliverables = async () => {
+    try {
+      setLoading(true);
+      const response = await deliverableAPI.getAll();
+      setDeliverables(response.data || []);
+      setItems(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = async (file) => {
+    try {
+      await uploadAPI.single(file);
+      fetchDeliverables();
+    } catch (error) {
+      alert('Upload failed');
+    }
+  };
+
+  const submitForApproval = async (id) => {
+    try {
+      await deliverableAPI.approve(id);
+      fetchDeliverables();
+    } catch (error) {
+      alert('Error submitting');
+    }
+  };
 
   const filtered = useMemo(() => {
     return items
@@ -23,9 +61,7 @@ export default function Deliverables() {
       .filter(it => `${it.name} ${it.project} ${it.type} ${it.stage}`.toLowerCase().includes(q.toLowerCase()));
   }, [items, stage, type, q]);
 
-  const submitForApproval = (id) => {
-    setItems(prev => prev.map(it => it.id===id ? { ...it, status: 'Submitted' } : it));
-  };
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="deliverables">

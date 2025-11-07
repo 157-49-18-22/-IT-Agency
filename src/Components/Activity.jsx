@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiCheckCircle, FiClipboard, FiFileText, FiGitCommit, FiMessageCircle, FiSearch, FiFilter, FiCalendar, FiClock, FiUser, FiGitBranch, FiAlertTriangle } from 'react-icons/fi';
 import './Activity.css';
+import { activityAPI } from '../services/api';
 
 const seed = [
   { id:'A-2007', type:'Approval', title:'Deliverable approved: Mockups v2', project:'E-commerce Platform', user:'Client Approver', ts:'2025-11-06 18:10' },
@@ -26,16 +27,35 @@ const typeIcon = (t) => {
 
 const formatDate = (ts) => ts.split(' ')[0];
 
-export default function Activity(){
-  const [items] = useState(seed);
+const Activity = () => {
+  const [filter, setFilter] = useState('all');
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
-  const [filter, setFilter] = useState('All');
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  const fetchActivities = async () => {
+    try {
+      setLoading(true);
+      const response = await activityAPI.getAll();
+      setActivities(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   const filtered = useMemo(()=>{
-    return items
-      .filter(it => filter==='All' || it.type===filter)
+    return activities
+      .filter(it => filter==='all' || it.type===filter)
       .filter(it => `${it.title} ${it.project} ${it.user}`.toLowerCase().includes(q.toLowerCase()));
-  }, [items, filter, q]);
+  }, [activities, filter, q]);
 
   const grouped = useMemo(()=>{
     return filtered.reduce((acc, it)=>{

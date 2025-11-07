@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiBell, FiCheckCircle, FiClock, FiMessageCircle, FiUser, FiSearch, FiFilter, FiAlertTriangle, FiFileText, FiAtSign } from 'react-icons/fi';
 import './Notifications.css';
+import { notificationAPI } from '../services/api';
 
 const seed = [
   { id:'N-3010', type:'Approval', title:'Approval required: UI Mockups v2', desc:'E-commerce Platform', time:'2m ago', read:false },
@@ -22,13 +23,51 @@ const TypeIcon = ({t}) => {
 };
 
 export default function Notifications(){
-  const [items, setItems] = useState(seed);
+  const [activeTab, setActiveTab] = useState('all');
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('All');
   const [q, setQ] = useState('');
   const [prefs, setPrefs] = useState({ approval:true, message:true, mention:true, system:true, alert:true });
 
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await notificationAPI.getAll();
+      setNotifications(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      fetchNotifications();
+    } catch (error) {
+      alert('Error marking as read');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      fetchNotifications();
+    } catch (error) {
+      alert('Error');
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+
   const filtered = useMemo(()=>{
-    const base = items.filter(n => {
+    const base = notifications.filter(n => {
       if(tab==='Unread' && n.read) return false;
       if(tab==='Mentions' && n.type!=='Mention') return false;
       if(tab==='System' && n.type!=='System') return false;

@@ -13,14 +13,31 @@ import {
   FiMessageSquare
 } from 'react-icons/fi';
 import './Uat.css';
+import { taskAPI, approvalAPI } from '../../services/api';
 
 const Uat = () => {
+  const [uatTests, setUatTests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await taskAPI.getAll({ type: 'uat' });
+        setUatTests(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isLoading] = useState(false);
 
-  // Mock UAT test data
-  const uatTests = [
+  if (loading) return <div className="loading">Loading...</div>;
+
+  // OLD Mock data - REMOVED
+  const oldUatTests = [
     {
       id: 1,
       title: 'Checkout Process',

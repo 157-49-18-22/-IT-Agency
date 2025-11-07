@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiArrowRight, FiFilter, FiSearch } from 'react-icons/fi';
 import './Backlog.css';
+import { taskAPI, sprintAPI } from '../../services/api';
 
 export default function Backlog() {
   const [backlogItems, setBacklogItems] = useState([

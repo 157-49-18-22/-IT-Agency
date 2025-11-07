@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiFilter, FiChevronDown, FiSearch, FiFlag, FiUsers, FiCalendar } from 'react-icons/fi';
 import './ProjectProgress.css';
+import { reportAPI } from '../../services/api';
 
 const projects = [
   { id: 'p1', name: 'Website Revamp', manager: 'John Doe', due: '2025-12-10', status: 'On Track', progress: 72, team: 8, milestones: [
@@ -15,6 +16,27 @@ const projects = [
 ];
 
 export default function ProjectProgress() {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchReport();
+  }, []);
+
+  const fetchReport = async () => {
+    try {
+      setLoading(true);
+      const response = await reportAPI.getProjectProgress();
+      setReportData(response.data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="loading">Loading report...</div>;
+
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const filtered = useMemo(() => projects.filter(p => {

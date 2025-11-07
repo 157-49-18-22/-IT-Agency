@@ -1,13 +1,30 @@
 import React, { useState } from 'react';
 import { FiSearch, FiFilter, FiClock, FiTrendingUp, FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import './Performance.css';
+import { reportAPI } from '../../services/api';
 
 const Performance = () => {
+  const [performanceData, setPerformanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await reportAPI.getCustom({ type: 'performance' });
+        setPerformanceData(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
   const [timeRange, setTimeRange] = useState('24h');
-  const [isLoading] = useState(false);
 
-  // Mock performance data
-  const performanceData = {
+  if (loading) return <div className="loading">Loading...</div>;
+
+  // OLD Mock data - REMOVED
+  const oldPerformanceData = {
     metrics: {
       avgResponseTime: '245ms',
       requestsPerSecond: '1,245',

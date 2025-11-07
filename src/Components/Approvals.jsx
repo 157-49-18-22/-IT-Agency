@@ -1,43 +1,69 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiCheck, FiX, FiSearch, FiFilter, FiChevronRight, FiClock, FiFile, FiUser, FiCalendar } from 'react-icons/fi';
 import './Approvals.css';
+import { approvalAPI } from '../services/api';
 
-const seed = [
-  { id: 'AP-1024', type: 'Deliverable', title: 'UI Mockups v2', project: 'E-commerce Platform', requestedBy: 'Sarah Lee', requestedTo: 'Client Approver', date: '2025-11-05', status: 'Pending', priority: 'High', notes: 'Homepage + PDP', version: 'v2' },
-  { id: 'AP-1025', type: 'Stage Transition', title: 'Move to Development', project: 'API Backend', requestedBy: 'Admin User', requestedTo: 'PM', date: '2025-11-04', status: 'Pending', priority: 'Medium', notes: 'UI/UX sign-off received', version: '-' },
-  { id: 'AP-1021', type: 'Deliverable', title: 'Prototype Link', project: 'Mobile App', requestedBy: 'Alex Johnson', requestedTo: 'Client Approver', date: '2025-11-01', status: 'Approved', priority: 'Low', notes: 'Clickable flows', version: 'v1' },
-  { id: 'AP-1017', type: 'Bug Fix', title: 'Critical auth patch', project: 'Website Revamp', requestedBy: 'Jane Smith', requestedTo: 'Admin', date: '2025-10-30', status: 'Rejected', priority: 'High', notes: 'Needs more tests', version: '-' }
-];
-
-export default function Approvals() {
-  const [items, setItems] = useState(seed);
-  const [active, setActive] = useState('Pending');
+const Approvals = () => {
+  const [approvals, setApprovals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Pending');
   const [q, setQ] = useState('');
   const [type, setType] = useState('All');
   const [selected, setSelected] = useState([]);
   const [detail, setDetail] = useState(null);
 
+  useEffect(() => {
+    fetchApprovals();
+  }, []);
+
+  const fetchApprovals = async () => {
+    try {
+      setLoading(true);
+      const response = await approvalAPI.getAll();
+      setApprovals(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await approvalAPI.approve(id, {});
+      fetchApprovals();
+    } catch (error) {
+      alert('Error approving');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await approvalAPI.reject(id, {});
+      fetchApprovals();
+    } catch (error) {
+      alert('Error rejecting');
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+
   const counts = useMemo(() => {
-    return items.reduce((acc, it) => { acc[it.status] = (acc[it.status] || 0) + 1; return acc; }, {});
-  }, [items]);
+    return approvals.reduce((acc, it) => { acc[it.status] = (acc[it.status] || 0) + 1; return acc; }, {});
+  }, [approvals]);
 
   const filtered = useMemo(() => {
-    return items.filter(it => (active === 'All' || it.status === active))
+    return approvals.filter(it => (activeTab === 'All' || it.status === activeTab))
       .filter(it => (type === 'All' || it.type === type))
       .filter(it => Object.values(it).join(' ').toLowerCase().includes(q.toLowerCase()));
-  }, [items, active, type, q]);
+  }, [approvals, activeTab, type, q]);
 
   const toggleSelect = (id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const setStatus = (ids, status) => {
-    setItems(prev => prev.map(it => ids.includes(it.id) ? { ...it, status } : it));
-    setSelected([]);
-  };
-
-  const quickApprove = (id) => setStatus([id], 'Approved');
-  const quickReject = (id) => setStatus([id], 'Rejected');
+  const quickApprove = (id) => handleApprove(id);
+  const quickReject = (id) => handleReject(id);
 
   return (
     <div className="approvals">
@@ -52,7 +78,7 @@ export default function Approvals() {
 
       <div className="tabs">
         {['Pending','Approved','Rejected','All'].map(t => (
-          <button key={t} className={`tab ${active===t?'active':''}`} onClick={() => setActive(t)}>{t}</button>
+          <button key={t} className={`tab ${activeTab===t?'active':''}`} onClick={() => setActiveTab(t)}>{t}</button>
         ))}
       </div>
 

@@ -2,73 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiSearch, FiFilter, FiChevronDown, FiClock, FiCalendar, FiUser, FiAlertCircle, FiCheckCircle, FiPauseCircle, FiPlay, FiMoreHorizontal } from 'react-icons/fi';
 import './Active.css';
+import { projectAPI } from '../services/api';
 
 const Active = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for active projects
   useEffect(() => {
-    const mockProjects = [
-      {
-        id: 1,
-        name: 'E-commerce Website Redesign',
-        client: 'Fashion Hub',
-        status: 'in-progress',
-        priority: 'high',
-        progress: 65,
-        startDate: '2023-10-15',
-        deadline: '2023-12-20',
-        team: [
-          { id: 1, name: 'John D', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-          { id: 2, name: 'Jane S', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
-          { id: 3, name: 'Mike R', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' },
-        ],
-        daysLeft: 28
-      },
-      {
-        id: 2,
-        name: 'Mobile App Development',
-        client: 'Tech Solutions Inc.',
-        status: 'in-progress',
-        priority: 'medium',
-        progress: 30,
-        startDate: '2023-11-01',
-        deadline: '2024-01-15',
-        team: [
-          { id: 4, name: 'Alex K', avatar: 'https://randomuser.me/api/portraits/men/4.jpg' },
-          { id: 5, name: 'Sarah M', avatar: 'https://randomuser.me/api/portraits/women/5.jpg' },
-        ],
-        daysLeft: 45
-      },
-      {
-        id: 3,
-        name: 'Corporate Website',
-        client: 'Global Corp',
-        status: 'in-progress',
-        priority: 'low',
-        progress: 15,
-        startDate: '2023-11-10',
-        deadline: '2024-02-28',
-        team: [
-          { id: 1, name: 'John D', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-          { id: 6, name: 'Emily T', avatar: 'https://randomuser.me/api/portraits/women/6.jpg' },
-        ],
-        daysLeft: 92
-      }
-    ];
-
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setProjects(mockProjects);
-      setLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    fetchActiveProjects();
   }, []);
+
+  const fetchActiveProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await projectAPI.getAll({ status: 'In Progress' });
+      setProjects(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

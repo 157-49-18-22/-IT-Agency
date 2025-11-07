@@ -3,8 +3,27 @@ import { FiSearch, FiFilter, FiChevronDown, FiRefreshCw, FiPlay,
   FiPause, FiExternalLink, FiGitBranch, FiClock, FiUser, FiCheckCircle, 
   FiXCircle, FiAlertCircle, FiGitCommit, FiGitPullRequest } from 'react-icons/fi';
 import './Deployment.css';
+import { projectAPI } from '../../services/api';
 
 const Deployment = () => {
+  const [deployments, setDeployments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await projectAPI.getAll();
+        setDeployments(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('all');

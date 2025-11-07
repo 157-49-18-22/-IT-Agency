@@ -25,8 +25,27 @@ import {
   FiMessageSquare as FiMessage
 } from 'react-icons/fi';
 import './Version.css';
+import { projectAPI } from '../../services/api';
 
 const Version = () => {
+  const [versions, setVersions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await projectAPI.getAll();
+        setVersions(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [versions, setVersions] = useState([]);
   const [filteredVersions, setFilteredVersions] = useState([]);
   const [loading, setLoading] = useState(true);

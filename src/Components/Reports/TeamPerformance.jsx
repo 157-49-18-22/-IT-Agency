@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiFilter, FiChevronDown, FiSearch, FiTrendingUp, FiClock, FiCheckCircle } from 'react-icons/fi';
-import './TeamPerformancs.css';
+import './TeamPerformance.css';
+import { reportAPI } from '../../services/api';
 
 const members = [
   { id: 'm1', name: 'John Doe', role: 'Frontend', velocity: 34, hours: 38, completed: 22, avgCycle: 2.4 },
@@ -10,6 +11,25 @@ const members = [
 ];
 
 export default function TeamPerformance() {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await reportAPI.getTeamPerformance();
+        setReportData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [q, setQ] = useState('');
   const [role, setRole] = useState('all');
 

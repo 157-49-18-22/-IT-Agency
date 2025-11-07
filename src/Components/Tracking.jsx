@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiPlay, FiPause, FiStopCircle, FiClock, FiTag, FiFilter, FiChevronDown, FiPlus, FiEdit2, FiTrash2, FiCalendar } from 'react-icons/fi';
 import './Tracking.css';
+import { timeTrackingAPI } from '../services/api';
 
 const projects = ['Website Revamp', 'Mobile App', 'API Backend', 'Marketing'];
 const members = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Sarah Lee'];
@@ -35,6 +36,43 @@ export default function Tracking() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ date: '', project: projects[0], task: '', member: members[0], notes: '', hours: 0, minutes: 30 });
+
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTimeEntries();
+  }, []);
+
+  const fetchTimeEntries = async () => {
+    try {
+      setLoading(true);
+      const response = await timeTrackingAPI.getAll();
+      setTimeEntries(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartTimer = async (data) => {
+    try {
+      await timeTrackingAPI.start(data);
+      fetchTimeEntries();
+    } catch (error) {
+      alert('Error starting timer');
+    }
+  };
+
+  const handleStopTimer = async (id) => {
+    try {
+      await timeTrackingAPI.stop(id);
+      fetchTimeEntries();
+    } catch (error) {
+      alert('Error stopping timer');
+    }
+  };
 
   useEffect(() => { return () => clearInterval(timerRef.current); }, []);
 

@@ -2,8 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiCode, FiGitBranch, FiClock, FiUser, FiAlertCircle, FiCheckCircle, FiEye, FiEdit2 } from 'react-icons/fi';
 import './Code.css';
+import { projectAPI } from '../../services/api';
 
 const Code = () => {
+  const [repos, setRepos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await projectAPI.getAll();
+        setRepos(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');

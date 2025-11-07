@@ -1,10 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheckCircle, FiClock, FiAlertCircle, FiDownload, FiMessageCircle, FiFileText } from 'react-icons/fi';
 import './ClientDashboard.css';
+import { projectAPI, dashboardAPI } from '../../services/api';
 
 export default function ClientDashboard() {
+  const [dashboardData, setDashboardData] = useState(null);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await projectAPI.getAll();
+        setDashboardData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     // Mock data - replace with API call

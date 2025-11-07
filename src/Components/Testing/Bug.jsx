@@ -1,8 +1,27 @@
 import React, { useState } from 'react';
 import { FiSearch, FiFilter, FiPlus, FiAlertTriangle, FiClock, FiCheck, FiX, FiUser } from 'react-icons/fi';
 import './Bug.css';
+import { taskAPI } from '../../services/api';
 
 const Bug = () => {
+  const [bugs, setBugs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBugs = async () => {
+      try {
+        const res = await taskAPI.getAll({ type: 'bug' });
+        setBugs(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBugs();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');

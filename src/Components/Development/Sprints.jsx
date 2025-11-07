@@ -1,60 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar } from 'react-icons/fi';
 import './Sprints.css';
+import { sprintAPI } from '../../services/api';
 
 export default function Sprints() {
-  const [sprints, setSprints] = useState([
-    {
-      id: 1,
-      name: 'Sprint 1 - Authentication & Core Features',
-      status: 'Active',
-      startDate: '2024-11-01',
-      endDate: '2024-11-14',
-      goal: 'Complete user authentication and basic CRUD operations',
-      totalPoints: 34,
-      completedPoints: 21,
-      tasks: [
-        { id: 1, title: 'User Login', status: 'Done', points: 5 },
-        { id: 2, title: 'JWT Implementation', status: 'Done', points: 8 },
-        { id: 3, title: 'Password Reset', status: 'In Progress', points: 5 },
-        { id: 4, title: 'User Profile', status: 'Done', points: 3 },
-        { id: 5, title: 'API Endpoints', status: 'In Progress', points: 13 }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Sprint 2 - Payment & Checkout',
-      status: 'Planned',
-      startDate: '2024-11-15',
-      endDate: '2024-11-28',
-      goal: 'Implement payment gateway and checkout flow',
-      totalPoints: 29,
-      completedPoints: 0,
-      tasks: [
-        { id: 6, title: 'Stripe Integration', status: 'To Do', points: 13 },
-        { id: 7, title: 'Checkout Flow', status: 'To Do', points: 8 },
-        { id: 8, title: 'Order Confirmation', status: 'To Do', points: 5 },
-        { id: 9, title: 'Payment Webhooks', status: 'To Do', points: 3 }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Sprint 0 - Setup & Planning',
-      status: 'Completed',
-      startDate: '2024-10-15',
-      endDate: '2024-10-31',
-      goal: 'Project setup and initial planning',
-      totalPoints: 21,
-      completedPoints: 21,
-      tasks: [
-        { id: 10, title: 'Project Setup', status: 'Done', points: 5 },
-        { id: 11, title: 'Database Schema', status: 'Done', points: 8 },
-        { id: 12, title: 'CI/CD Pipeline', status: 'Done', points: 8 }
-      ]
-    }
-  ]);
-
+  const [sprints, setSprints] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSprint, setSelectedSprint] = useState(null);
+
+  useEffect(() => {
+    const fetchSprints = async () => {
+      try {
+        setLoading(true);
+        const response = await sprintAPI.getAll();
+        setSprints(response.data || []);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSprints();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   const getProgressPercentage = (sprint) => {
     return sprint.totalPoints > 0 ? Math.round((sprint.completedPoints / sprint.totalPoints) * 100) : 0;

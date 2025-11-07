@@ -11,6 +11,7 @@ import {
   FiSearch
 } from 'react-icons/fi';
 import './Calendar.css';
+import { calendarAPI } from '../services/api';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -95,11 +96,6 @@ export default function Calendar() {
   const selectedKey = formatDateKey(selected);
   const selectedDayEvents = eventsByDate[selectedKey] || [];
 
-  const changeMonth = (delta) => {
-    const d = new Date(current);
-    d.setMonth(d.getMonth() + delta);
-    setCurrent(d);
-  };
   const goToday = () => {
     setCurrent(new Date());
     setSelected(new Date());

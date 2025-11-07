@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiCheckCircle, FiClock, FiAlertCircle, FiArrowRight, FiCheck, FiX } from 'react-icons/fi';
 import './StageTransition.css';
+import { projectAPI } from '../../services/api';
 
 export default function StageTransition() {
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      name: 'E-commerce Website Redesign',
-      currentStage: 1, // 1=UI/UX, 2=Development, 3=Testing
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
       stageName: 'UI/UX Design',
       progress: 95,
       readyForTransition: true,

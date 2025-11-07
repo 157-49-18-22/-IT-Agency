@@ -1,15 +1,32 @@
 import React, { useState } from 'react';
 import { FiSearch, FiFilter, FiPlus, FiCheck, FiX, FiUser, FiClock, FiAlertCircle } from 'react-icons/fi';
 import './Cases.css';
+import { taskAPI } from '../../services/api';
 
 const Cases = () => {
+  const [testCases, setTestCases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await taskAPI.getAll({ type: 'test' });
+        setTestCases(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [isLoading] = useState(false);
 
-  // Mock data for test cases
-  const testCases = [
+  if (loading) return <div className="loading">Loading...</div>;
+
+  // OLD Mock data - REMOVED
+  const oldTestCases = [
     {
       id: 1,
       title: 'User Login Test',

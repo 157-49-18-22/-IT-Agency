@@ -1,8 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Mockups.css';
+import { deliverableAPI } from '../../services/api';
 
 const Mockups = () => {
+  const [mockups, setMockups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await deliverableAPI.getAll({ stage: 'UI/UX', type: 'Mockup' });
+        setMockups(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+  if (loading) return <div className="loading">Loading...</div>;
   // Mock mockups data
   const mockups = [
     {

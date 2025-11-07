@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiPlus, FiTrash2, FiFilter, FiChevronDown, FiSearch } from 'react-icons/fi';
 import './Custom.css';
+import { reportAPI } from '../../services/api';
 
 const fields = [
   { key: 'project', label: 'Project' },
@@ -18,6 +19,25 @@ const data = [
 ];
 
 export default function Custom() {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await reportAPI.getCustom();
+        setReportData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState(['project','member','type','amount','status']);
   const [filters, setFilters] = useState([{ field: 'project', value: '' }]);

@@ -12,70 +12,33 @@ import {
   FiMoreHorizontal
 } from 'react-icons/fi';
 import './Completed.css';
+import { projectAPI } from '../services/api';
 
 const Completed = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for completed projects
   useEffect(() => {
-    const mockProjects = [
-      {
-        id: 1,
-        name: 'E-commerce Website',
-        client: 'ShopEase',
-        status: 'completed',
-        rating: 5,
-        completionDate: '2023-09-15',
-        duration: '3 months',
-        team: [
-          { id: 1, name: 'John D', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-          { id: 2, name: 'Jane S', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
-        ],
-        feedback: 'Great work! The project was delivered on time and exceeded our expectations.'
-      },
-      {
-        id: 2,
-        name: 'Mobile Banking App',
-        client: 'Global Bank',
-        status: 'completed',
-        rating: 4,
-        completionDate: '2023-08-22',
-        duration: '5 months',
-        team: [
-          { id: 3, name: 'Mike R', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' },
-          { id: 4, name: 'Sarah L', avatar: 'https://randomuser.me/api/portraits/women/4.jpg' },
-          { id: 5, name: 'Alex K', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
-        ],
-        feedback: 'Very professional team. The app is working perfectly and our customers love it.'
-      },
-      {
-        id: 3,
-        name: 'Corporate Website Redesign',
-        client: 'TechNova',
-        status: 'completed',
-        rating: 5,
-        completionDate: '2023-10-05',
-        duration: '2 months',
-        team: [
-          { id: 6, name: 'Emily T', avatar: 'https://randomuser.me/api/portraits/women/6.jpg' },
-          { id: 1, name: 'John D', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-        ],
-        feedback: 'Excellent communication and delivery. Will definitely work with them again.'
-      }
-    ];
-
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setProjects(mockProjects);
-      setLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    fetchCompletedProjects();
   }, []);
+
+  const fetchCompletedProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await projectAPI.getAll({ status: 'Completed' });
+      setProjects(response.data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -2,8 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiDownload, FiEye, FiEdit2, FiLink, FiClock, FiUser, FiLayers } from 'react-icons/fi';
 import './Prototypes.css';
+import { deliverableAPI } from '../../services/api';
 
 const Prototypes = () => {
+  const [prototypes, setPrototypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await deliverableAPI.getAll({ stage: 'UI/UX', type: 'Prototype' });
+        setPrototypes(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');

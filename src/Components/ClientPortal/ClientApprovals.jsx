@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiCheck, FiX, FiEye, FiDownload, FiMessageCircle } from 'react-icons/fi';
 import './ClientApprovals.css';
+import { approvalAPI } from '../../services/api';
 
 export default function ClientApprovals() {
-  const [approvals, setApprovals] = useState([
-    {
-      id: 'AP-1024',
-      type: 'Deliverable',
-      title: 'UI Mockups v2 - Homepage & Product Pages',
+  const [approvals, setApprovals] = useState([]);
+  const [loading, setLoading] = useState(true);
       description: 'High-fidelity mockups for homepage and product detail pages',
       stage: 'UI/UX Design',
       requestedBy: 'Sarah Lee (UI/UX Designer)',

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FiFilter, FiChevronDown, FiSearch, FiCalendar, FiDownload } from 'react-icons/fi';
 import './Finacial.css';
+import { reportAPI } from '../../services/api';
 
 const projects = ['All Projects','Website Revamp','Mobile App','API Backend'];
 const rows = [
@@ -21,6 +22,25 @@ const monthBars = [
 ];
 
 export default function Finacial() {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await reportAPI.getFinancial();
+        setReportData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [q, setQ] = useState('');
   const [proj, setProj] = useState('All Projects');
   const [range, setRange] = useState({ from: '', to: '' });
