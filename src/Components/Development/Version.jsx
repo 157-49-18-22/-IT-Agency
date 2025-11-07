@@ -45,10 +45,9 @@ const Version = () => {
     fetch();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  const [versions, setVersions] = useState([]);
   const [filteredVersions, setFilteredVersions] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     type: 'all',

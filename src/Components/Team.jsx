@@ -107,19 +107,8 @@ const Team = () => {
         avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
         status: 'inactive',
         joinDate: '2023-05-18',
-      },
+      }
     ];
-
-    setMembers(mockMembers);
-    setFilteredMembers(mockMembers);
-    
-    // Update department counts
-    const updatedDepartments = departments.map(dept => ({
-      ...dept,
-      count: mockMembers.filter(member => member.department === dept.name).length
-    }));
-    setDepartments(updatedDepartments);
-  }, []);
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();

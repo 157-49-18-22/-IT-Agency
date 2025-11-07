@@ -20,8 +20,8 @@ const Mockups = () => {
     fetch();
   }, []);
   if (loading) return <div className="loading">Loading...</div>;
-  // Mock mockups data
-  const mockups = [
+  // OLD Mock data - REMOVED
+  const oldMockups = [
     {
       id: 1,
       title: 'Dashboard UI',

@@ -22,8 +22,8 @@ const Wireframes = () => {
   }, []);
 
   if (loading) return <div className="loading">Loading...</div>;
-  // Mock wireframe data
-  const wireframes = [
+  // OLD Mock data - REMOVED
+  const oldWireframes = [
     {
       id: 1,
       title: 'Dashboard Layout',

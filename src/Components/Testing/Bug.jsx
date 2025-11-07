@@ -21,14 +21,14 @@ const Bug = () => {
     fetchBugs();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [isLoading] = useState(false);
 
-  // Mock data for bugs
-  const bugs = [
+  if (loading) return <div className="loading">Loading...</div>;
+
+  // OLD Mock data - REMOVED
+  const oldBugs = [
     {
       id: 1,
       title: 'Login button not working',

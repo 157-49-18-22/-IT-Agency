@@ -6,58 +6,39 @@ import { approvalAPI } from '../../services/api';
 export default function ClientApprovals() {
   const [approvals, setApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
-      description: 'High-fidelity mockups for homepage and product detail pages',
-      stage: 'UI/UX Design',
-      requestedBy: 'Sarah Lee (UI/UX Designer)',
-      requestedDate: '2024-11-05',
-      dueDate: '2024-11-10',
-      status: 'Pending',
-      priority: 'High',
-      files: [
-        { name: 'Homepage_v2.pdf', size: '4.2 MB', url: '#' },
-        { name: 'Product_Page_v2.pdf', size: '3.8 MB', url: '#' }
-      ],
-      notes: 'Updated based on your previous feedback. Changed color scheme and improved mobile responsiveness.'
-    },
-    {
-      id: 'AP-1025',
-      type: 'Stage Transition',
-      title: 'Move to Development Stage',
-      description: 'UI/UX design phase completed, ready to start development',
-      stage: 'UI/UX Design → Development',
-      requestedBy: 'John Doe (Project Manager)',
-      requestedDate: '2024-11-04',
-      dueDate: '2024-11-08',
-      status: 'Pending',
-      priority: 'Medium',
-      files: [],
-      notes: 'All design deliverables approved. Development team is ready to begin implementation.'
-    },
-    {
-      id: 'AP-1021',
-      type: 'Deliverable',
-      title: 'Interactive Prototype',
-      description: 'Clickable prototype with all user flows',
-      stage: 'UI/UX Design',
-      requestedBy: 'Sarah Lee (UI/UX Designer)',
-      requestedDate: '2024-11-01',
-      dueDate: '2024-11-05',
-      status: 'Approved',
-      priority: 'High',
-      files: [
-        { name: 'Prototype_Link.txt', size: '1 KB', url: '#' }
-      ],
-      notes: 'Figma prototype with all interactions',
-      approvedDate: '2024-11-03',
-      feedback: 'Looks great! Approved to proceed.'
-    }
-  ]);
+
+  useEffect(() => {
+    const fetchApprovals = async () => {
+      try {
+        setLoading(true);
+        const response = await approvalAPI.getAll();
+        setApprovals(response.data || []);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApprovals();
+  }, []);
 
   const [selectedApproval, setSelectedApproval] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [filter, setFilter] = useState('Pending');
 
-  const handleApprove = (id) => {
+  if (loading) return <div className="loading">Loading...</div>;
+
+  const handleApprove = async (id) => {
+    try {
+      await approvalAPI.approve(id, {});
+      const response = await approvalAPI.getAll();
+      setApprovals(response.data || []);
+    } catch (error) {
+      alert('Error');
+    }
+  };
+
+  const handleApproveWithFeedback = (id) => {
     if (!feedback.trim()) {
       alert('Please provide feedback');
       return;

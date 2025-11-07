@@ -20,16 +20,17 @@ const Prototypes = () => {
     };
     fetch();
   }, []);
-  if (loading) return <div className="loading">Loading...</div>;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Mock data for prototypes
-  const [prototypes, setPrototypes] = useState([
+  if (loading) return <div className="loading">Loading...</div>;
+
+  // OLD Mock data - REMOVED
+  const oldPrototypes = [
     {
       id: 1,
       title: 'E-commerce App Flow',
@@ -77,16 +78,8 @@ const Prototypes = () => {
       screens: 8,
       link: 'https://example.com/prototype4',
       thumbnail: 'https://via.placeholder.com/300x180/9f7aea/ffffff?text=Mobile+Nav'
-    },
-  ]);
-
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  ];
 
   // Filter and sort prototypes
   const filteredPrototypes = prototypes

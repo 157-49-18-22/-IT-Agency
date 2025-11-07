@@ -3,13 +3,6 @@ import { FiFilter, FiChevronDown, FiSearch, FiTrendingUp, FiClock, FiCheckCircle
 import './TeamPerformance.css';
 import { reportAPI } from '../../services/api';
 
-const members = [
-  { id: 'm1', name: 'John Doe', role: 'Frontend', velocity: 34, hours: 38, completed: 22, avgCycle: 2.4 },
-  { id: 'm2', name: 'Jane Smith', role: 'Backend', velocity: 28, hours: 41, completed: 19, avgCycle: 3.1 },
-  { id: 'm3', name: 'Alex Johnson', role: 'Mobile', velocity: 22, hours: 36, completed: 16, avgCycle: 2.9 },
-  { id: 'm4', name: 'Sarah Lee', role: 'QA', velocity: 26, hours: 35, completed: 25, avgCycle: 1.8 },
-];
-
 export default function TeamPerformance() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);

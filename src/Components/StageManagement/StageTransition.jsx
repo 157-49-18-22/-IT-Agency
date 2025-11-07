@@ -6,43 +6,38 @@ import { projectAPI } from '../../services/api';
 export default function StageTransition() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-      stageName: 'UI/UX Design',
-      progress: 95,
-      readyForTransition: true,
-      checklist: [
-        { id: 1, item: 'All wireframes approved', completed: true },
-        { id: 2, item: 'High-fidelity mockups delivered', completed: true },
-        { id: 3, item: 'Interactive prototype created', completed: true },
-        { id: 4, item: 'Design system documented', completed: true },
-        { id: 5, item: 'Client final approval received', completed: false }
-      ],
-      nextStage: 'Development',
-      estimatedStartDate: '2024-11-10'
-    },
-    {
-      id: 2,
-      name: 'Mobile Banking App',
-      currentStage: 2,
-      stageName: 'Development',
-      progress: 75,
-      readyForTransition: false,
-      checklist: [
-        { id: 1, item: 'Frontend development complete', completed: true },
-        { id: 2, item: 'Backend APIs implemented', completed: true },
-        { id: 3, item: 'Database schema finalized', completed: true },
-        { id: 4, item: 'Third-party integrations done', completed: false },
-        { id: 5, item: 'Code review completed', completed: false },
-        { id: 6, item: 'Documentation updated', completed: false }
-      ],
-      nextStage: 'Testing',
-      estimatedStartDate: '2024-12-01'
-    }
-  ]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await projectAPI.getAll();
+        setProjects(response.data || []);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const [selectedProject, setSelectedProject] = useState(null);
   const [transitionNotes, setTransitionNotes] = useState('');
 
-  const handleTransition = (projectId) => {
+  if (loading) return <div className="loading">Loading...</div>;
+
+  const handleTransition = async (projectId, newStage) => {
+    try {
+      await projectAPI.updatePhase(projectId, newStage);
+      const response = await projectAPI.getAll();
+      setProjects(response.data || []);
+    } catch (error) {
+      alert('Error transitioning stage');
+    }
+  };
+
+  const handleTransitionClick = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     
     if (!project.readyForTransition) {

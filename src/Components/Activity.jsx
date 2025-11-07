@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiCheckCircle, FiClipboard, FiFileText, FiGitCommit, FiMessageCircle, FiSearch, FiFilter, FiCalendar, FiClock, FiUser, FiGitBranch, FiAlertTriangle } from 'react-icons/fi';
 import './Activity.css';
 import { activityAPI } from '../services/api';

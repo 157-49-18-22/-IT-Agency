@@ -23,14 +23,12 @@ const Deployment = () => {
     fetch();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
-  const [deployments, setDeployments] = useState([]);
-  const [filteredDeployments, setFilteredDeployments] = useState([]);
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   // Mock data for deployments
   useEffect(() => {
