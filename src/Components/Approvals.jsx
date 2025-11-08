@@ -174,4 +174,6 @@ const Approvals = () => {
       )}
     </div>
   );
-}
+};
+
+export default Approvals;

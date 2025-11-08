@@ -20,7 +20,7 @@ import Client from './Components/UI/Client';
 // Import Development Components
 import Code from './Components/Development/Code';
 import Deployment from './Components/Development/Deployment';
-import Task from './Components/Development/Task';
+import DevelopmentTask from './Components/Development/Task';
 import Version from './Components/Development/Version';
 
 // Import Testing Components
@@ -32,7 +32,7 @@ import Uat from './Components/Testing/Uat';
 // Import Team Component
 import Team from './Components/Team';
 // Import standalone Tasks page
-import TasksPage from './Components/Task';
+import Task from './Components/Development/Task';
 // Import Calendar Component
 import Calendar from './Components/Calendar';
 import Tracking from './Components/Tracking';
@@ -122,7 +122,7 @@ function App() {
               <Route path="Runs" element={<div>Test Runs</div>} />
             </Route>
             
-            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/tasks" element={<DevelopmentTask />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/time-tracking" element={<Tracking />} />
             {/* New top-level routes from sidebar */}
