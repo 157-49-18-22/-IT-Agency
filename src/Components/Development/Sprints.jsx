@@ -13,9 +13,12 @@ export default function Sprints() {
       try {
         setLoading(true);
         const response = await sprintAPI.getAll();
-        setSprints(response.data || []);
+        // Ensure we always set an array, even if the response is malformed
+        const sprintsData = Array.isArray(response?.data) ? response.data : [];
+        setSprints(sprintsData);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching sprints:', error);
+        setSprints([]); // Reset to empty array on error
       } finally {
         setLoading(false);
       }

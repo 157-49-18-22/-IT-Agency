@@ -52,9 +52,18 @@ export default function ClientDashboard() {
     }, 500);
   }, []);
 
-  if (loading) {
-    return <div className="client-dashboard"><div className="loading">Loading...</div></div>;
+  if (loading || !project) {
+    return <div className="loading">Loading client data...</div>;
   }
+
+  // Default values to prevent null reference errors
+  const clientData = {
+    name: project?.client || 'Client',
+    projects: project?.milestones || [],
+    completedProjects: project?.milestones.filter(milestone => milestone.status === 'Completed').length || 0,
+    totalInvestment: 100000, // Replace with actual data
+    upcomingMilestones: project?.milestones.filter(milestone => milestone.status !== 'Completed') || []
+  };
 
   const getStageStatus = (stageNum) => {
     if (project.currentStage > stageNum) return 'completed';
@@ -66,8 +75,8 @@ export default function ClientDashboard() {
     <div className="client-dashboard">
       <div className="client-header">
         <div>
-          <h1>{project.name}</h1>
-          <p className="client-name">{project.client}</p>
+          <h1>Welcome back, {clientData.name}!</h1>
+          <p>{clientData.completedProjects}</p>
         </div>
         <div className="header-actions">
           <button className="btn-outline"><FiMessageCircle /> Contact Team</button>
@@ -130,7 +139,7 @@ export default function ClientDashboard() {
                 <div className="progress-bar small">
                   <div className="progress-fill" style={{ width: `${project.stages.uiux.progress}%` }}></div>
                 </div>
-                <span>{project.stages.uiux.progress}%</span>
+                <p>{clientData.projects.length}</p>
               </div>
               <div className="stage-status">{project.stages.uiux.status}</div>
               {project.stages.uiux.endDate && (
@@ -168,7 +177,7 @@ export default function ClientDashboard() {
                 <div className="progress-bar small">
                   <div className="progress-fill" style={{ width: `${project.stages.testing.progress}%` }}></div>
                 </div>
-                <span>{project.stages.testing.progress}%</span>
+                <p>${clientData.totalInvestment.toLocaleString()}</p>
               </div>
               <div className="stage-status">{project.stages.testing.status}</div>
             </div>
@@ -180,11 +189,13 @@ export default function ClientDashboard() {
       <div className="milestones-section">
         <h2>Key Milestones</h2>
         <div className="milestones-list">
-          {project.milestones.map(milestone => (
+          {clientData.upcomingMilestones.map((milestone, index) => (
             <div key={milestone.id} className={`milestone ${milestone.status.toLowerCase()}`}>
-              <div className="milestone-icon">
-                {milestone.status === 'Completed' ? <FiCheckCircle /> : <FiClock />}
-              </div>
+              {clientData.upcomingMilestones.length > 0 ? (
+                <div className="milestone-icon">
+                  {milestone.status === 'Completed' ? <FiCheckCircle /> : <FiClock />}
+                </div>
+              ) : null}
               <div className="milestone-content">
                 <div className="milestone-name">{milestone.name}</div>
                 <div className="milestone-date">{milestone.date}</div>

@@ -114,4 +114,22 @@ const Task = sequelize.define('Task', {
   ]
 });
 
+// Define associations
+Task.associate = (models) => {
+  Task.belongsTo(models.Project, {
+    foreignKey: 'projectId',
+    as: 'project'
+  });
+  
+  Task.belongsTo(models.User, {
+    foreignKey: 'assigneeId',
+    as: 'assignee'
+  });
+  
+  Task.belongsTo(models.User, {
+    foreignKey: 'reporterId',
+    as: 'reporter'
+  });
+};
+
 module.exports = Task;

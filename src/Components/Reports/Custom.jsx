@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiPlus, FiTrash2, FiFilter, FiChevronDown, FiSearch } from 'react-icons/fi';
 import './Custom.css';
 import { reportAPI } from '../../services/api';
@@ -19,9 +19,14 @@ const data = [
 ];
 
 export default function Custom() {
+  // State hooks at the top
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [selected, setSelected] = useState(['project','member','type','amount','status']);
+  const [filters, setFilters] = useState([{ field: 'project', value: '' }]);
 
+  // Effects
   useEffect(() => {
     const fetchReport = async () => {
       try {
@@ -37,28 +42,32 @@ export default function Custom() {
     fetchReport();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  const [q, setQ] = useState('');
-  const [selected, setSelected] = useState(['project','member','type','amount','status']);
-  const [filters, setFilters] = useState([{ field: 'project', value: '' }]);
+  // Filtered data and calculations
+  const filtered = useMemo(() => {
+    if (loading) return [];
+    return data.filter(row => {
+      if (q && !Object.values(row).join(' ').toLowerCase().includes(q.toLowerCase())) return false;
+      return filters.every(({ field, value }) => {
+        if (!value) return true;
+        return String(row[field]).toLowerCase().includes(value.toLowerCase());
+      });
+    });
+  }, [data, q, filters, loading]);
 
-  const addFilter = () => setFilters(prev => [...prev, { field: 'project', value: '' }]);
-  const removeFilter = (idx) => setFilters(prev => prev.filter((_,i)=>i!==idx));
-  const updateFilter = (idx, patch) => setFilters(prev => prev.map((f,i)=> i===idx ? { ...f, ...patch } : f));
-
-  const filtered = useMemo(() => data.filter(row => {
-    if (q && !Object.values(row).join(' ').toLowerCase().includes(q.toLowerCase())) return false;
-    for (const f of filters) {
-      if (f.value && String(row[f.field]).toLowerCase().indexOf(f.value.toLowerCase()) === -1) return false;
-    }
-    return true;
-  }), [q, filters]);
-
+  // Calculate totals
   const totals = useMemo(() => ({
     count: filtered.length,
-    positive: filtered.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0),
-    negative: Math.abs(filtered.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0))
+    positive: filtered.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0),
+    negative: Math.abs(filtered.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0))
   }), [filtered]);
+
+  // Handler functions
+  const addFilter = () => setFilters(prev => [...prev, { field: 'project', value: '' }]);
+  const removeFilter = (idx) => setFilters(prev => prev.filter((_, i) => i !== idx));
+  const updateFilter = (idx, patch) => 
+    setFilters(prev => prev.map((f, i) => i === idx ? { ...f, ...patch } : f));
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="cr-container">

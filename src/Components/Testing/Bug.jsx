@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiPlus, FiAlertTriangle, FiClock, FiCheck, FiX, FiUser } from 'react-icons/fi';
 import './Bug.css';
 import { taskAPI } from '../../services/api';
 
 const Bug = () => {
   const [bugs, setBugs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchBugs = async () => {
@@ -15,7 +15,7 @@ const Bug = () => {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     fetchBugs();
@@ -25,7 +25,7 @@ const Bug = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (isLoading) return <div className="loading">Loading...</div>;
 
   // OLD Mock data - REMOVED
   const oldBugs = [

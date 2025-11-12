@@ -4,14 +4,20 @@ import './TeamPerformance.css';
 import { reportAPI } from '../../services/api';
 
 export default function TeamPerformance() {
+  // State hooks at the top
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [role, setRole] = useState('all');
+  const roles = ['Frontend', 'Backend', 'Mobile', 'QA'];
 
+  // Data fetching effect
   useEffect(() => {
     const fetchReport = async () => {
       try {
         setLoading(true);
         const response = await reportAPI.getTeamPerformance();
+        console.log('API Response:', response.data); // Log the response
         setReportData(response.data);
       } catch (error) {
         console.error('Error:', error);
@@ -22,16 +28,27 @@ export default function TeamPerformance() {
     fetchReport();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  const [q, setQ] = useState('');
-  const [role, setRole] = useState('all');
+  // Filtered members
+  const filtered = useMemo(() => {
+    console.log('Report Data:', reportData); // Log reportData for debugging
+    
+    // Handle case where reportData is not loaded yet
+    if (loading || !reportData) return [];
 
-  const roles = ['Frontend','Backend','Mobile','QA'];
-  const filtered = useMemo(() => members.filter(m => {
-    const okQ = !q || m.name.toLowerCase().includes(q.toLowerCase());
-    const okR = role === 'all' || m.role === role;
-    return okQ && okR;
-  }), [q, role]);
+    // Get members from reportData, defaulting to an empty array if not found
+    const members = reportData.members || reportData.teamMembers || [];
+    
+    return members.filter(m => {
+      const name = m.name || m.memberName || '';
+      const memberRole = m.role || m.memberRole || '';
+      
+      const okQ = !q || name.toLowerCase().includes(q.toLowerCase());
+      const okR = role === 'all' || memberRole === role;
+      return okQ && okR;
+    });
+  }, [q, role, loading, reportData]);
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="tp-container">
@@ -59,17 +76,17 @@ export default function TeamPerformance() {
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-title"><FiTrendingUp/> Team Velocity</div>
-          <div className="kpi-value">{members.reduce((s,m)=>s+m.velocity,0)} pts</div>
+          <div className="kpi-value">{filtered.reduce((s, m) => s + (m.velocity || 0), 0)} pts</div>
           <div className="kpi-sub">This sprint</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title"><FiClock/> Logged Hours</div>
-          <div className="kpi-value">{members.reduce((s,m)=>s+m.hours,0)} h</div>
+          <div className="kpi-value">{filtered.reduce((s, m) => s + (m.hours || 0), 0)} h</div>
           <div className="kpi-sub">Week to date</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title"><FiCheckCircle/> Completed</div>
-          <div className="kpi-value">{members.reduce((s,m)=>s+m.completed,0)}</div>
+          <div className="kpi-value">{filtered.reduce((s, m) => s + (m.completed || 0), 0)}</div>
           <div className="kpi-sub">Tasks</div>
         </div>
       </div>

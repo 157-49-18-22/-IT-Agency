@@ -130,7 +130,7 @@ const Prototypes = () => {
       .join(' ');
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="prototypes-loading">
         <div className="loading-spinner"></div>

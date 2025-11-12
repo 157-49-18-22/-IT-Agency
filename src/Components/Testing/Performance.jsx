@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiClock, FiTrendingUp, FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import './Performance.css';
 import { reportAPI } from '../../services/api';
@@ -21,28 +21,23 @@ const Performance = () => {
   }, []);
   const [timeRange, setTimeRange] = useState('24h');
 
-  if (loading) return <div className="loading">Loading...</div>;
-
-  // OLD Mock data - REMOVED
-  const oldPerformanceData = {
-    metrics: {
-      avgResponseTime: '245ms',
-      requestsPerSecond: '1,245',
-      errorRate: '0.12%',
-      uptime: '99.98%',
-    },
-    tests: [
-      {
-        id: 1,
-        name: 'Homepage Load Test',
-        status: 'passed',
-        responseTime: '1.2s',
-        successRate: '100%',
-        lastRun: '2023-10-28 14:30:00',
-      },
-      // Add more test data here
-    ],
+  // Default values for metrics
+  const defaultMetrics = {
+    avgResponseTime: '0ms',
+    requestsPerSecond: '0',
+    errorRate: '0%',
+    uptime: '0%',
   };
+
+  // Use performanceData if available, otherwise use default values
+  const metrics = performanceData?.metrics || defaultMetrics;
+  const tests = performanceData?.tests || [];
+
+  if (loading) return <div className="loading">Loading performance data...</div>;
+  
+  if (!performanceData) {
+    return <div className="no-data">No performance data available</div>;
+  }
 
   return (
     <div className="performance-container">
@@ -69,7 +64,7 @@ const Performance = () => {
           </div>
           <div className="metric-info">
             <span className="metric-label">Avg. Response Time</span>
-            <span className="metric-value">{performanceData.metrics.avgResponseTime}</span>
+            <span className="metric-value">{metrics.avgResponseTime}</span>
           </div>
         </div>
 
@@ -79,7 +74,7 @@ const Performance = () => {
           </div>
           <div className="metric-info">
             <span className="metric-label">Requests / Second</span>
-            <span className="metric-value">{performanceData.metrics.requestsPerSecond}</span>
+            <span className="metric-value">{metrics.requestsPerSecond}</span>
           </div>
         </div>
 
@@ -89,7 +84,7 @@ const Performance = () => {
           </div>
           <div className="metric-info">
             <span className="metric-label">Error Rate</span>
-            <span className="metric-value">{performanceData.metrics.errorRate}</span>
+            <span className="metric-value">{metrics.errorRate}</span>
           </div>
         </div>
 
@@ -99,7 +94,7 @@ const Performance = () => {
           </div>
           <div className="metric-info">
             <span className="metric-label">Uptime</span>
-            <span className="metric-value">{performanceData.metrics.uptime}</span>
+            <span className="metric-value">{metrics.uptime}</span>
           </div>
         </div>
       </div>

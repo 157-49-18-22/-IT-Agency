@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo,useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch, FiFilter, FiChevronDown, FiClock, FiCalendar, FiUser, FiAlertCircle, FiCheckCircle, FiPauseCircle, FiPlay, FiMoreHorizontal } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiChevronDown, FiClock, FiCalendar, FiUser, FiAlertCircle, FiCheckCircle, FiPauseCircle, FiPlay, FiMoreHorizontal, FiFileText } from 'react-icons/fi';
 import './Active.css';
 import { projectAPI } from '../services/api';
 

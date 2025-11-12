@@ -28,26 +28,10 @@ import './Version.css';
 import { projectAPI } from '../../services/api';
 
 const Version = () => {
+  // State hooks must be called at the top level, before any conditional returns
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await projectAPI.getAll();
-        setVersions(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
-
   const [filteredVersions, setFilteredVersions] = useState([]);
-
-  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     type: 'all',
@@ -58,8 +42,75 @@ const Version = () => {
   const [expandedVersion, setExpandedVersion] = useState(null);
   const [branches, setBranches] = useState(['main', 'develop', 'feature/new-ui']);
   const [authors, setAuthors] = useState(['John Doe', 'Jane Smith', 'Alex Johnson']);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Mock data for versions
+  // Data fetching effect
+  useEffect(() => {
+    let isSubscribed = true;
+    
+    const fetchData = async () => {
+      try {
+        const res = await projectAPI.getAll();
+        if (isSubscribed) {
+          setVersions(res.data || []);
+          setLoading(false);
+          setIsMounted(true);
+        }
+      } catch (err) {
+        console.error('Error fetching versions:', err);
+        if (isSubscribed) {
+          setLoading(false);
+          setIsMounted(true);
+        }
+      }
+    };
+
+    fetchData();
+    
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  // Filter versions based on search term and filters
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    let result = [...versions];
+    
+    // Apply search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter(version => 
+        version.title.toLowerCase().includes(searchLower) || 
+        version.description.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply type filter
+    if (filters.type !== 'all') {
+      result = result.filter(version => version.type === filters.type);
+    }
+    
+    // Apply status filter
+    if (filters.status !== 'all') {
+      result = result.filter(version => version.status === filters.status);
+    }
+    
+    // Apply author filter
+    if (filters.author !== 'all') {
+      result = result.filter(version => version.author === filters.author);
+    }
+    
+    // Apply branch filter
+    if (filters.branch !== 'all') {
+      result = result.filter(version => version.branch === filters.branch);
+    }
+    
+    setFilteredVersions(result);
+  }, [versions, searchTerm, filters, isMounted]);
+
+  // Mock data for development
   useEffect(() => {
     const mockVersions = [
       {
@@ -315,15 +366,6 @@ const Version = () => {
       setLoading(false);
     }, 1000);
   };
-
-  if (loading) {
-    return (
-      <div className="version-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading versions...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="version-container">

@@ -5,30 +5,22 @@ import './Code.css';
 import { projectAPI } from '../../services/api';
 
 const Code = () => {
+  // State declarations at the top
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await projectAPI.getAll();
-        setRepos(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
-
-  if (loading) return <div className="loading">Loading...</div>;
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [isLoading, setIsLoading] = useState(true);
   
-  // Mock data for code files
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [files, setFiles] = useState([
     {
       id: 1,
@@ -98,13 +90,22 @@ const Code = () => {
     }
   ]);
 
-  // Simulate loading
+  // Fetch data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const fetchData = async () => {
+      try {
+        const res = await projectAPI.getAll();
+        setRepos(res.data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   // Filter and sort files
   const filteredFiles = files

@@ -17,7 +17,8 @@ const AllProjects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -115,7 +116,7 @@ const AllProjects = () => {
     return <span className="days-left">{diffDays} days left</span>;
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="projects-loading">
         <div className="spinner"></div>
@@ -152,8 +153,8 @@ const AllProjects = () => {
             <label htmlFor="status-filter">Status:</label>
             <select 
               id="status-filter" 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="filter-select"
             >
               <option value="all">All Projects</option>

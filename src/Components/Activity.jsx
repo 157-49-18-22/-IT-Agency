@@ -28,15 +28,36 @@ const typeIcon = (t) => {
 const formatDate = (ts) => ts.split(' ')[0];
 
 const Activity = () => {
+  // State hooks at the top
   const [filter, setFilter] = useState('all');
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
 
+  // Memoized values
+  const filtered = useMemo(() => {
+    if (loading) return [];
+    return activities
+      .filter(it => filter === 'all' || it.type === filter)
+      .filter(it => `${it.title} ${it.project} ${it.user}`.toLowerCase().includes(q.toLowerCase()));
+  }, [activities, filter, q, loading]);
+
+  const grouped = useMemo(() => {
+    return filtered.reduce((acc, it) => {
+      const d = formatDate(it.ts);
+      (acc[d] = acc[d] || []).push(it);
+      return acc;
+    }, {});
+  }, [filtered]);
+
+  const dates = useMemo(() => Object.keys(grouped).sort((a, b) => a < b ? 1 : -1), [grouped]);
+
+  // Effects
   useEffect(() => {
     fetchActivities();
   }, []);
 
+  // Handler functions
   const fetchActivities = async () => {
     try {
       setLoading(true);
@@ -48,24 +69,6 @@ const Activity = () => {
       setLoading(false);
     }
   };
-
-  if (loading) return <div className="loading">Loading...</div>;
-
-  const filtered = useMemo(()=>{
-    return activities
-      .filter(it => filter==='all' || it.type===filter)
-      .filter(it => `${it.title} ${it.project} ${it.user}`.toLowerCase().includes(q.toLowerCase()));
-  }, [activities, filter, q]);
-
-  const grouped = useMemo(()=>{
-    return filtered.reduce((acc, it)=>{
-      const d = formatDate(it.ts);
-      (acc[d] = acc[d] || []).push(it);
-      return acc;
-    }, {});
-  }, [filtered]);
-
-  const dates = useMemo(()=> Object.keys(grouped).sort((a,b)=> a<b?1:-1), [grouped]);
 
   return (
     <div className="activity">

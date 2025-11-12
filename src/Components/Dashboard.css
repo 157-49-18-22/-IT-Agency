@@ -50,7 +50,7 @@ body {
 
 .header h1 {
   margin: 0;
-  color: var(--dark);
+  color: Black;
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -83,7 +83,7 @@ body {
   background: transparent;
   padding: 0.4rem 0.5rem;
   font-size: 0.9rem;
-  color: var(--dark);
+  color: Black;
 }
 
 .search-bar input::placeholder {
@@ -105,7 +105,7 @@ body {
 
 .search-bar button:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: var(--primary);
+  color: Black;
 }
 
 /* Notifications */
@@ -124,7 +124,7 @@ body {
 
 .notifications:hover {
   background: var(--primary-light);
-  color: var(--primary);
+  color: Black;
 }
 
 .notification-badge {
@@ -161,7 +161,7 @@ body {
   gap: 1.25rem;
   box-shadow: var(--box-shadow);
   transition: var(--transition);
-  border-left: 4px solid var(--primary);
+  border-left: 4px solid Black;
 }
 
 .stat-card:hover {
@@ -197,7 +197,7 @@ body {
   margin: 0 0 0.25rem 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--dark);
+  color: Black;
   line-height: 1.2;
 }
 
@@ -208,7 +208,7 @@ body {
   padding: 0.15rem 0.5rem;
   border-radius: 50px;
   background: rgba(67, 97, 238, 0.1);
-  color: var(--primary);
+  color: Black;
 }
 
 /* Content row */
@@ -238,13 +238,13 @@ body {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--dark);
+  color: Black;
 }
 
 .btn-view-all {
   background: none;
   border: none;
-  color: var(--primary);
+  color: Black;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -290,7 +290,7 @@ body {
 .project-header h4 {
   margin: 0;
   font-size: 1rem;
-  color: var(--dark);
+  color: Black;
   font-weight: 600;
 }
 
@@ -346,7 +346,7 @@ body {
 
 .progress-fill {
   height: 100%;
-  background: var(--primary);
+  background: Black;
   border-radius: 4px;
   transition: width 1s ease-in-out;
   position: relative;
@@ -508,7 +508,7 @@ body {
   margin: 0 0 0.1rem 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--dark);
+  color: Black;
 }
 
 .member-info p {
@@ -533,7 +533,7 @@ body {
 
 .btn-message:hover {
   background: var(--primary-light);
-  color: var(--primary);
+  color: Black;
 }
 
 /* Activity Widget */
@@ -604,7 +604,7 @@ body {
 .activity-details p {
   margin: 0 0 0.2rem 0;
   font-size: 0.85rem;
-  color: var(--dark);
+  color: Black;
   line-height: 1.4;
 }
 

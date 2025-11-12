@@ -7,105 +7,82 @@ import { projectAPI } from '../../services/api';
 
 const Deployment = () => {
   const [deployments, setDeployments] = useState([]);
+  const [filteredDeployments, setFilteredDeployments] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await projectAPI.getAll();
-        setDeployments(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
 
-  if (loading) return <div className="loading">Loading...</div>;
-
   // Mock data for deployments
   useEffect(() => {
-    // Simulate API call
-    const fetchDeployments = () => {
-      setLoading(true);
-      // Mock data
-      const mockDeployments = [
-        {
-          id: 'deploy-001',
-          project: 'E-commerce Platform',
-          environment: 'Production',
-          status: 'success',
-          branch: 'main',
-          commit: 'a1b2c3d',
-          commitMessage: 'Update payment gateway integration',
-          deployedBy: 'John Doe',
-          deployedAt: new Date(Date.now() - 3600000 * 2), // 2 hours ago
-          duration: '2m 15s',
-          url: 'https://example.com',
-        },
-        {
-          id: 'deploy-002',
-          project: 'Admin Dashboard',
-          environment: 'Staging',
-          status: 'in-progress',
-          branch: 'feature/user-management',
-          commit: 'd4e5f6g',
-          commitMessage: 'Add user role management',
-          deployedBy: 'Jane Smith',
-          deployedAt: new Date(Date.now() - 1800000), // 30 minutes ago
-          duration: '1m 45s',
-          progress: 65,
-        },
-        {
-          id: 'deploy-003',
-          project: 'Mobile App API',
-          environment: 'Development',
-          status: 'failed',
-          branch: 'fix/auth-bug',
-          commit: 'h7i8j9k',
-          commitMessage: 'Fix authentication token expiration',
-          deployedBy: 'Alex Johnson',
-          deployedAt: new Date(Date.now() - 86400000), // 1 day ago
-          duration: '3m 20s',
-          error: 'Build failed: Test suite failed',
-        },
-        {
-          id: 'deploy-004',
-          project: 'Marketing Website',
-          environment: 'Preview',
-          status: 'pending',
-          branch: 'update-content',
-          commit: 'l1m2n3o',
-          commitMessage: 'Update homepage content',
-          deployedBy: 'Sarah Williams',
-          deployedAt: new Date(),
-          duration: '0s',
-        },
-        {
-          id: 'deploy-005',
-          project: 'E-commerce Platform',
-          environment: 'Staging',
-          status: 'success',
-          branch: 'feature/checkout',
-          commit: 'p4q5r6s',
-          commitMessage: 'Implement new checkout flow',
-          deployedBy: 'Mike Brown',
-          deployedAt: new Date(Date.now() - 172800000), // 2 days ago
-          duration: '2m 50s',
-          url: 'https://staging.example.com',
-        },
-      ];
-
-      setDeployments(mockDeployments);
-      setFilteredDeployments(mockDeployments);
-      setLoading(false);
+    const fetchDeployments = async () => {
+      try {
+        setLoading(true);
+        // Try to fetch from API first
+        const res = await projectAPI.getAll();
+        if (res.data && res.data.length > 0) {
+          setDeployments(res.data);
+          setFilteredDeployments(res.data);
+        } else {
+          // Fallback to mock data if API returns no data
+          const mockDeployments = [
+            {
+              id: 'deploy-001',
+              project: 'E-commerce Platform',
+              environment: 'Production',
+              status: 'success',
+              branch: 'main',
+              commit: 'a1b2c3d',
+              commitMessage: 'Update payment gateway integration',
+              deployedBy: 'John Doe',
+              deployedAt: new Date(Date.now() - 7200000), // 2 hours ago
+              startedAt: new Date(Date.now() - 7300000).toISOString(),
+              finishedAt: new Date().toISOString(),
+              duration: '2m 15s',
+              url: 'https://example.com'
+            },
+            {
+              id: 'deploy-002',
+              project: 'Admin Dashboard',
+              environment: 'Staging',
+              status: 'in-progress',
+              branch: 'feature/user-management',
+              commit: 'd4e5f6g',
+              commitMessage: 'Add user role management',
+              deployedBy: 'Jane Smith',
+              deployedAt: new Date(Date.now() - 1800000), // 30 minutes ago
+              startedAt: new Date().toISOString(),
+              finishedAt: null,
+              duration: '1m 45s',
+              progress: 65,
+              url: '#'
+            },
+            {
+              id: 'deploy-003',
+              project: 'Mobile App API',
+              environment: 'Development',
+              status: 'failed',
+              branch: 'fix/auth-bug',
+              commit: 'h7i8j9k',
+              commitMessage: 'Fix authentication token expiration',
+              deployedBy: 'Alex Johnson',
+              deployedAt: new Date(Date.now() - 86400000), // 1 day ago
+              startedAt: new Date(Date.now() - 86520000).toISOString(),
+              finishedAt: new Date(Date.now() - 86480000).toISOString(),
+              duration: '3m 20s',
+              error: 'Build failed: Test suite failed',
+              url: '#'
+            }
+          ];
+          setDeployments(mockDeployments);
+          setFilteredDeployments(mockDeployments);
+        }
+      } catch (err) {
+        console.error('Error fetching deployments:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchDeployments();

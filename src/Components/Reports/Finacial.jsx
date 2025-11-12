@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiFilter, FiChevronDown, FiSearch, FiCalendar, FiDownload } from 'react-icons/fi';
 import './Finacial.css';
 import { reportAPI } from '../../services/api';
@@ -22,9 +22,14 @@ const monthBars = [
 ];
 
 export default function Finacial() {
+  // State hooks at the top
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [proj, setProj] = useState('All Projects');
+  const [range, setRange] = useState({ from: '', to: '' });
 
+  // Fetch data effect
   useEffect(() => {
     const fetchReport = async () => {
       try {
@@ -40,23 +45,33 @@ export default function Finacial() {
     fetchReport();
   }, []);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  const [q, setQ] = useState('');
-  const [proj, setProj] = useState('All Projects');
-  const [range, setRange] = useState({ from: '', to: '' });
+  // Filtered data and calculations
+  const filtered = useMemo(() => {
+    if (loading) return [];
+    return rows.filter(r => {
+      if (q && !`${r.desc} ${r.project} ${r.type}`.toLowerCase().includes(q.toLowerCase())) return false;
+      if (proj !== 'All Projects' && r.project !== proj) return false;
+      if (range.from && r.date < range.from) return false;
+      if (range.to && r.date > range.to) return false;
+      return true;
+    });
+  }, [q, proj, range, loading]);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (q && !`${r.desc} ${r.project} ${r.type}`.toLowerCase().includes(q.toLowerCase())) return false;
-    if (proj !== 'All Projects' && r.project !== proj) return false;
-    if (range.from && r.date < range.from) return false;
-    if (range.to && r.date > range.to) return false;
-    return true;
-  }), [q, proj, range]);
-
-  const revenue = filtered.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
-  const expenses = Math.abs(filtered.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0));
+  // Derived state
+  const revenue = useMemo(() => 
+    filtered.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0),
+    [filtered]
+  );
+  
+  const expenses = useMemo(() => 
+    Math.abs(filtered.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0)),
+    [filtered]
+  );
+  
   const profit = revenue - expenses;
   const outstanding = 2200; // mock
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="fin-container">

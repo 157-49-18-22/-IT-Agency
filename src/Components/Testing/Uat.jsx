@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiSearch, 
   FiFilter, 
@@ -17,7 +17,8 @@ import { taskAPI, approvalAPI } from '../../services/api';
 
 const Uat = () => {
   const [uatTests, setUatTests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -26,15 +27,16 @@ const Uat = () => {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     fetch();
   }, []);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (isLoading) return <div className="loading">Loading...</div>;
 
   // OLD Mock data - REMOVED
   const oldUatTests = [

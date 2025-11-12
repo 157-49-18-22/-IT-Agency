@@ -46,8 +46,6 @@ const Approvals = () => {
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
-
   const counts = useMemo(() => {
     return approvals.reduce((acc, it) => { acc[it.status] = (acc[it.status] || 0) + 1; return acc; }, {});
   }, [approvals]);
@@ -58,12 +56,27 @@ const Approvals = () => {
       .filter(it => Object.values(it).join(' ').toLowerCase().includes(q.toLowerCase()));
   }, [approvals, activeTab, type, q]);
 
+  if (loading) return <div className="loading">Loading...</div>;
+
   const toggleSelect = (id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const quickApprove = (id) => handleApprove(id);
   const quickReject = (id) => handleReject(id);
+  
+  const setStatus = async (ids, status) => {
+    try {
+      const promises = ids.map(id => 
+        status === 'Approved' ? handleApprove(id) : handleReject(id)
+      );
+      await Promise.all(promises);
+      setSelected([]);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert(`Error ${status.toLowerCase()} items`);
+    }
+  };
 
   return (
     <div className="approvals">
@@ -143,7 +156,7 @@ const Approvals = () => {
         {filtered.length===0 && (
           <div className="empty">
             <FiClock/>
-            <p>No items in {active}.</p>
+            <p>No {activeTab.toLowerCase()} items found.</p>
           </div>
         )}
       </div>

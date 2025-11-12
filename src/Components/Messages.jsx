@@ -25,6 +25,7 @@ const seedMessages = {
 };
 
 export default function Messages(){
+  // State hooks at the top
   const [threads, setThreads] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [q, setQ] = useState('');
@@ -33,17 +34,33 @@ export default function Messages(){
   const [loading, setLoading] = useState(true);
   const endRef = useRef(null);
 
+  // Memoized values
+  const filteredThreads = useMemo(() => 
+    threads.filter(t => t.title.toLowerCase().includes(q.toLowerCase())), 
+    [threads, q]
+  );
+  
+  const activeMsgs = store[activeId] || [];
+
+  // Effects after all state and memos
   useEffect(() => {
     fetchMessages();
   }, []);
 
+  useEffect(() => { 
+    endRef.current?.scrollIntoView({ behavior: 'smooth' }); 
+  }, [activeId, activeMsgs.length]);
+
+  // Handler functions
   const fetchMessages = async () => {
     try {
       setLoading(true);
       const response = await messageAPI.getAll();
       const messages = response.data || [];
       setThreads(messages);
-      if (messages.length > 0) setActiveId(messages[0].id);
+      if (messages.length > 0 && !activeId) {
+        setActiveId(messages[0].id);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -66,11 +83,6 @@ export default function Messages(){
   };
 
   if (loading) return <div className="loading">Loading messages...</div>;
-
-  const filteredThreads = useMemo(()=> threads.filter(t => t.title.toLowerCase().includes(q.toLowerCase())), [threads, q]);
-  const activeMsgs = store[activeId] || [];
-
-  useEffect(()=>{ endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [activeId, activeMsgs.length]);
 
   const send = () => {
     if(!text.trim()) return;

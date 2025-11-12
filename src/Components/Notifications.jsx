@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { FiBell, FiCheckCircle, FiClock, FiMessageCircle, FiUser, FiSearch, FiFilter, FiAlertTriangle, FiFileText, FiAtSign } from 'react-icons/fi';
 import './Notifications.css';
 import { notificationAPI } from '../services/api';
@@ -23,17 +23,43 @@ const TypeIcon = ({t}) => {
 };
 
 export default function Notifications(){
-  const [activeTab, setActiveTab] = useState('all');
+  // State hooks at the top
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('All');
   const [q, setQ] = useState('');
-  const [prefs, setPrefs] = useState({ approval:true, message:true, mention:true, system:true, alert:true });
+  const [prefs, setPrefs] = useState({ 
+    approval: true, 
+    message: true, 
+    mention: true, 
+    system: true, 
+    alert: true 
+  });
 
+  // Memoized values and effects
+  const filtered = useMemo(() => {
+    if (loading) return [];
+    return notifications.filter(n => {
+      if (tab === 'Unread' && n.read) return false;
+      if (tab === 'Mentions' && n.type !== 'Mention') return false;
+      if (tab === 'System' && n.type !== 'System') return false;
+      return true;
+    }).filter(n => `${n.title} ${n.desc}`.toLowerCase().includes(q.toLowerCase()));
+  }, [notifications, tab, q, loading]);
+
+  const counts = useMemo(() => ({
+    all: notifications.length,
+    unread: notifications.filter(n => !n.read).length,
+    mentions: notifications.filter(n => n.type === 'Mention').length,
+    system: notifications.filter(n => n.type === 'System').length
+  }), [notifications]);
+
+  // Effects
   useEffect(() => {
     fetchNotifications();
   }, []);
 
+  // Handler functions
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -49,8 +75,11 @@ export default function Notifications(){
   const handleMarkAsRead = async (id) => {
     try {
       await notificationAPI.markAsRead(id);
-      fetchNotifications();
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, read: true } : n)
+      );
     } catch (error) {
+      console.error('Error marking as read:', error);
       alert('Error marking as read');
     }
   };
@@ -58,33 +87,24 @@ export default function Notifications(){
   const handleMarkAllAsRead = async () => {
     try {
       await notificationAPI.markAllAsRead();
-      fetchNotifications();
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, read: true }))
+      );
     } catch (error) {
-      alert('Error');
+      console.error('Error marking all as read:', error);
+      alert('Error marking all as read');
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  const markAllRead = () => {
+    handleMarkAllAsRead();
+  };
 
-  const filtered = useMemo(()=>{
-    const base = notifications.filter(n => {
-      if(tab==='Unread' && n.read) return false;
-      if(tab==='Mentions' && n.type!=='Mention') return false;
-      if(tab==='System' && n.type!=='System') return false;
-      return true;
-    }).filter(n => `${n.title} ${n.desc}`.toLowerCase().includes(q.toLowerCase()));
-    return base;
-  }, [items, tab, q]);
-
-  const markAllRead = () => setItems(prev => prev.map(n => ({...n, read:true})));
-  const toggleRead = (id) => setItems(prev => prev.map(n => n.id===id ? ({...n, read:!n.read}) : n));
-
-  const counts = useMemo(()=>({
-    all: items.length,
-    unread: items.filter(n=>!n.read).length,
-    mentions: items.filter(n=>n.type==='Mention').length,
-    system: items.filter(n=>n.type==='System').length
-  }), [items]);
+  const toggleRead = (id) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: !n.read } : n)
+    );
+  };
 
   return (
     <div className="notifications">

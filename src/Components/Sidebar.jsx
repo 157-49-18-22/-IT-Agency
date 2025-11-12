@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
@@ -52,11 +52,31 @@ const Sidebar = () => {
     return location.pathname === path ? 'active' : '';
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      // Clear all auth related data
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Optional: Call logout API if you have one
+      try {
+        await authAPI.logout();
+      } catch (apiError) {
+        console.warn('Logout API error:', apiError);
+        // Continue with logout even if API call fails
+      }
+      
+      // Redirect to login page
+      navigate('/', { replace: true });
+      
+      // Force a full page reload to ensure all application state is cleared
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, still try to redirect to login
+      navigate('/');
+    }
   };
 
   return (

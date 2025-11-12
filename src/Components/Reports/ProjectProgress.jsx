@@ -16,34 +16,39 @@ const projects = [
 ];
 
 export default function ProjectProgress() {
+  // State hooks at the top
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [q, setQ] = useState('');
+  const [status, setStatus] = useState('all');
+  
+  // Fetch data effect
   useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await reportAPI.getProjectProgress();
+        setReportData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchReport();
   }, []);
 
-  const fetchReport = async () => {
-    try {
-      setLoading(true);
-      const response = await reportAPI.getProjectProgress();
-      setReportData(response.data);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filtered projects
+  const filtered = useMemo(() => {
+    if (loading) return [];
+    return projects.filter(p => {
+      const okQ = !q || p.name.toLowerCase().includes(q.toLowerCase());
+      const okS = status === 'all' || p.status === status;
+      return okQ && okS;
+    });
+  }, [q, status, loading]);
 
   if (loading) return <div className="loading">Loading report...</div>;
-
-  const [q, setQ] = useState('');
-  const [status, setStatus] = useState('all');
-  const filtered = useMemo(() => projects.filter(p => {
-    const okQ = !q || p.name.toLowerCase().includes(q.toLowerCase());
-    const okS = status === 'all' || p.status === status;
-    return okQ && okS;
-  }), [q, status]);
 
   return (
     <div className="rep-container">
