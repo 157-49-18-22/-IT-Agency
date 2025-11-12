@@ -123,8 +123,8 @@ const Sidebar = () => {
                 <li className={isActive('/projects/completed')}>
                   <Link to="/projects/completed">Completed</Link>
                 </li>
-                <li className={isActive('/projects/create')}>
-                  <Link to="/projects/create">+ New Project</Link>
+                <li className={isActive('/projects/new')}>
+                  <Link to="/projects/new">+ New Project</Link>
                 </li>
               </ul>
             )}

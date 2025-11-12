@@ -6,6 +6,7 @@ import './App.css';
 import Login from './Components/Login';
 import Dashboard from './Components/Dashboard';
 import AllProjects from './Components/AllProjects';
+import NewProjects from './Components/NewProjects';
 import Active from './Components/Active';
 import Completed from './Components/Completed';
 import Sidebar from './Components/Sidebar';
@@ -81,6 +82,7 @@ function App() {
           <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<AllProjects />} />
+            <Route path="/projects/new" element={<NewProjects />} />
             <Route path="/projects/active" element={<Active />} />
             <Route path="/projects/completed" element={<Completed />} />
             <Route path="/team" element={<Team />} />
