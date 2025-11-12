@@ -27,6 +27,7 @@ const calendarRoutes = require('./routes/calendar.routes');
 const timeTrackingRoutes = require('./routes/timeTracking.routes');
 // NEW Routes
 const uploadRoutes = require('./routes/upload.routes');
+const wireframeRoutes = require('./routes/wireframe.routes');
 const sprintRoutes = require('./routes/sprint.routes');
 const auditLogRoutes = require('./routes/auditLog.routes');
 
@@ -94,6 +95,7 @@ app.use('/api/time-tracking', timeTrackingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/wireframes', wireframeRoutes);
 
 // 404 handler
 app.use((req, res) => {
