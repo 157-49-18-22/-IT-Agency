@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUpload, FaCalendarAlt, FaUserTie, FaUsers, FaFileAlt, FaArrowLeft } from 'react-icons/fa';
+import { FaUpload, FaCalendarAlt, FaUserTie, FaUsers, FaFileAlt, FaArrowLeft, FaCheck } from 'react-icons/fa';
+import { ProjectContext } from '../context/ProjectContext';
 import './NewProjects.css';
 
 const NewProjects = () => {
   const navigate = useNavigate();
+  const { addProject } = useContext(ProjectContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
     projectName: '',
     clientName: '',
@@ -60,12 +65,34 @@ const NewProjects = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Project Data:', formData);
-    // Here you would typically make an API call to save the project
-    alert('Project created successfully!');
-    navigate('/projects');
+    setIsSubmitting(true);
+    
+    try {
+      // Add project to context
+      const newProject = {
+        ...formData,
+        teamMembers: formData.teamMembers.map(id => 
+          teamMembers.find(member => member.id === id)
+        ).filter(Boolean) // Remove any undefined members
+      };
+      
+      addProject(newProject);
+      
+      // Show success state
+      setSubmitSuccess(true);
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        navigate('/projects');
+      }, 1500);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      alert('Failed to create project. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const removeAttachment = (index) => {
@@ -285,11 +312,28 @@ const NewProjects = () => {
         </div>
 
         <div className="form-actions">
-          <button type="button" className="cancel-button" onClick={() => navigate('/projects')}>
+          <button 
+            type="button" 
+            className="cancel-button" 
+            onClick={() => navigate('/projects')}
+            disabled={isSubmitting}
+          >
             Cancel
           </button>
-          <button type="submit" className="submit-button">
-            Create Project
+          <button 
+            type="submit" 
+            className={`submit-button ${submitSuccess ? 'success' : ''}`}
+            disabled={isSubmitting || submitSuccess}
+          >
+            {submitSuccess ? (
+              <>
+                <FaCheck /> Success!
+              </>
+            ) : isSubmitting ? (
+              'Creating...'
+            ) : (
+              'Create Project'
+            )}
           </button>
         </div>
       </form>

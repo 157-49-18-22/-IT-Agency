@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { ProjectProvider } from './context/ProjectContext';
 import './App.css';
 
 // Import your components
@@ -75,8 +76,9 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <div className="app">
+    <ProjectProvider>
+      <Router>
+        <div className="app">
         <Routes>
           <Route path="/" element={<Login />} />
           <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
@@ -165,6 +167,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+  </ProjectProvider>
   );
 }
 
