@@ -1,24 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth.middleware');
-const Task = require('../models/sql');
+const { Task, User, Project } = require('../models/sql');
 
 router.use(protect);
 
 // Get all tasks
 router.get('/', async (req, res) => {
   try {
-    const { project, status, assignee } = req.query;
-    let query = {};
-    if (project) query.project = project;
-    if (status) query.status = status;
-    if (assignee) query.assignee = assignee;
+    const { project, status, assignee, type } = req.query;
+    const where = {};
+    
+    if (project) where.projectId = project;
+    if (status) where.status = status;
+    if (assignee) where.assigneeId = assignee;
+    if (type && type !== 'all') where.type = type;
 
-    const tasks = await Task.find(query)
-      .populate('project', 'name')
-      .populate('assignee', 'name email avatar')
-      .populate('reporter', 'name email')
-      .sort({ createdAt: -1 });
+    const tasks = await Task.findAll({
+      where,
+      include: [
+        { model: Project, attributes: ['id', 'name'] },
+        { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
+        { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     res.json({ success: true, data: tasks });
   } catch (error) {
@@ -29,9 +35,24 @@ router.get('/', async (req, res) => {
 // Create task
 router.post('/', async (req, res) => {
   try {
-    const task = await Task.create({ ...req.body, reporter: req.user.id });
-    res.status(201).json({ success: true, data: task });
+    const task = await Task.create({ 
+      ...req.body, 
+      reporterId: req.user.id,
+      status: req.body.status || 'to_do' // Default status
+    });
+    
+    // Fetch the created task with related data
+    const createdTask = await Task.findByPk(task.id, {
+      include: [
+        { model: Project, attributes: ['id', 'name'] },
+        { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
+        { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
+      ]
+    });
+    
+    res.status(201).json({ success: true, data: createdTask });
   } catch (error) {
+    console.error('Error creating task:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -39,9 +60,25 @@ router.post('/', async (req, res) => {
 // Update task
 router.put('/:id', async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json({ success: true, data: task });
+    const task = await Task.findByPk(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    
+    await task.update(req.body);
+    
+    // Fetch the updated task with related data
+    const updatedTask = await Task.findByPk(task.id, {
+      include: [
+        { model: Project, attributes: ['id', 'name'] },
+        { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
+        { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
+      ]
+    });
+    
+    res.json({ success: true, data: updatedTask });
   } catch (error) {
+    console.error('Error updating task:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -49,9 +86,15 @@ router.put('/:id', async (req, res) => {
 // Delete task
 router.delete('/:id', async (req, res) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Task deleted' });
+    const task = await Task.findByPk(req.params.id);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    
+    await task.destroy();
+    res.json({ success: true, message: 'Task deleted successfully' });
   } catch (error) {
+    console.error('Error deleting task:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

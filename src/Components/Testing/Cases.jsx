@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiPlus, FiCheck, FiX, FiUser, FiClock, FiAlertCircle } from 'react-icons/fi';
 import './Cases.css';
 import { taskAPI } from '../../services/api';
@@ -95,7 +95,7 @@ const Cases = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="loading">Loading test cases...</div>
       ) : filteredCases.length === 0 ? (
         <div className="no-results">No test cases found matching your criteria.</div>

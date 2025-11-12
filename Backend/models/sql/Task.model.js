@@ -24,16 +24,32 @@ const Task = sequelize.define('Task', {
     }
   },
   status: {
-    type: DataTypes.ENUM('todo', 'in-progress', 'review', 'completed', 'blocked'),
-    defaultValue: 'todo'
+    type: DataTypes.ENUM('to_do', 'in_progress', 'in_review', 'done', 'blocked'),
+    defaultValue: 'to_do'
   },
   priority: {
     type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
     defaultValue: 'medium'
   },
   type: {
-    type: DataTypes.ENUM('Feature', 'Bug', 'Enhancement', 'Research', 'Documentation'),
-    defaultValue: 'Feature'
+    type: DataTypes.ENUM('task', 'bug', 'story', 'epic', 'test'),
+    defaultValue: 'task'
+  },
+  storyPoints: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  dueDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  startDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  endDate: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   assigneeId: {
     type: DataTypes.INTEGER,
@@ -50,10 +66,6 @@ const Task = sequelize.define('Task', {
       model: 'users',
       key: 'id'
     }
-  },
-  dueDate: {
-    type: DataTypes.DATE,
-    allowNull: true
   },
   estimatedHours: {
     type: DataTypes.DECIMAL(10, 2),
@@ -86,10 +98,6 @@ const Task = sequelize.define('Task', {
   sprint: {
     type: DataTypes.STRING(50),
     allowNull: true
-  },
-  storyPoints: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
   },
   phase: {
     type: DataTypes.ENUM('UI/UX', 'Development', 'Testing'),

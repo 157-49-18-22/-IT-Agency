@@ -84,24 +84,22 @@ const User = sequelize.define('User', {
   tableName: 'users',
   timestamps: true,
   hooks: {
+    // Password hashing temporarily disabled for development
     beforeCreate: async (user) => {
-      if (user.password) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-      }
+      // Password will be stored as plain text
+      // No hashing applied
     },
     beforeUpdate: async (user) => {
-      if (user.changed('password')) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-      }
+      // Password will be stored as plain text
+      // No hashing applied
     }
   }
 });
 
-// Instance method to compare password
+// Instance method to compare password (plain text comparison for development)
 User.prototype.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  // Temporary: Compare plain text passwords
+  return candidatePassword === this.password;
 };
 
 // Don't return password by default
