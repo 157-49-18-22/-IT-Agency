@@ -30,6 +30,9 @@ const uploadRoutes = require('./routes/upload.routes');
 const wireframeRoutes = require('./routes/wireframe.routes');
 const sprintRoutes = require('./routes/sprint.routes');
 const auditLogRoutes = require('./routes/auditLog.routes');
+const mockupRoutes = require('./routes/mockup.routes');
+const prototypeRoutes = require('./routes/prototype.routes');
+const codeRoutes = require('./routes/code.routes');
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -96,6 +99,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/wireframes', wireframeRoutes);
+app.use('/api/mockups', mockupRoutes);
+app.use('/api/prototypes', prototypeRoutes);
+app.use('/api/code', codeRoutes);
 
 // 404 handler
 app.use((req, res) => {

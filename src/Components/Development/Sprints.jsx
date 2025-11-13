@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar } from 'react-icons/fi';
+import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar, FiPlus, FiX } from 'react-icons/fi';
 import './Sprints.css';
 import { sprintAPI } from '../../services/api';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Sprints() {
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSprint, setSelectedSprint] = useState(null);
+  const [isNewSprintModalOpen, setIsNewSprintModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    goal: '',
+    startDate: '',
+    endDate: '',
+    velocity: 20,
+    projectId: 1 // Default or get from context/params
+  });
 
   useEffect(() => {
     const fetchSprints = async () => {
@@ -25,6 +36,36 @@ export default function Sprints() {
     };
     fetchSprints();
   }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'velocity' ? parseInt(value) || 0 : value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await sprintAPI.create(formData);
+      setSprints([...sprints, response.data]);
+      setIsNewSprintModalOpen(false);
+      toast.success('Sprint created successfully!');
+      // Reset form
+      setFormData({
+        name: '',
+        goal: '',
+        startDate: '',
+        endDate: '',
+        velocity: 20,
+        projectId: 1
+      });
+    } catch (error) {
+      console.error('Error creating sprint:', error);
+      toast.error('Failed to create sprint');
+    }
+  };
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -59,13 +100,103 @@ export default function Sprints() {
 
   return (
     <div className="sprints-container">
+      {/* New Sprint Modal */}
+      {isNewSprintModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Start New Sprint</h2>
+              <button className="close-button" onClick={() => setIsNewSprintModalOpen(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="name">Sprint Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g., Sprint 1 - Feature Launch"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="goal">Sprint Goal *</label>
+                <textarea
+                  id="goal"
+                  name="goal"
+                  value={formData.goal}
+                  onChange={handleInputChange}
+                  required
+                  rows="3"
+                  placeholder="What do you want to accomplish in this sprint?"
+                ></textarea>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="startDate">Start Date *</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="endDate">End Date *</label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="velocity">Velocity (story points)</label>
+                <input
+                  type="number"
+                  id="velocity"
+                  name="velocity"
+                  min="1"
+                  value={formData.velocity}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setIsNewSprintModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Start Sprint
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="sprints-header">
         <div>
-          <h1>Sprint Management</h1>
-          <p>Plan and track development sprints</p>
+          <h1>Sprints</h1>
+          <p>Manage your development sprints and track progress</p>
         </div>
-        <button className="btn-primary">
-          <FiPlay /> Start New Sprint
+        <button
+          className="btn-primary"
+          onClick={() => setIsNewSprintModalOpen(true)}
+        >
+          <FiPlus size={16} style={{ marginRight: '8px' }} />
+          Start New Sprint
         </button>
       </div>
 

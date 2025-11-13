@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheckCircle, FiClock, FiAlertCircle, FiDownload, FiMessageCircle, FiFileText } from 'react-icons/fi';
 import './ClientDashboard.css';
-import { projectAPI, dashboardAPI } from '../../services/api';
+import { projectAPI, clientAPI } from '../../services/api';
 
 export default function ClientDashboard() {
   const [dashboardData, setDashboardData] = useState(null);

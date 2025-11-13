@@ -1,92 +1,221 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiChevronDown, FiRefreshCw, FiPlay, 
   FiPause, FiExternalLink, FiGitBranch, FiClock, FiUser, FiCheckCircle, 
-  FiXCircle, FiAlertCircle, FiGitCommit, FiGitPullRequest } from 'react-icons/fi';
+  FiXCircle, FiAlertCircle, FiGitCommit, FiGitPullRequest, FiPlus } from 'react-icons/fi';
 import './Deployment.css';
-import { projectAPI } from '../../services/api';
+import { projectAPI, deploymentAPI } from '../../services/api';
+
+// Form component for new deployments
+const NewDeploymentForm = ({ onSubmit, onCancel, projects }) => {
+  const [formData, setFormData] = useState({
+    projectId: '',
+    branch: 'main',
+    environment: 'staging',
+    commitHash: '',
+    commitMessage: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Basic validation
+      if (!formData.projectId) {
+        throw new Error('Please select a project');
+      }
+      if (!formData.branch) {
+        throw new Error('Branch is required');
+      }
+      
+      // Call the API
+      await deploymentAPI.create({
+        ...formData,
+        // Add any additional fields required by your API
+        status: 'pending',
+        deployedBy: 'current-user-id', // You'll want to get this from auth context
+        startedAt: new Date().toISOString()
+      });
+      
+      // Call the success callback
+      onSubmit();
+    } catch (err) {
+      setError(err.message || 'Failed to create deployment');
+      console.error('Deployment error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>New Deployment</h3>
+          <button type="button" className="close-button" onClick={(e) => onCancel(e)}>
+            &times;
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="projectId">Project</label>
+            <select
+              id="projectId"
+              name="projectId"
+              value={formData.projectId}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            >
+              <option value="">Select a project</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="environment">Environment</label>
+            <select
+              id="environment"
+              name="environment"
+              value={formData.environment}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            >
+              <option value="development">Development</option>
+              <option value="staging">Staging</option>
+              <option value="production">Production</option>
+            </select>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="branch">Branch</label>
+            <input
+              type="text"
+              id="branch"
+              name="branch"
+              value={formData.branch}
+              onChange={handleChange}
+              placeholder="e.g., main, develop"
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="commitHash">Commit Hash (optional)</label>
+            <input
+              type="text"
+              id="commitHash"
+              name="commitHash"
+              value={formData.commitHash}
+              onChange={handleChange}
+              placeholder="e.g., a1b2c3d"
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="commitMessage">Deployment Notes (optional)</label>
+            <textarea
+              id="commitMessage"
+              name="commitMessage"
+              value={formData.commitMessage}
+              onChange={handleChange}
+              placeholder="Add any notes about this deployment"
+              rows="3"
+              disabled={loading}
+            />
+          </div>
+          
+          {error && (
+            <div className="form-error">
+              <FiAlertCircle /> {error}
+            </div>
+          )}
+          
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Deploying...' : 'Deploy'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const Deployment = () => {
   const [deployments, setDeployments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [filteredDeployments, setFilteredDeployments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showNewDeploymentForm, setShowNewDeploymentForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Mock data for deployments
+  // Fetch deployments and projects
   useEffect(() => {
-    const fetchDeployments = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Try to fetch from API first
-        const res = await projectAPI.getAll();
-        if (res.data && res.data.length > 0) {
-          setDeployments(res.data);
-          setFilteredDeployments(res.data);
-        } else {
-          // Fallback to mock data if API returns no data
-          const mockDeployments = [
-            {
-              id: 'deploy-001',
-              project: 'E-commerce Platform',
-              environment: 'Production',
-              status: 'success',
-              branch: 'main',
-              commit: 'a1b2c3d',
-              commitMessage: 'Update payment gateway integration',
-              deployedBy: 'John Doe',
-              deployedAt: new Date(Date.now() - 7200000), // 2 hours ago
-              startedAt: new Date(Date.now() - 7300000).toISOString(),
-              finishedAt: new Date().toISOString(),
-              duration: '2m 15s',
-              url: 'https://example.com'
-            },
-            {
-              id: 'deploy-002',
-              project: 'Admin Dashboard',
-              environment: 'Staging',
-              status: 'in-progress',
-              branch: 'feature/user-management',
-              commit: 'd4e5f6g',
-              commitMessage: 'Add user role management',
-              deployedBy: 'Jane Smith',
-              deployedAt: new Date(Date.now() - 1800000), // 30 minutes ago
-              startedAt: new Date().toISOString(),
-              finishedAt: null,
-              duration: '1m 45s',
-              progress: 65,
-              url: '#'
-            },
-            {
-              id: 'deploy-003',
-              project: 'Mobile App API',
-              environment: 'Development',
-              status: 'failed',
-              branch: 'fix/auth-bug',
-              commit: 'h7i8j9k',
-              commitMessage: 'Fix authentication token expiration',
-              deployedBy: 'Alex Johnson',
-              deployedAt: new Date(Date.now() - 86400000), // 1 day ago
-              startedAt: new Date(Date.now() - 86520000).toISOString(),
-              finishedAt: new Date(Date.now() - 86480000).toISOString(),
-              duration: '3m 20s',
-              error: 'Build failed: Test suite failed',
-              url: '#'
-            }
-          ];
-          setDeployments(mockDeployments);
-          setFilteredDeployments(mockDeployments);
+        
+        // Fetch deployments
+        const [deploymentsRes, projectsRes] = await Promise.all([
+          deploymentAPI.getAll(),
+          projectAPI.getAll()
+        ]);
+        
+        if (deploymentsRes.data) {
+          setDeployments(deploymentsRes.data);
+          setFilteredDeployments(deploymentsRes.data);
         }
+        
+        if (projectsRes.data) {
+          setProjects(projectsRes.data);
+        }
+        
       } catch (err) {
-        console.error('Error fetching deployments:', err);
+        console.error('Error fetching data:', err);
+        // Handle error (show toast/notification)
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDeployments();
-  }, []);
+    fetchData();
+  }, [refreshTrigger]);
 
   // Apply filters and search
   useEffect(() => {
@@ -207,6 +336,21 @@ const Deployment = () => {
     }
   };
 
+  // Handle new deployment
+  const handleNewDeployment = () => {
+    console.log('New Deployment button clicked');
+    setShowNewDeploymentForm(true);
+  };
+
+  const handleDeploymentCreated = () => {
+    setShowNewDeploymentForm(false);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleCancelDeploymentForm = () => {
+    setShowNewDeploymentForm(false);
+  };
+
   if (loading) {
     return (
       <div className="deployment-loading">
@@ -216,15 +360,29 @@ const Deployment = () => {
     );
   }
 
+  console.log('Rendering Deployment component, showNewDeploymentForm:', showNewDeploymentForm);
+  
   return (
     <div className="deployment-container">
+      {showNewDeploymentForm && (
+        <NewDeploymentForm 
+          onSubmit={handleDeploymentCreated}
+          onCancel={handleCancelDeploymentForm}
+          projects={projects}
+        />
+      )}
+      
       <div className="deployment-header">
         <div>
           <h2>Deployments</h2>
-          <p>Manage and monitor your application deployments</p>
+          <p>Manage and track your application deployments</p>
         </div>
-        <button className="btn btn-primary">
-          <FiPlay className="btn-icon" /> New Deployment
+        <button 
+          className="btn btn-primary"
+          onClick={handleNewDeployment}
+        >
+          <FiPlus className="btn-icon" />
+          New Deployment
         </button>
       </div>
 
@@ -249,7 +407,6 @@ const Deployment = () => {
             <option value="production">Production</option>
             <option value="staging">Staging</option>
             <option value="development">Development</option>
-            <option value="preview">Preview</option>
           </select>
           <FiChevronDown className="chevron-icon" />
         </div>

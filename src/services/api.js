@@ -210,12 +210,71 @@ export const auditLogAPI = {
   export: () => api.get('/audit-logs/export', { responseType: 'blob' }),
 };
 
+// Deployment APIs
+export const deploymentAPI = {
+  getAll: (params) => api.get('/deployments', { params }),
+  getById: (id) => api.get(`/deployments/${id}`),
+  create: (data) => api.post('/deployments', data),
+  update: (id, data) => api.put(`/deployments/${id}`, data),
+  delete: (id) => api.delete(`/deployments/${id}`),
+  getProjectDeployments: (projectId) => api.get(`/deployments/project/${projectId}`),
+  getEnvironmentDeployments: (environment) => api.get(`/deployments/environment/${environment}`),
+  getStatus: (id) => api.get(`/deployments/${id}/status`),
+  redeploy: (id) => api.post(`/deployments/${id}/redeploy`),
+  cancel: (id) => api.post(`/deployments/${id}/cancel`),
+  getLogs: (id) => api.get(`/deployments/${id}/logs`)
+};
+
+// Code Repository APIs
+export const codeAPI = {
+  getAll: (params) => api.get('/code', { params }),
+  getById: (id) => api.get(`/code/${id}`),
+  create: (data) => api.post('/code', data),
+  update: (id, data) => api.put(`/code/${id}`, data),
+  delete: (id) => api.delete(`/code/${id}`),
+  getByProject: (projectId) => api.get(`/code/project/${projectId}`),
+  getByUser: (userId) => api.get(`/code/user/${userId}`),
+  search: (query) => api.get('/code/search', { params: { q: query } }),
+  getFileContent: (id, path) => api.get(`/code/${id}/file`, { params: { path } }),
+  updateFile: (id, path, content) => api.put(`/code/${id}/file`, { path, content }),
+  createFile: (id, path, content) => api.post(`/code/${id}/file`, { path, content }),
+  deleteFile: (id, path) => api.delete(`/code/${id}/file`, { data: { path } })
+};
+
+// Add token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Dashboard APIs
 export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
-  getRecentActivity: () => api.get('/dashboard/recent-activity'),
-  getActiveProjects: () => api.get('/dashboard/active-projects'),
-  getTeamMembers: () => api.get('/dashboard/team-members'),
+  getRecentActivities: (params) => api.get('/dashboard/activities', { params }),
+  getProjectStatus: () => api.get('/dashboard/project-status'),
+  getUpcomingDeliverables: () => api.get('/dashboard/upcoming-deliverables'),
+  getMessages: () => api.get('/dashboard/messages')
 };
 
 export default api;

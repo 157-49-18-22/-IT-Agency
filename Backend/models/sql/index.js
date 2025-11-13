@@ -17,6 +17,7 @@ const Sprint = require('./Sprint.model');
 const AuditLog = require('./AuditLog.model');
 const TaskChecklist = require('./TaskChecklist.model');
 const StageTransition = require('./StageTransition.model');
+const Prototype = require('./Prototype.model');
 
 // Define relationships
 
@@ -32,6 +33,8 @@ User.hasMany(Notification, { foreignKey: 'recipientId', as: 'notifications' });
 User.hasMany(Activity, { foreignKey: 'userId', as: 'activities' });
 User.hasMany(TimeTracking, { foreignKey: 'userId', as: 'timeEntries' });
 User.hasMany(CalendarEvent, { foreignKey: 'organizerId', as: 'organizedEvents' });
+User.hasMany(Prototype, { foreignKey: 'createdBy', as: 'createdPrototypes' });
+User.hasMany(Prototype, { foreignKey: 'updatedBy', as: 'updatedPrototypes' });
 
 // Client relationships
 Client.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
@@ -46,6 +49,7 @@ Project.hasMany(Message, { foreignKey: 'projectId', as: 'messages' });
 Project.hasMany(Activity, { foreignKey: 'projectId', as: 'activities' });
 Project.hasMany(TimeTracking, { foreignKey: 'projectId', as: 'timeEntries' });
 Project.hasMany(CalendarEvent, { foreignKey: 'projectId', as: 'events' });
+Project.hasMany(Prototype, { foreignKey: 'projectId', as: 'prototypes' });
 
 // Task relationships
 Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
