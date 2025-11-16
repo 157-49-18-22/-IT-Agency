@@ -1,37 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FiSearch, 
-  FiFilter, 
   FiPlus, 
-  FiCheck, 
   FiX, 
   FiClock, 
   FiUser, 
   FiAlertCircle,
   FiThumbsUp,
   FiThumbsDown,
-  FiMessageSquare
+  FiMessageSquare,
+  FiSave,
+  FiTrash2
 } from 'react-icons/fi';
 import './Uat.css';
-import { taskAPI, approvalAPI } from '../../services/api';
+import uatAPI from '../../services/uatAPI';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Uat = () => {
   const [uatTests, setUatTests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    steps: [''],
+    status: 'pending',
+    tester: '',
+    priority: 'medium'
+  });
   
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await taskAPI.getAll({ type: 'uat' });
-        setUatTests(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetch();
+    fetchTests();
   }, []);
+
+  const fetchTests = async () => {
+    try {
+      setIsLoading(true);
+      const tests = await uatAPI.getAllTests();
+      setUatTests(tests);
+    } catch (err) {
+      console.error('Error fetching UAT tests:', err);
+      toast.error('Failed to load UAT tests');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -79,14 +94,226 @@ const Uat = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleStepChange = (index, value) => {
+    const newSteps = [...formData.steps];
+    newSteps[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      steps: newSteps
+    }));
+  };
+
+  const addStep = () => {
+    setFormData(prev => ({
+      ...prev,
+      steps: [...prev.steps, '']
+    }));
+  };
+
+  const removeStep = (index) => {
+    const newSteps = formData.steps.filter((_, i) => i !== index);
+    setFormData(prev => ({
+      ...prev,
+      steps: newSteps
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Filter out empty steps
+      const testData = {
+        ...formData,
+        steps: formData.steps.filter(step => step.trim() !== ''),
+        lastUpdated: new Date().toISOString(),
+        comments: 0
+      };
+      
+      await uatAPI.createTest(testData);
+      toast.success('Test case created successfully!');
+      setShowModal(false);
+      resetForm();
+      fetchTests();
+    } catch (err) {
+      console.error('Error creating test case:', err);
+      toast.error('Failed to create test case');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      steps: [''],
+      status: 'pending',
+      tester: '',
+      priority: 'medium'
+    });
+  };
+
   return (
     <div className="uat-container">
       <div className="uat-header">
         <h2>User Acceptance Testing</h2>
-        <button className="btn-primary">
+        <button 
+          className="btn-primary"
+          onClick={() => setShowModal(true)}
+        >
           <FiPlus size={16} /> New Test Case
         </button>
       </div>
+
+      {/* New Test Case Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Create New Test Case</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter test case title"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                  rows="3"
+                  placeholder="Describe the test case in detail"
+                ></textarea>
+              </div>
+              
+              <div className="form-group">
+                <label>Test Steps *</label>
+                {formData.steps.map((step, index) => (
+                  <div key={index} className="step-input">
+                    <span className="step-number">{index + 1}.</span>
+                    <input
+                      type="text"
+                      value={step}
+                      onChange={(e) => handleStepChange(index, e.target.value)}
+                      required={index === 0}
+                      placeholder={`Step ${index + 1}`}
+                    />
+                    {formData.steps.length > 1 && (
+                      <button 
+                        type="button" 
+                        className="remove-step"
+                        onClick={() => removeStep(index)}
+                        aria-label="Remove step"
+                      >
+                        <FiX size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  type="button" 
+                  className="add-step"
+                  onClick={addStep}
+                >
+                  + Add Step
+                </button>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select 
+                    name="status" 
+                    value={formData.status}
+                    onChange={handleInputChange}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select 
+                    name="priority" 
+                    value={formData.priority}
+                    onChange={handleInputChange}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label>Tester Name</label>
+                <input
+                  type="text"
+                  name="tester"
+                  value={formData.tester}
+                  onChange={handleInputChange}
+                  placeholder="Enter tester's name"
+                />
+              </div>
+              
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn-outline"
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Test Case'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="uat-toolbar">
         <div className="search-box">

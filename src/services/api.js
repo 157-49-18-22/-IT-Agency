@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -275,6 +275,48 @@ export const dashboardAPI = {
   getProjectStatus: () => api.get('/dashboard/project-status'),
   getUpcomingDeliverables: () => api.get('/dashboard/upcoming-deliverables'),
   getMessages: () => api.get('/dashboard/messages')
+};
+
+// Stage Transition APIs
+export const stageTransitionAPI = {
+  getAll: (params) => api.get('/stage-transitions', { params }),
+  getById: (id) => api.get(`/stage-transitions/${id}`),
+  create: (data) => api.post('/stage-transitions', data),
+  update: (id, data) => api.put(`/stage-transitions/${id}`, data),
+  delete: (id) => api.delete(`/stage-transitions/${id}`),
+  getByProject: (projectId) => api.get(`/stage-transitions/project/${projectId}`),
+  approve: (id, data) => api.post(`/stage-transitions/${id}/approve`, data),
+  reject: (id, data) => api.post(`/stage-transitions/${id}/reject`, data),
+};
+
+// Test Case APIs
+export const testCaseAPI = {
+  // Get all test cases with optional filters
+  getAll: (params = {}) => api.get('/test-cases', { params }),
+  
+  // Get a single test case by ID
+  getById: (id) => api.get(`/test-cases/${id}`),
+  
+  // Create a new test case
+  create: (data) => api.post('/test-cases', data),
+  
+  // Update an existing test case
+  update: (id, data) => api.patch(`/test-cases/${id}`, data),
+  
+  // Delete a test case
+  delete: (id) => api.delete(`/test-cases/${id}`),
+  
+  // Add test result to a test case
+  addTestResult: (id, data) => api.post(`/test-cases/${id}/results`, data),
+  
+  // Get test cases by project ID
+  getByProject: (projectId) => api.get(`/test-cases?project=${projectId}`),
+  
+  // Get test cases by status
+  getByStatus: (status) => api.get(`/test-cases?status=${status}`),
+  
+  // Get test cases by type
+  getByType: (type) => api.get(`/test-cases?type=${type}`)
 };
 
 export default api;

@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
-const User = require('../models/sql');
+const teamController = require('../controllers/team.controller');
+const { protect, authorize } = require('../middleware/auth.middleware');
 
+// Apply authentication middleware to all routes
 router.use(protect);
 
-router.get('/', async (req, res) => {
-  try {
-    const { department, status, role } = req.query;
-    let query = {};
-    if (department) query.department = department;
-    if (status) query.status = status;
-    if (role) query.role = role;
+/**
+ * @route   GET /api/team
+ * @desc    Get all team members with department counts
+ * @access  Private
+ */
+router.get('/', teamController.getTeamMembers);
 
-    const team = await User.find(query).select('-password');
-    res.json({ success: true, data: team });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+/**
+ * @route   POST /api/team
+ * @desc    Add a new team member
+ * @access  Private/Admin
+ */
+router.post('/', authorize('admin'), teamController.addTeamMember);
+
+/**
+ * @route   PUT /api/team/:id
+ * @desc    Update a team member
+ * @access  Private/Admin
+ */
+router.put('/:id', authorize('admin'), teamController.updateTeamMember);
+
+/**
+ * @route   DELETE /api/team/:id
+ * @desc    Remove a team member (soft delete)
+ * @access  Private/Admin
+ */
+router.delete('/:id', authorize('admin'), teamController.removeTeamMember);
 
 module.exports = router;

@@ -16,8 +16,17 @@ const Team = () => {
     { id: 4, name: 'Sales', count: 0 },
     { id: 5, name: 'Support', count: 0 },
   ]);
-
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: '',
+    department: '',
+    phone: '',
+    status: 'active'
+  });
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchTeamMembers();
@@ -27,10 +36,17 @@ const Team = () => {
     try {
       setLoading(true);
       const response = await userAPI.getAll();
-      setMembers(response.data || []);
-      setFilteredMembers(response.data || []);
+      const membersData = response.data || [];
+      
+      setMembers(membersData);
+      setFilteredMembers(membersData);
+      
+      // Update department counts
+      updateDepartmentCounts(membersData);
+      
     } catch (error) {
       console.error('Error fetching team:', error);
+      setError('Failed to load team members');
     } finally {
       setLoading(false);
     }
@@ -142,10 +158,84 @@ const Team = () => {
     }
   };
 
-  const handleAddMember = (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      role: '',
+      department: '',
+      phone: '',
+      status: 'active'
+    });
+    setError('');
+  };
+
+  const handleAddMember = async (e) => {
     e.preventDefault();
-    // In a real app, you would add the new member to your backend here
-    setShowAddMemberModal(false);
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.role || !formData.department) {
+        throw new Error('All fields are required');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      // Create member data
+      const newMember = {
+        ...formData,
+        joinDate: new Date().toISOString().split('T')[0],
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
+      };
+
+      // Call API to add member
+      const response = await userAPI.create(newMember);
+      
+      // Update local state
+      setMembers(prev => [...prev, response.data]);
+      setFilteredMembers(prev => [...prev, response.data]);
+      
+      // Update department counts
+      updateDepartmentCounts([...members, response.data]);
+      
+      // Close modal and reset form
+      setShowAddMemberModal(false);
+      resetForm();
+      
+    } catch (err) {
+      console.error('Error adding team member:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to add team member');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateDepartmentCounts = (memberList) => {
+    const counts = {};
+    memberList.forEach(member => {
+      counts[member.department] = (counts[member.department] || 0) + 1;
+    });
+
+    setDepartments(prev => 
+      prev.map(dept => ({
+        ...dept,
+        count: counts[dept.name] || 0
+      }))
+    );
   };
 
   return (
@@ -283,21 +373,58 @@ const Team = () => {
               </button>
             </div>
             <form onSubmit={handleAddMember}>
+              {error && <div className="error-message">{error}</div>}
               <div className="form-group">
                 <label>Full Name</label>
-                <input type="text" placeholder="Enter full name" required />
+                <input 
+                  type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter full name" 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" placeholder="Enter email address" required />
+                <input 
+                  type="email" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter email address" 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input 
+                  type="tel" 
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                />
               </div>
               <div className="form-group">
                 <label>Role</label>
-                <input type="text" placeholder="Enter role" required />
+                <input 
+                  type="text" 
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  placeholder="Enter role" 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label>Department</label>
-                <select required>
+                <select 
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  required
+                >
                   <option value="">Select Department</option>
                   {departments.map(dept => (
                     <option key={dept.id} value={dept.name}>
@@ -310,12 +437,20 @@ const Team = () => {
                 <button 
                   type="button" 
                   className="btn-cancel"
-                  onClick={() => setShowAddMemberModal(false)}
+                  onClick={() => {
+                    setShowAddMemberModal(false);
+                    resetForm();
+                  }}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Add Member
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Adding...' : 'Add Member'}
                 </button>
               </div>
             </form>

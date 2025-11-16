@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
+import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
 // Import your components
@@ -76,8 +77,9 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <ProjectProvider>
-      <Router>
+    <AuthProvider>
+      <ProjectProvider>
+        <Router>
         <div className="app">
         <Routes>
           <Route path="/" element={<Login />} />
@@ -168,6 +170,7 @@ function App() {
       </div>
     </Router>
   </ProjectProvider>
+  </AuthProvider>
   );
 }
 

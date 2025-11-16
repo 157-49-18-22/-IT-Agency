@@ -1,148 +1,148 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiClock, FiTrendingUp, FiAlertTriangle, FiCheck } from 'react-icons/fi';
+import { FiActivity, FiClock, FiAlertTriangle, FiTrendingUp, FiServer, FiZap } from 'react-icons/fi';
 import './Performance.css';
-import { reportAPI } from '../../services/api';
 
 const Performance = () => {
-  const [performanceData, setPerformanceData] = useState(null);
+  const [metrics, setMetrics] = useState({
+    responseTime: '0ms',
+    uptime: '99.9%',
+    requestsPerSecond: '0',
+    errorRate: '0%',
+    cpuUsage: '0%',
+    memoryUsage: '0%'
+  });
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetch = async () => {
+    // Simulate API call to fetch performance metrics
+    const fetchMetrics = async () => {
       try {
-        const res = await reportAPI.getCustom({ type: 'performance' });
-        setPerformanceData(res.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
+        // In a real app, you would fetch this from your API
+        // const response = await performanceAPI.getMetrics();
+        // setMetrics(response.data);
+        
+        // Mock data for demonstration
+        setTimeout(() => {
+          setMetrics({
+            responseTime: '42ms',
+            uptime: '99.95%',
+            requestsPerSecond: '1,243',
+            errorRate: '0.05%',
+            cpuUsage: '32%',
+            memoryUsage: '45%'
+          });
+          setLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error('Error fetching performance metrics:', error);
         setLoading(false);
       }
     };
-    fetch();
+
+    fetchMetrics();
+    
+    // Set up polling in a real app
+    // const interval = setInterval(fetchMetrics, 30000);
+    // return () => clearInterval(interval);
   }, []);
-  const [timeRange, setTimeRange] = useState('24h');
 
-  // Default values for metrics
-  const defaultMetrics = {
-    avgResponseTime: '0ms',
-    requestsPerSecond: '0',
-    errorRate: '0%',
-    uptime: '0%',
-  };
-
-  // Use performanceData if available, otherwise use default values
-  const metrics = performanceData?.metrics || defaultMetrics;
-  const tests = performanceData?.tests || [];
-
-  if (loading) return <div className="loading">Loading performance data...</div>;
-  
-  if (!performanceData) {
-    return <div className="no-data">No performance data available</div>;
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading performance metrics...</div>;
   }
 
   return (
-    <div className="performance-container">
-      <div className="performance-header">
-        <h2>Performance Testing</h2>
-        <div className="time-range-selector">
-          <select 
-            value={timeRange} 
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="time-range-select"
-          >
-            <option value="1h">Last Hour</option>
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">Performance Metrics</h1>
+        <p className="text-gray-600">Monitor your application's performance in real-time</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Response Time */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+              <FiZap size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Response Time</p>
+              <p className="text-2xl font-bold">{metrics.responseTime}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Uptime */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+              <FiClock size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Uptime</p>
+              <p className="text-2xl font-bold">{metrics.uptime}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Requests per Second */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+              <FiTrendingUp size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Requests / Second</p>
+              <p className="text-2xl font-bold">{metrics.requestsPerSecond}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Rate */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+              <FiAlertTriangle size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Error Rate</p>
+              <p className="text-2xl font-bold">{metrics.errorRate}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CPU Usage */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+              <FiActivity size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">CPU Usage</p>
+              <p className="text-2xl font-bold">{metrics.cpuUsage}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Memory Usage */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+              <FiServer size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Memory Usage</p>
+              <p className="text-2xl font-bold">{metrics.memoryUsage}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-icon">
-            <FiClock size={24} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-label">Avg. Response Time</span>
-            <span className="metric-value">{metrics.avgResponseTime}</span>
-          </div>
+      {/* Additional performance charts and data can be added here */}
+      <div className="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Performance Over Time</h2>
+        <div className="h-64 flex items-center justify-center text-gray-400">
+          Performance charts will be displayed here
         </div>
-
-        <div className="metric-card">
-          <div className="metric-icon">
-            <FiTrendingUp size={24} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-label">Requests / Second</span>
-            <span className="metric-value">{metrics.requestsPerSecond}</span>
-          </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-icon error">
-            <FiAlertTriangle size={24} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-label">Error Rate</span>
-            <span className="metric-value">{metrics.errorRate}</span>
-          </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-icon success">
-            <FiCheck size={24} />
-          </div>
-          <div className="metric-info">
-            <span className="metric-label">Uptime</span>
-            <span className="metric-value">{metrics.uptime}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="performance-tests">
-        <div className="section-header">
-          <h3>Performance Tests</h3>
-          <div className="search-box">
-            <FiSearch className="search-icon" />
-            <input type="text" placeholder="Search tests..." />
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="loading">Loading performance data...</div>
-        ) : (
-          <div className="tests-table">
-            <div className="table-header">
-              <div className="table-row">
-                <div className="table-cell">Test Name</div>
-                <div className="table-cell">Status</div>
-                <div className="table-cell">Response Time</div>
-                <div className="table-cell">Success Rate</div>
-                <div className="table-cell">Last Run</div>
-                <div className="table-cell">Actions</div>
-              </div>
-            </div>
-            <div className="table-body">
-              {performanceData.tests.map((test) => (
-                <div key={test.id} className="table-row">
-                  <div className="table-cell">{test.name}</div>
-                  <div className="table-cell">
-                    <span className={`status-badge ${test.status}`}>
-                      {test.status === 'passed' ? <FiCheck size={14} /> : <FiAlertTriangle size={14} />}
-                      {test.status}
-                    </span>
-                  </div>
-                  <div className="table-cell">{test.responseTime}</div>
-                  <div className="table-cell">{test.successRate}</div>
-                  <div className="table-cell">{test.lastRun}</div>
-                  <div className="table-cell">
-                    <button className="btn-text">View Details</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -33,9 +33,12 @@ const auditLogRoutes = require('./routes/auditLog.routes');
 const mockupRoutes = require('./routes/mockup.routes');
 const prototypeRoutes = require('./routes/prototype.routes');
 const codeRoutes = require('./routes/code.routes');
+const bugRoutes = require('./routes/bug.routes');
+const uatRoutes = require('./routes/uat.routes');
+const stageTransitionRoutes = require('./routes/stageTransition.routes');
 
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet()); // Security headers@stage
 app.use(compression()); // Compress responses
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -90,18 +93,38 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/team', teamRoutes);
-app.use('/api/clients', clientRoutes);
+
+// Client routes with authentication and authorization
+app.use('/api/clients', (req, res, next) => {
+  // Log request for debugging
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+}, clientRoutes);
+
 app.use('/api/reports', reportRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/time-tracking', timeTrackingRoutes);
 // NEW API Routes
-app.use('/api/upload', uploadRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/wireframes', wireframeRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
-app.use('/api/wireframes', wireframeRoutes);
 app.use('/api/mockups', mockupRoutes);
 app.use('/api/prototypes', prototypeRoutes);
 app.use('/api/code', codeRoutes);
+app.use('/api/bugs', bugRoutes);
+app.use('/api/uat', uatRoutes);
+app.use('/api/stage-transitions', stageTransitionRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // 404 handler
 app.use((req, res) => {
