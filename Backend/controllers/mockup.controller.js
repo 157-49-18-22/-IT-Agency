@@ -51,6 +51,9 @@ const deleteFile = (filePath) => {
 // @access  Private
 exports.createMockup = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    
     const { title, description, projectId, category } = req.body;
     
     if (!req.file) {
@@ -60,18 +63,33 @@ exports.createMockup = async (req, res) => {
       });
     }
 
-    // Save the file
-    const imageUrl = saveFile(req.file);
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
 
-    const mockup = await Mockup.create({
+    // Save the file
+    const imageUrl = '/uploads/mockups/' + req.file.filename;
+
+    const mockupData = {
       title,
-      description,
-      imageUrl,
-      projectId,
-      category,
-      createdBy: req.user.id,
+      description: description || '',
+      image_url: imageUrl, // Use snake_case to match database column
+      category: category || 'Web App',
+      created_by: req.user.id, // Make sure this is set
       status: 'draft'
-    });
+    };
+
+    // Add project_id only if provided
+    if (projectId) {
+      mockupData.project_id = projectId;
+    }
+
+    console.log('Creating mockup with data:', mockupData);
+
+    const mockup = await Mockup.create(mockupData);
 
     // Log activity
     await logActivity({
@@ -79,7 +97,7 @@ exports.createMockup = async (req, res) => {
       action: 'create',
       entityType: 'mockup',
       entityId: mockup.id,
-      projectId: projectId,
+      projectId: projectId || null,
       description: `Created new mockup: ${title}`
     });
 

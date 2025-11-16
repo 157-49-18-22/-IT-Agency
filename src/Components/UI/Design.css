@@ -87,6 +87,30 @@
   border: 1px solid #e2e8f0;
   padding: 24px;
   min-height: 400px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* Ensure modals can be displayed on top */
+.design-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modal overlay should be above everything */
+.modal-overlay {
+  position: fixed !important;
+  z-index: 1000 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
 /* Responsive Design */

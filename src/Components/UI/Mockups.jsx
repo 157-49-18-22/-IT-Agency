@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -10,6 +10,7 @@ const API_URL = 'http://localhost:5000/api';
 
 const Mockups = () => {
   const navigate = useNavigate();
+  // Ensure mockups is always an array
   const [mockups, setMockups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,74 +26,157 @@ const Mockups = () => {
   });
   const [uploading, setUploading] = useState(false);
 
-  // Fetch mockups from API
-  useEffect(() => {
-    const fetchMockups = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/mockups`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMockups(response.data || []);
-      } catch (error) {
-        console.error('Error fetching mockups:', error);
-        toast.error('Failed to load mockups');
-      } finally {
-        setLoading(false);
+  // Function to fetch mockups with improved error handling and response processing
+  const fetchMockups = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Fetching mockups with token:', token ? 'Token exists' : 'No token');
+      
+      const response = await axios.get(`${API_URL}/mockups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('API Response:', response.data);
+      
+      // Handle different response formats
+      let mockupsData = [];
+      if (Array.isArray(response.data)) {
+        mockupsData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        mockupsData = response.data.data;
+      } else if (response.data && response.data.mockups) {
+        mockupsData = response.data.mockups;
       }
-    };
-
-    fetchMockups();
+      
+      console.log('Processed mockups:', mockupsData);
+      setMockups(mockupsData);
+      return mockupsData;
+    } catch (error) {
+      console.error('Error fetching mockups:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error('Failed to load mockups');
+      setMockups([]);
+      return [];
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Handle form input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Initial fetch
+  useEffect(() => {
+    fetchMockups();
+  }, [fetchMockups]);
 
-  // Handle file input
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({
-        ...prev,
-        image: e.target.files[0]
-      }));
+  // Memoize filtered and sorted mockups
+  const filteredMockups = useMemo(() => {
+    return mockups
+      .filter(mockup => {
+        const matchesSearch = mockup.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           mockup.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || mockup.category === categoryFilter;
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'name') return a.title?.localeCompare(b.title);
+        if (sortBy === 'status') return a.status?.localeCompare(b.status);
+        // Default sort by recent (createdAt)
+        return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+      });
+  }, [mockups, searchTerm, categoryFilter, sortBy]);
+
+  // Helper function to get status class
+  const getStatusClass = (status) => {
+    if (!status) return 'status-draft';
+    switch(status.toLowerCase()) {
+      case 'approved': return 'status-approved';
+      case 'pending': return 'status-pending';
+      case 'rejected': return 'status-rejected';
+      default: return 'status-draft';
     }
   };
 
+  // Memoize formatDate to prevent recreation on every render
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, []);
+
+  // Helper function to get thumbnail based on category
+  const getThumbnail = (category) => {
+    if (!category) return '📋';
+    switch(category.toLowerCase()) {
+      case 'web app': return '🌐';
+      case 'mobile': return '📱';
+      case 'dashboard': return '📊';
+      case 'marketing': return '📢';
+      default: return '📋';
+    }
+  };
+
+  // Mockup card click handlers
+  const handleViewMockup = useCallback((id) => {
+    navigate(`/mockups/${id}`);
+  }, [navigate]);
+
+  const handleEditMockup = useCallback((id) => {
+    // Implement edit functionality
+    console.log('Edit mockup:', id);
+    navigate(`/mockups/edit/${id}`);
+  }, [navigate]);
+
+  const handleDelete = useCallback(async (id) => {
+    if (window.confirm('Are you sure you want to delete this mockup?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_URL}/mockups/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success('Mockup deleted successfully');
+        fetchMockups(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting mockup:', error);
+        toast.error('Failed to delete mockup');
+      }
+    }
+  }, [fetchMockups]);
+
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setUploading(true);
     
+    const formDataToSend = new FormData();
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('projectId', formData.projectId);
+    if (formData.image) {
+      formDataToSend.append('image', formData.image);
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const formDataToSend = new FormData();
-      
-      // Append all form fields to FormData
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null) {
-          formDataToSend.append(key, formData[key]);
+      await axios.post(`${API_URL}/mockups`, formDataToSend, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
         }
       });
-
-      const response = await axios.post(
-        `${API_URL}/api/mockups`,
-        formDataToSend,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      toast.success('Mockup created successfully!');
-      setMockups([response.data, ...mockups]);
+      
+      toast.success('Mockup created successfully');
       setIsModalOpen(false);
       setFormData({
         title: '',
@@ -101,246 +185,216 @@ const Mockups = () => {
         projectId: 1,
         image: null
       });
+      fetchMockups(); // Refresh the list
     } catch (error) {
       console.error('Error creating mockup:', error);
-      toast.error(error.response?.data?.message || 'Failed to create mockup');
+      toast.error('Failed to create mockup');
     } finally {
       setUploading(false);
     }
-  };
+  }, [formData, fetchMockups]);
 
-  // Handle mockup deletion
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this mockup?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_URL}/api/mockups/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        setMockups(mockups.filter(mockup => mockup.id !== id));
-        toast.success('Mockup deleted successfully');
-      } catch (error) {
-        console.error('Error deleting mockup:', error);
-        toast.error('Failed to delete mockup');
-      }
+  // Handle form input changes
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  // Handle file input
+  const handleFileChange = useCallback((e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData(prev => ({
+        ...prev,
+        image: e.target.files[0]
+      }));
     }
-  };
-
-  // Filter and sort mockups
-  const filteredMockups = mockups
-    .filter(mockup => 
-      mockup.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mockup.description.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter(mockup => 
-      categoryFilter === 'all' || mockup.category === categoryFilter
-    )
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.title.localeCompare(b.title);
-      } else if (sortBy === 'status') {
-        return a.status.localeCompare(b.status);
-      } else {
-        // Default: sort by most recent
-        return new Date(b.updatedAt) - new Date(a.updatedAt);
-      }
-    });
-
-  if (loading) return <div className="loading">Loading mockups...</div>;
-
-  const getStatusClass = (status) => {
-    if (!status) return 'status-draft';
-    
-    switch (status.toLowerCase()) {
-      case 'approved':
-        return 'status-approved';
-      case 'in_review':
-      case 'in review':
-        return 'status-review';
-      case 'in_progress':
-      case 'in progress':
-        return 'status-progress';
-      case 'rejected':
-        return 'status-rejected';
-      case 'draft':
-      default:
-        return 'status-draft';
-    }
-  };
-  
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-  
-  const getThumbnail = (category) => {
-    switch (category?.toLowerCase()) {
-      case 'mobile':
-        return '📱';
-      case 'marketing':
-        return '🌐';
-      case 'web':
-      case 'web app':
-        return '🖥️';
-      case 'dashboard':
-        return '📊';
-      default:
-        return '🖼️';
-    }
-  };
+  }, []);
 
   return (
     <div className="mockups-container">
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-      
-      <div className="mockups-header">
-        <div>
-          <h2>Mockups</h2>
-          <p>High-fidelity designs and visual mockups</p>
-        </div>
-        <button 
-          className="btn-primary"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <span className="btn-icon">+</span> New Mockup
-        </button>
+      {/* Debug Info - Remove after fixing */}
+      <div style={{ background: '#f0f0f0', padding: '10px', marginBottom: '20px', borderRadius: '4px' }}>
+        <h4>Debug Info:</h4>
+        <p>Total Mockups: {mockups.length}</p>
+        <p>Loading: {loading ? 'Yes' : 'No'}</p>
       </div>
 
+      {/* Search and Filter Controls */}
       <div className="mockups-toolbar">
         <div className="search-box">
-          <input 
-            type="text" 
-            placeholder="Search mockups..." 
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Search mockups..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <span className="search-icon">🔍</span>
         </div>
+        
         <div className="filter-group">
-          <select 
+          <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="all">All Categories</option>
             <option value="Web App">Web App</option>
             <option value="Mobile">Mobile</option>
-            <option value="Marketing">Marketing</option>
             <option value="Dashboard">Dashboard</option>
+            <option value="Marketing">Marketing</option>
           </select>
         </div>
+        
         <div className="sort-group">
-          <select 
+          <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="recent">Recently Updated</option>
-            <option value="name">Name (A-Z)</option>
-            <option value="status">Status</option>
+            <option value="recent">Sort by: Recent</option>
+            <option value="name">Sort by: Name</option>
+            <option value="status">Sort by: Status</option>
           </select>
         </div>
+        
+        <button
+          className="btn-primary"
+          onClick={() => setIsModalOpen(true)}
+        >
+          + New Mockup
+        </button>
       </div>
 
-      <div className="mockups-grid">
-        {filteredMockups.length > 0 ? (
-          filteredMockups.map((mockup) => (
+      {loading ? (
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading mockups...</p>
+        </div>
+      ) : mockups.length === 0 ? (
+        <div className="no-mockups">
+          <div className="no-mockups-icon">📋</div>
+          <h3>No mockups found</h3>
+          <p>Create your first mockup by clicking the "New Mockup" button</p>
+        </div>
+      ) : (
+        <div className="mockups-grid">
+          {filteredMockups.map((mockup) => (
             <div key={mockup.id} className="mockup-card">
-              <div className="mockup-thumbnail">
-                <div className="thumbnail-content">
-                  {getThumbnail(mockup.category)}
+              <div className="mockup-header">
+                <div className="mockup-thumbnail">
+                  {mockup.image_url ? (
+                    <img 
+                      src={`http://localhost:5000${mockup.image_url}`} 
+                      alt={mockup.title || 'Mockup'}
+                      onError={(e) => {
+                        const target = e.target;
+                        target.onerror = null;
+                        target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23e0e0e0"><rect width="100" height="100" rx="8"/><text x="50%" y="50%" font-size="12" text-anchor="middle" dy=".3em" fill="%23999">No Preview</text></svg>';
+                      }}
+                    />
+                  ) : (
+                    <div className="mockup-placeholder">
+                      {getThumbnail(mockup.category)}
+                    </div>
+                  )}
                 </div>
-                <div className={`status-badge ${getStatusClass(mockup.status)}`}>
-                  {mockup.status?.replace('_', ' ')}
+                <div className="mockup-actions">
+                  <button className="btn-icon" onClick={() => handleViewMockup(mockup.id)}>👁️</button>
+                  <button className="btn-icon" onClick={() => handleEditMockup(mockup.id)}>✏️</button>
+                  <button className="btn-icon danger" onClick={() => handleDelete(mockup.id)}>🗑️</button>
                 </div>
-                {mockup.imageUrl && (
-                  <a 
-                    href={`${API_URL}${mockup.imageUrl}`} 
-                    className="preview-overlay" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    View Preview
-                  </a>
-                )}
               </div>
-              <div className="mockup-details">
-                <div className="mockup-header">
-                  <h3>{mockup.title}</h3>
-                  <span className="version">v{mockup.version || '1.0'}</span>
-                </div>
-                <p className="description">{mockup.description || 'No description provided'}</p>
+              <div className="mockup-body">
+                <h3 className="mockup-title">{mockup.title || 'Untitled Mockup'}</h3>
+                <p className="mockup-description">{mockup.description || 'No description provided'}</p>
                 <div className="mockup-meta">
-                  <span className="category">{mockup.category || 'Uncategorized'}</span>
-                  <span className="date">Updated {formatDate(mockup.updatedAt)}</span>
+                  <span className={`status-badge ${getStatusClass(mockup.status)}`}>
+                    {mockup.status || 'draft'}
+                  </span>
+                  <span className="mockup-category">{mockup.category || 'Uncategorized'}</span>
                 </div>
                 <div className="mockup-footer">
-                  <div className="updated-by">
-                    {mockup.User?.name && (
-                      <>
-                        <span className="avatar">{mockup.User.name.charAt(0)}</span>
-                        <span>{mockup.User.name}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="actions">
-                    {mockup.imageUrl && (
-                      <a 
-                        href={`${API_URL}${mockup.imageUrl}`} 
-                        className="btn-icon" 
-                        title="Preview" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        👁️
-                      </a>
-                    )}
-                    <button 
-                      className="btn-icon" 
-                      title="Edit"
-                      onClick={() => navigate(`/mockups/edit/${mockup.id}`)}
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="btn-icon danger" 
-                      title="Delete"
-                      onClick={() => handleDelete(mockup.id)}
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  <span className="mockup-date">
+                    {formatDate(mockup.updatedAt || mockup.createdAt)}
+                  </span>
+                  {mockup.creator && (
+                    <span className="mockup-author">
+                      👤 {mockup.creator.name || 'Unknown'}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="no-results">
-            <p>No mockups found. Create your first mockup to get started!</p>
-          </div>
-        )}
-      </div>
-
+          ))}
+        </div>
+      )}
       {/* Add Mockup Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Add New Mockup</h3>
+        <div 
+          className="modal-overlay" 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            padding: '20px',
+            backdropFilter: 'blur(5px)',
+            WebkitBackdropFilter: 'blur(5px)'
+          }}
+          onClick={(e) => {
+            // Close modal if clicking on overlay
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
+          <div 
+            className="modal-content"
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '500px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+              position: 'relative',
+              zIndex: 1001,
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              transform: 'translateY(0)',
+              opacity: 1,
+              transition: 'all 0.3s ease',
+              padding: '24px'
+            }}
+          >
+            <div className="modal-header" style={{
+              padding: '16px 24px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#2d3748' }}>Add New Mockup</h3>
               <button 
                 className="close-btn"
                 onClick={() => setIsModalOpen(false)}
                 disabled={uploading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#718096',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
               >
                 &times;
               </button>

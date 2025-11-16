@@ -109,4 +109,13 @@ const Project = sequelize.define('Project', {
   ]
 });
 
+// Define associations after the model is defined
+Project.associate = function(models) {
+  // Define the one-to-many relationship with Mockup
+  Project.hasMany(models.Mockup, {
+    foreignKey: 'projectId',
+    as: 'mockups',
+    onDelete: 'CASCADE'
+  });};
+
 module.exports = Project;

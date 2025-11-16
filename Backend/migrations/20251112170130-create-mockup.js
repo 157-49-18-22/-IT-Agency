@@ -17,7 +17,7 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      imageUrl: {
+      image_url: {
         type: Sequelize.STRING,
         allowNull: false
       },
@@ -33,7 +33,7 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-      projectId: {
+      project_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -43,7 +43,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      createdBy: {
+      created_by: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -53,7 +53,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      approvedBy: {
+      approved_by: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
