@@ -62,6 +62,9 @@ const AllProjects = () => {
     const projectClient = project.client || '';
     const projectStatus = project.status || '';
     
+    
+    
+    
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
                          projectClient.toLowerCase().includes(searchLower);
