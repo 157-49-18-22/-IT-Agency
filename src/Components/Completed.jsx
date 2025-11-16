@@ -40,12 +40,26 @@ const Completed = () => {
 
   if (loading) return <div className="loading">Loading...</div>;
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.client.toLowerCase().includes(searchTerm.toLowerCase());
+  // Ensure projects is an array before filtering
+  const projectsArray = Array.isArray(projects) ? projects : [];
+
+  const filteredProjects = projectsArray.filter(project => {
+    if (!project) return false;
+    
+    const projectName = project.name || '';
+    const projectClient = project.client || '';
+    const projectRating = project.rating || 0;
+    const completionDate = project.completionDate ? new Date(project.completionDate) : null;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
+                         projectClient.toLowerCase().includes(searchLower);
+    
     const matchesFilter = filter === 'all' || 
-                         (filter === 'high-rating' && project.rating >= 4) ||
-                         (filter === 'recent' && new Date(project.completionDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+                         (filter === 'high-rating' && projectRating >= 4) ||
+                         (filter === 'recent' && completionDate && completionDate > thirtyDaysAgo);
+    
     return matchesSearch && matchesFilter;
   });
 

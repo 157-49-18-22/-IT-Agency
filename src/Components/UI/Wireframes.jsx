@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+// projectId is now optional
 import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
+import { API_URL } from '../../config/endpoints';
 import './Wireframes.css';
 
-const Wireframes = ({ projectId }) => {
+const Wireframes = () => {
+  // projectId is now optional and can be passed as a prop or will be null
+  const [projectId] = useState(null);
   const [wireframes, setWireframes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,35 +29,70 @@ const Wireframes = ({ projectId }) => {
   const fetchWireframes = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/wireframes?projectId=${projectId}`);
-      setWireframes(response.data);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required. Please log in.');
+        return;
+      }
+
+      // Build the URL with projectId if it exists
+      const url = projectId 
+        ? `${API_URL}/wireframes?projectId=${projectId}`
+        : `${API_URL}/wireframes`;
+      
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      // Check if response.data exists and has a data property
+      const wireframesData = response.data?.data || [];
+      setWireframes(wireframesData);
     } catch (err) {
       setError('Failed to load wireframes');
       console.error('Error fetching wireframes:', err);
+      setWireframes([]); // Ensure wireframes is always an array
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fetch wireframes on component mount and when projectId changes
   useEffect(() => {
-    if (projectId) {
-      fetchWireframes();
-    }
+    fetchWireframes();
   }, [projectId]);
 
   // Handle file selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size should be less than 10MB');
+        return;
+      }
+      
+      // Check file type
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a valid image file (PNG, JPG, GIF)');
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
+        setCurrentWireframe(prev => ({
+          ...prev,
+          image: file,
+        }));
+        setError(''); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError('Failed to read the file');
       };
       reader.readAsDataURL(file);
-      setCurrentWireframe({
-        ...currentWireframe,
-        image: file,
-      });
     }
   };
 
@@ -68,6 +107,7 @@ const Wireframes = ({ projectId }) => {
 
   // Reset form
   const resetForm = () => {
+    console.log('Resetting form');
     setCurrentWireframe({
       id: null,
       title: '',
@@ -80,51 +120,140 @@ const Wireframes = ({ projectId }) => {
     });
     setPreview('');
     setError('');
+    
+    // Reset file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
+    console.log('Form submission started');
     e.preventDefault();
+    e.stopPropagation();
     
-    if (!currentWireframe.title || (!currentWireframe.image && !currentWireframe.id)) {
-      setError('Title and image are required');
+    // Clear previous errors
+    setError('');
+    
+    // Trim the title and check if it's empty
+    const title = currentWireframe.title ? currentWireframe.title.trim() : '';
+    
+    // Basic validation
+    if (!title) {
+      console.log('Title is required');
+      setError('Title is required');
       return;
     }
+    
+    // projectId is now optional, so we'll use a default integer value if not provided
+    const projectIdToUse = projectId || 1; // Using 1 as default project ID
+    
+    // Image is now optional
+    console.log('Image is optional');
+    
+    console.log('All validations passed, proceeding with form submission');
 
+    // Create form data
     const formData = new FormData();
     formData.append('title', currentWireframe.title);
-    formData.append('description', currentWireframe.description);
-    formData.append('version', currentWireframe.version);
-    formData.append('status', currentWireframe.status);
-    formData.append('category', currentWireframe.category);
-    formData.append('projectId', currentWireframe.projectId);
+    formData.append('description', currentWireframe.description || '');
+    formData.append('version', currentWireframe.version || '1.0');
+    formData.append('status', currentWireframe.status || 'draft');
+    formData.append('category', currentWireframe.category || 'web');
+    formData.append('projectId', projectIdToUse); // Use the project ID or default value
+    
+    // Add image to form data if it exists
     if (currentWireframe.image) {
-      formData.append('image', currentWireframe.image);
+      formData.append('image', currentWireframe.image, currentWireframe.image.name || 'wireframe.jpg');
+    }
+    
+    // Log form data for debugging
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
     }
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You need to be logged in to save wireframes');
+        return;
+      }
+
+      console.log('Auth token:', token ? 'Token exists' : 'No token found');
+      
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        withCredentials: true // Ensure cookies are sent with the request
+      };
+      
+      // Log the headers being sent
+      console.log('Request headers:', config.headers);
+
+      // Show loading state
+      setError('Saving wireframe...');
+      
       if (currentWireframe.id) {
         // Update existing wireframe
-        await axios.put(`/api/wireframes/${currentWireframe.id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await axios.put(`${API_URL}/wireframes/${currentWireframe.id}`, formData, config);
       } else {
         // Create new wireframe
-        await axios.post('/api/wireframes', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await axios.post(`${API_URL}/wireframes`, formData, config);
       }
       
-      setIsModalOpen(false);
+      // On success - close modal and reset form
+      console.log('Wireframe saved successfully');
+      await fetchWireframes(); // Wait for the data to be refreshed
       resetForm();
-      fetchWireframes();
+      setIsModalOpen(false);
+      
     } catch (err) {
-      setError('Failed to save wireframe');
       console.error('Error saving wireframe:', err);
+      console.error('Error response data:', err.response?.data);
+      console.error('Error response status:', err.response?.status);
+      
+      let errorMessage = 'Failed to save wireframe. Please check your connection and try again.';
+      
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (err.response.data) {
+          if (typeof err.response.data === 'string') {
+            errorMessage = err.response.data;
+          } else if (err.response.data.error) {
+            errorMessage = err.response.data.error;
+          } else if (err.response.data.message) {
+            errorMessage = err.response.data.message;
+          } else if (err.response.data.details) {
+            // If we have validation errors, format them nicely
+            if (Array.isArray(err.response.data.details)) {
+              errorMessage = err.response.data.details
+                .map(detail => `${detail.field ? `${detail.field}: ` : ''}${detail.message}`)
+                .join('\n');
+            } else {
+              errorMessage = JSON.stringify(err.response.data.details);
+            }
+          }
+        }
+        
+        // Add status code to the error message
+        errorMessage = `[${err.response.status}] ${errorMessage}`;
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error('No response received:', err.request);
+        errorMessage = 'No response from server. Please check your connection.';
+      } else {
+        // Something happened in setting up the request
+        console.error('Request setup error:', err.message);
+        errorMessage = `Request error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -148,7 +277,7 @@ const Wireframes = ({ projectId }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this wireframe?')) {
       try {
-        await axios.delete(`/api/wireframes/${id}`);
+        await axios.delete(`${API_URL}/wireframes/${id}`);
         fetchWireframes();
       } catch (err) {
         setError('Failed to delete wireframe');
@@ -182,10 +311,12 @@ const Wireframes = ({ projectId }) => {
   };
 
   // Filter wireframes based on search term
-  const filteredWireframes = wireframes.filter(wireframe =>
-    wireframe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    wireframe.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredWireframes = Array.isArray(wireframes) 
+    ? wireframes.filter(wireframe =>
+        (wireframe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        wireframe.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : [];
 
   return (
     <div className="wireframes-container">
@@ -333,7 +464,7 @@ const Wireframes = ({ projectId }) => {
               </button>
             </div>
             <div className="modal-body">
-              <form onSubmit={handleSubmit}>
+              <div className="wireframe-form">
                 <div className="form-group">
                   <label>Title <span className="required">*</span></label>
                   <input
@@ -341,8 +472,8 @@ const Wireframes = ({ projectId }) => {
                     name="title"
                     value={currentWireframe.title}
                     onChange={handleInputChange}
-                    required
                     placeholder="Enter wireframe title"
+                    className={!currentWireframe.title ? 'error' : ''}
                   />
                 </div>
                 
@@ -399,21 +530,25 @@ const Wireframes = ({ projectId }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>Wireframe {!currentWireframe.id && <span className="required">*</span>}</label>
+                  <label>Wireframe (Optional)</label>
                   <div className="file-upload">
-                    <label className={`file-upload-label ${preview ? 'has-preview' : ''}`}>
-                      <FaUpload className="upload-icon" />
-                      <span>
-                        {currentWireframe.image?.name || 'Choose an image or drag & drop'}
-                        <small>PNG, JPG, GIF up to 10MB</small>
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        style={{ display: 'none' }}
-                        required={!currentWireframe.id}
-                      />
+                    <input
+                      type="file"
+                      id="wireframe-image"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="file-input"
+                    />
+                    <label htmlFor="wireframe-image" className="file-upload-label">
+                      {preview ? (
+                        <img src={preview} alt="Preview" className="image-preview" />
+                      ) : (
+                        <>
+                          <FaUpload className="upload-icon" />
+                          <span>Choose an image or drag & drop (Optional)</span>
+                          <small>PNG, JPG, GIF up to 10MB</small>
+                        </>
+                      )}
                     </label>
                   </div>
                   
@@ -433,17 +568,22 @@ const Wireframes = ({ projectId }) => {
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => {
+                      console.log('Cancel button clicked');
                       setIsModalOpen(false);
                       resetForm();
                     }}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={handleSubmit}
+                  >
                     {currentWireframe.id ? 'Update' : 'Save'} Wireframe
                   </button>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
         </div>

@@ -30,10 +30,21 @@ const Active = () => {
 
   if (loading) return <div className="loading">Loading...</div>;
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'all' || project.priority === filter;
+  // Ensure projects is an array before filtering
+  const projectsArray = Array.isArray(projects) ? projects : [];
+
+  const filteredProjects = projectsArray.filter(project => {
+    if (!project) return false;
+    
+    const projectName = project.name || '';
+    const projectClient = project.client || '';
+    const projectPriority = project.priority || '';
+    
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
+                         projectClient.toLowerCase().includes(searchLower);
+    const matchesFilter = filter === 'all' || projectPriority === filter;
+    
     return matchesSearch && matchesFilter;
   });
 

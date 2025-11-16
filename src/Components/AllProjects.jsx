@@ -52,20 +52,30 @@ const AllProjects = () => {
     return <div className="loading">Loading projects...</div>;
   }
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.client.toLowerCase().includes(searchTerm.toLowerCase());
+  // Ensure projects is an array before filtering
+  const projectsArray = Array.isArray(projects) ? projects : [];
+  
+  const filteredProjects = projectsArray.filter(project => {
+    if (!project) return false;
     
-    if (statusFilter === 'All') return matchesSearch;
-    if (statusFilter === 'In Progress') return project.status === 'In Progress' && matchesSearch;
-    if (statusFilter === 'Completed') return project.status === 'Completed' && matchesSearch;
-    if (statusFilter === 'On Hold') return project.status === 'On Hold' && matchesSearch;
-    if (statusFilter === 'Planning') return project.status === 'Planning' && matchesSearch;
-    if (filter === 'all') return matchesSearch;
-    if (filter === 'in-progress') return project.status === 'In Progress' && matchesSearch;
-    if (filter === 'completed') return project.status === 'Completed' && matchesSearch;
-    if (filter === 'on-hold') return project.status === 'On Hold' && matchesSearch;
-    if (filter === 'planning') return project.status === 'Planning' && matchesSearch;
+    const projectName = project.name || '';
+    const projectClient = project.client || '';
+    const projectStatus = project.status || '';
+    
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
+                         projectClient.toLowerCase().includes(searchLower);
+    
+    if (!statusFilter || statusFilter === 'all' || statusFilter === 'All') return matchesSearch;
+    if (statusFilter === 'in-progress' || statusFilter === 'In Progress') 
+      return projectStatus === 'In Progress' && matchesSearch;
+    if (statusFilter === 'completed' || statusFilter === 'Completed') 
+      return projectStatus === 'Completed' && matchesSearch;
+    if (statusFilter === 'on-hold' || statusFilter === 'On Hold') 
+      return projectStatus === 'On Hold' && matchesSearch;
+    if (statusFilter === 'planning' || statusFilter === 'Planning') 
+      return projectStatus === 'Planning' && matchesSearch;
+      
     return matchesSearch;
   });
 

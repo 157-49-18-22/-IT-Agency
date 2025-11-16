@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db');
+const { sequelize } = require('../../config/database.sql');
 
 const Wireframe = sequelize.define('Wireframe', {
   id: {
@@ -17,7 +17,7 @@ const Wireframe = sequelize.define('Wireframe', {
   },
   imageUrl: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,  // Make image optional
   },
   version: {
     type: DataTypes.STRING,
@@ -43,6 +43,14 @@ const Wireframe = sequelize.define('Wireframe', {
   createdBy: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id',
+    },
+  },
+  updatedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
     references: {
       model: 'Users',
       key: 'id',

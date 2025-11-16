@@ -18,6 +18,7 @@ const AuditLog = require('./AuditLog.model');
 const TaskChecklist = require('./TaskChecklist.model');
 const StageTransition = require('./StageTransition.model');
 const Prototype = require('./Prototype.model');
+const Wireframe = require('./Wireframe.model');
 
 // Define relationships
 
@@ -35,6 +36,8 @@ User.hasMany(TimeTracking, { foreignKey: 'userId', as: 'timeEntries' });
 User.hasMany(CalendarEvent, { foreignKey: 'organizerId', as: 'organizedEvents' });
 User.hasMany(Prototype, { foreignKey: 'createdBy', as: 'createdPrototypes' });
 User.hasMany(Prototype, { foreignKey: 'updatedBy', as: 'updatedPrototypes' });
+User.hasMany(Wireframe, { foreignKey: 'createdBy', as: 'createdWireframes' });
+User.hasMany(Wireframe, { foreignKey: 'updatedBy', as: 'updatedWireframes' });
 
 // Client relationships
 Client.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
@@ -50,6 +53,7 @@ Project.hasMany(Activity, { foreignKey: 'projectId', as: 'activities' });
 Project.hasMany(TimeTracking, { foreignKey: 'projectId', as: 'timeEntries' });
 Project.hasMany(CalendarEvent, { foreignKey: 'projectId', as: 'events' });
 Project.hasMany(Prototype, { foreignKey: 'projectId', as: 'prototypes' });
+Project.hasMany(Wireframe, { foreignKey: 'projectId', as: 'wireframes' });
 
 // Task relationships
 Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
@@ -114,6 +118,10 @@ StageTransition.belongsTo(User, { foreignKey: 'requestedById', as: 'requestedBy'
 StageTransition.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
 Project.hasMany(StageTransition, { foreignKey: 'projectId', as: 'transitions' });
 
+// Wireframe relationships
+Wireframe.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Wireframe.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+
 module.exports = {
   sequelize,
   User,
@@ -130,5 +138,7 @@ module.exports = {
   Sprint,
   AuditLog,
   TaskChecklist,
-  StageTransition
+  StageTransition,
+  Prototype,
+  Wireframe
 };

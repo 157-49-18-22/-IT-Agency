@@ -1,4 +1,4 @@
-const { Wireframe } = require('../models/sql');
+const { Wireframe, User } = require('../models/sql');
 const { Op } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
@@ -48,27 +48,60 @@ const deleteFile = (filePath) => {
 // Create a new wireframe
 exports.createWireframe = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    
     const { title, description, version, status, category, projectId } = req.body;
-    const userId = req.user.id; // Assuming user is authenticated and user ID is in req.user
+    const userId = req.user?.id; // Using optional chaining in case user is not set
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'Image file is required' });
+    // Basic validation
+    if (!title) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Title is required' 
+      });
     }
 
-    // Save file to local storage
-    const imageUrl = saveFile(req.file);
+    if (!projectId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Project ID is required' 
+      });
+    }
 
-    const wireframe = await Wireframe.create({
+    // Make image optional
+    let imageUrl = null;
+    if (req.file) {
+      try {
+        // Save file to local storage
+        imageUrl = saveFile(req.file);
+      } catch (fileError) {
+        console.error('Error saving file:', fileError);
+        return res.status(400).json({ 
+          success: false,
+          error: 'Failed to save the uploaded file',
+          details: process.env.NODE_ENV === 'development' ? fileError.message : undefined
+        });
+      }
+    }
+
+    const wireframeData = {
       title,
-      description,
-      imageUrl,
+      description: description || '',
       version: version || '1.0',
       status: status || 'draft',
       category: category || 'web',
       projectId,
       createdBy: userId,
       updatedBy: userId,
-    });
+    };
+
+    // Only add imageUrl if it exists
+    if (imageUrl) {
+      wireframeData.imageUrl = imageUrl;
+    }
+
+    const wireframe = await Wireframe.create(wireframeData);
 
     res.status(201).json({
       success: true,
@@ -76,6 +109,21 @@ exports.createWireframe = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating wireframe:', error);
+    
+    // Handle Sequelize validation errors
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      const errors = error.errors.map(err => ({
+        field: err.path,
+        message: err.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: errors
+      });
+    }
+
     res.status(500).json({
       success: false,
       error: 'Failed to create wireframe',
@@ -88,7 +136,12 @@ exports.createWireframe = async (req, res) => {
 exports.getWireframes = async (req, res) => {
   try {
     const { projectId, search, status, category } = req.query;
-    const where = { projectId };
+    const where = {};
+    
+    // Only add projectId to where clause if it's provided
+    if (projectId) {
+      where.projectId = projectId;
+    }
 
     // Add search filter
     if (search) {
