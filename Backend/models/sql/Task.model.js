@@ -17,11 +17,14 @@ const Task = sequelize.define('Task', {
   },
   projectId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,  // This field is optional
+    defaultValue: null,
     references: {
       model: 'projects',
       key: 'id'
-    }
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
   },
   status: {
     type: DataTypes.ENUM('to_do', 'in_progress', 'in_review', 'done', 'blocked'),

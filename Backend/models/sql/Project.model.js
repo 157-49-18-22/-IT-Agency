@@ -116,6 +116,14 @@ Project.associate = function(models) {
     foreignKey: 'projectId',
     as: 'mockups',
     onDelete: 'CASCADE'
-  });};
+  });
+  
+  // Define the one-to-many relationship with Task
+  Project.hasMany(models.Task, {
+    foreignKey: 'projectId',
+    as: 'tasks',
+    onDelete: 'SET NULL'
+  });
+};
 
 module.exports = Project;

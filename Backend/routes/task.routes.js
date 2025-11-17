@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     const tasks = await Task.findAll({
       where,
       include: [
-        { model: Project, attributes: ['id', 'name'] },
+        { model: Project, as: 'project', attributes: ['id', 'name'] },
         { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
         { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
       ],
@@ -35,16 +35,23 @@ router.get('/', async (req, res) => {
 // Create task
 router.post('/', async (req, res) => {
   try {
-    const task = await Task.create({ 
-      ...req.body, 
+    const taskData = { 
+      ...req.body,
       reporterId: req.user.id,
       status: req.body.status || 'to_do' // Default status
-    });
+    };
+    
+    // Only include projectId if it's provided
+    if (req.body.projectId) {
+      taskData.projectId = req.body.projectId;
+    }
+    
+    const task = await Task.create(taskData);
     
     // Fetch the created task with related data
     const createdTask = await Task.findByPk(task.id, {
       include: [
-        { model: Project, attributes: ['id', 'name'] },
+        { model: Project, as: 'project', attributes: ['id', 'name'] },
         { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
         { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
       ]
@@ -70,7 +77,7 @@ router.put('/:id', async (req, res) => {
     // Fetch the updated task with related data
     const updatedTask = await Task.findByPk(task.id, {
       include: [
-        { model: Project, attributes: ['id', 'name'] },
+        { model: Project, as: 'project', attributes: ['id', 'name'] },
         { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'avatar'] },
         { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] }
       ]

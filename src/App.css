@@ -49,8 +49,10 @@ body {
   margin-left: 280px; /* Same as sidebar width */
   padding: 30px;
   overflow-y: auto;
-  height: 100vh;
+  min-height: 100vh;
   transition: margin-left 0.3s ease;
+  position: relative; /* Create a stacking context */
+  z-index: 1; /* Ensure content stays behind modal */
 }
 
 /* Responsive adjustments */
