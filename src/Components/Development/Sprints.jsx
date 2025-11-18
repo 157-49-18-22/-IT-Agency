@@ -8,8 +8,10 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function Sprints() {
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [isNewSprintModalOpen, setIsNewSprintModalOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     goal: '',
@@ -23,17 +25,52 @@ export default function Sprints() {
     const fetchSprints = async () => {
       try {
         setLoading(true);
-        const response = await sprintAPI.getAll();
-        // Ensure we always set an array, even if the response is malformed
-        const sprintsData = Array.isArray(response?.data) ? response.data : [];
-        setSprints(sprintsData);
+        console.log('Fetching sprints...');
+        
+        // Try to fetch sprints directly
+        try {
+          const response = await sprintAPI.getAll();
+          console.log('Sprints API response:', response);
+          
+          let sprintsData = [];
+          
+          // Handle different possible response structures
+          if (Array.isArray(response)) {
+            sprintsData = response;
+          } else if (response?.data) {
+            // If response has data property, check if it's an array or has a nested data property
+            if (Array.isArray(response.data)) {
+              sprintsData = response.data;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+              sprintsData = response.data.data;
+            } else if (response.data.sprints && Array.isArray(response.data.sprints)) {
+              sprintsData = response.data.sprints;
+            }
+          }
+          
+          console.log('Processed sprints data:', sprintsData);
+          setSprints(sprintsData || []);
+          
+          if (sprintsData.length === 0) {
+            toast.info('No sprints found. Click "Start New Sprint" to create one.');
+          }
+          
+        } catch (apiError) {
+          console.error('API Error:', apiError);
+          const errorMessage = apiError.response?.data?.message || 'Failed to load sprints';
+          toast.error(`Error: ${errorMessage}`);
+          setSprints([]);
+        }
+        
       } catch (error) {
-        console.error('Error fetching sprints:', error);
-        setSprints([]); // Reset to empty array on error
+        console.error('Unexpected error:', error);
+        toast.error('An unexpected error occurred. Please check the console for details.');
+        setSprints([]);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchSprints();
   }, []);
 
@@ -45,13 +82,68 @@ export default function Sprints() {
     }));
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = 'Sprint name is required';
+    }
+    
+    if (!formData.goal.trim()) {
+      errors.goal = 'Sprint goal is required';
+    }
+    
+    if (!formData.startDate) {
+      errors.startDate = 'Start date is required';
+    }
+    
+    if (!formData.endDate) {
+      errors.endDate = 'End date is required';
+    } else if (new Date(formData.endDate) <= new Date(formData.startDate)) {
+      errors.endDate = 'End date must be after start date';
+    }
+    
+    if (formData.velocity <= 0) {
+      errors.velocity = 'Velocity must be greater than 0';
+    }
+    
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    const errors = validateForm();
+    setFormErrors(errors);
+    
+    // If there are errors, don't submit
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+    
     try {
-      const response = await sprintAPI.create(formData);
-      setSprints([...sprints, response.data]);
+      setSubmitting(true);
+      
+      // Format dates to ISO string
+      const sprintData = {
+        ...formData,
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: new Date(formData.endDate).toISOString(),
+        status: 'Planned', // Default status
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const response = await sprintAPI.create(sprintData);
+      
+      // Update local state with the new sprint
+      setSprints(prevSprints => [...prevSprints, response.data]);
+      
+      // Close modal and show success message
       setIsNewSprintModalOpen(false);
-      toast.success('Sprint created successfully!');
+      toast.success('Sprint created successfully! 🎉');
+      
       // Reset form
       setFormData({
         name: '',
@@ -61,13 +153,17 @@ export default function Sprints() {
         velocity: 20,
         projectId: 1
       });
+      
     } catch (error) {
       console.error('Error creating sprint:', error);
-      toast.error('Failed to create sprint');
+      const errorMessage = error.response?.data?.message || 'Failed to create sprint';
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading sprints...</div>;
 
   const getProgressPercentage = (sprint) => {
     return sprint.totalPoints > 0 ? Math.round((sprint.completedPoints / sprint.totalPoints) * 100) : 0;
@@ -89,6 +185,12 @@ export default function Sprints() {
     return colors[status] || '#6b7280';
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
   const getTaskStatusColor = (status) => {
     const colors = {
       'Done': '#10b981',
@@ -101,6 +203,7 @@ export default function Sprints() {
   return (
     <div className="sprints-container">
       {/* New Sprint Modal */}
+      {console.log('Rendering modal, isNewSprintModalOpen:', isNewSprintModalOpen)}
       {isNewSprintModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -119,9 +222,10 @@ export default function Sprints() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  required
+                  className={formErrors.name ? 'input-error' : ''}
                   placeholder="e.g., Sprint 1 - Feature Launch"
                 />
+                {formErrors.name && <span className="error-message">{formErrors.name}</span>}
               </div>
               <div className="form-group">
                 <label htmlFor="goal">Sprint Goal *</label>
@@ -130,10 +234,11 @@ export default function Sprints() {
                   name="goal"
                   value={formData.goal}
                   onChange={handleInputChange}
-                  required
+                  className={formErrors.goal ? 'input-error' : ''}
                   rows="3"
                   placeholder="What do you want to accomplish in this sprint?"
                 ></textarea>
+                {formErrors.goal && <span className="error-message">{formErrors.goal}</span>}
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -144,7 +249,8 @@ export default function Sprints() {
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleInputChange}
-                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    className={formErrors.startDate ? 'input-error' : ''}
                   />
                 </div>
                 <div className="form-group">
@@ -155,7 +261,8 @@ export default function Sprints() {
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleInputChange}
-                    required
+                    min={formData.startDate || new Date().toISOString().split('T')[0]}
+                    className={formErrors.endDate ? 'input-error' : ''}
                   />
                 </div>
               </div>
@@ -168,7 +275,9 @@ export default function Sprints() {
                   min="1"
                   value={formData.velocity}
                   onChange={handleInputChange}
+                  className={formErrors.velocity ? 'input-error' : ''}
                 />
+                {formErrors.velocity && <span className="error-message">{formErrors.velocity}</span>}
               </div>
               <div className="form-actions">
                 <button
@@ -178,8 +287,17 @@ export default function Sprints() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Start Sprint
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Creating...
+                    </>
+                  ) : 'Start Sprint'}
                 </button>
               </div>
             </form>
@@ -193,7 +311,25 @@ export default function Sprints() {
         </div>
         <button
           className="btn-primary"
-          onClick={() => setIsNewSprintModalOpen(true)}
+          onClick={(e) => {
+            console.log('Button clicked, opening modal...');
+            e.preventDefault();
+            e.stopPropagation();
+            setIsNewSprintModalOpen(true);
+            console.log('isNewSprintModalOpen should be true now');
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 20px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
         >
           <FiPlus size={16} style={{ marginRight: '8px' }} />
           Start New Sprint
@@ -205,7 +341,10 @@ export default function Sprints() {
         <div key={sprint.id} className="active-sprint-card">
           <div className="sprint-header-row">
             <div>
-              <h2>{sprint.name}</h2>
+              <h2>
+                <FiPlay size={20} style={{ marginRight: '8px' }} />
+                {sprint.name}
+              </h2>
               <p className="sprint-goal">{sprint.goal}</p>
             </div>
             <div className="sprint-status-badge active">
@@ -232,14 +371,20 @@ export default function Sprints() {
               <FiCheckCircle className="stat-icon" />
               <div>
                 <div className="stat-label">Story Points</div>
-                <div className="stat-value">{sprint.completedPoints}/{sprint.totalPoints}</div>
+                <div className="stat-value">{sprint.completedPoints || 0}/{sprint.totalPoints || 0}</div>
               </div>
             </div>
             <div className="stat-box">
               <FiClock className="stat-icon" />
               <div>
                 <div className="stat-label">End Date</div>
-                <div className="stat-value-small">{sprint.endDate}</div>
+                <div className="stat-value-small">
+                  {new Date(sprint.endDate).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric' 
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -248,7 +393,10 @@ export default function Sprints() {
             <div className="progress-bar">
               <div 
                 className="progress-fill" 
-                style={{ width: `${getProgressPercentage(sprint)}%` }}
+                style={{ 
+                  width: `${getProgressPercentage(sprint)}%`,
+                  background: 'linear-gradient(90deg, #3b82f6, #60a5fa)'
+                }}
               ></div>
             </div>
           </div>
@@ -256,11 +404,11 @@ export default function Sprints() {
           <div className="sprint-tasks">
             <h3>Sprint Tasks</h3>
             <div className="tasks-grid">
-              {sprint.tasks.map(task => (
-                <div key={task.id} className="task-card">
+              {sprint.tasks && sprint.tasks.slice(0, 3).map((task, index) => (
+                <div key={task.id || `task-${index}`} className="task-card">
                   <div className="task-header">
                     <span className="task-title">{task.title}</span>
-                    <span className="task-points">{task.points} SP</span>
+                    <span className="task-points">{task.points || 0} SP</span>
                   </div>
                   <div 
                     className="task-status" 
@@ -269,10 +417,15 @@ export default function Sprints() {
                       color: getTaskStatusColor(task.status)
                     }}
                   >
-                    {task.status}
+                    {task.status || 'To Do'}
                   </div>
                 </div>
               ))}
+              {sprint.tasks && sprint.tasks.length > 3 && (
+                <div className="task-card view-more">
+                  +{sprint.tasks.length - 3} more tasks
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -281,58 +434,75 @@ export default function Sprints() {
       {/* All Sprints List */}
       <div className="sprints-list">
         <h2>All Sprints</h2>
-        <div className="sprints-grid">
-          {sprints.map(sprint => (
-            <div 
-              key={sprint.id} 
-              className={`sprint-card ${sprint.status.toLowerCase()}`}
-              onClick={() => setSelectedSprint(sprint)}
-            >
-              <div className="sprint-card-header">
-                <div>
-                  <h3>{sprint.name}</h3>
-                  <p className="sprint-dates">{sprint.startDate} → {sprint.endDate}</p>
+        {sprints.length === 0 ? (
+          <div className="no-sprints">
+            <p>No sprints found. Click the "Start New Sprint" button to create your first sprint.</p>
+          </div>
+        ) : (
+          <div className="sprints-grid">
+            {sprints.map(sprint => (
+              <div 
+                key={sprint.id} 
+                className={`sprint-card ${(sprint.status || 'Planned').toLowerCase()}`}
+                onClick={() => setSelectedSprint(sprint)}
+              >
+                <div className="sprint-card-header">
+                  <div>
+                    <h3 className="sprint-name">
+                      {sprint.status === 'Active' && <FiPlay size={16} />}
+                      {sprint.status === 'Completed' && <FiCheckCircle size={16} />}
+                      {(!sprint.status || sprint.status === 'Planned') && <FiClock size={16} />}
+                      {sprint.name}
+                    </h3>
+                    <p className="sprint-dates">
+                      <FiCalendar size={14} />
+                      {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className={`sprint-status ${(sprint.status || 'Planned').toLowerCase()}`}>
+                    {sprint.status || 'Planned'}
+                  </div>
                 </div>
-                <div 
-                  className="status-badge"
-                  style={{ 
-                    background: getStatusColor(sprint.status) + '20',
-                    color: getStatusColor(sprint.status)
-                  }}
-                >
-                  {sprint.status}
+
+                <p className="sprint-description">{sprint.goal}</p>
+
+                <div className="sprint-progress">
+                  <div className="progress-header">
+                    <span>Progress</span>
+                    <span>{getProgressPercentage(sprint)}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${getProgressPercentage(sprint)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="sprint-metrics">
+                  <div className="metric">
+                    <span className="metric-value">
+                      {sprint.completedPoints || 0}/{sprint.totalPoints || 0}
+                    </span>
+                    <span className="metric-label">Points</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-value">
+                      {sprint.completedTasks || 0}/{sprint.totalTasks || 0}
+                    </span>
+                    <span className="metric-label">Tasks</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-value">
+                      {getDaysRemaining(sprint.endDate)}
+                    </span>
+                    <span className="metric-label">Days Left</span>
+                  </div>
                 </div>
               </div>
-
-              <p className="sprint-goal-text">{sprint.goal}</p>
-
-              <div className="sprint-metrics">
-                <div className="metric">
-                  <span className="metric-label">Progress</span>
-                  <span className="metric-value">{getProgressPercentage(sprint)}%</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Points</span>
-                  <span className="metric-value">{sprint.completedPoints}/{sprint.totalPoints}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Tasks</span>
-                  <span className="metric-value">{sprint.tasks.length}</span>
-                </div>
-              </div>
-
-              <div className="sprint-progress-bar">
-                <div 
-                  className="sprint-progress-fill"
-                  style={{ 
-                    width: `${getProgressPercentage(sprint)}%`,
-                    background: getStatusColor(sprint.status)
-                  }}
-                ></div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sprint Detail Modal */}
