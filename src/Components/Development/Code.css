@@ -300,11 +300,17 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
+/* Form Styles */
+.form-group {
+  margin-bottom: 16px;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
+  color: #334155;
   color: #1e293b;
 }
 
@@ -401,6 +407,7 @@
   background: #cbd5e1;
   border-radius: 4px;
 }
+
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
@@ -633,7 +640,13 @@
   padding: 0 8px;
 }
 
-/* Buttons */
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

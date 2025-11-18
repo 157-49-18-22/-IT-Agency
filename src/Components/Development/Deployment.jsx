@@ -3,7 +3,7 @@ import { FiSearch, FiFilter, FiChevronDown, FiRefreshCw, FiPlay,
   FiPause, FiExternalLink, FiGitBranch, FiClock, FiUser, FiCheckCircle, 
   FiXCircle, FiAlertCircle, FiGitCommit, FiGitPullRequest, FiPlus } from 'react-icons/fi';
 import './Deployment.css';
-import { projectAPI, deploymentAPI } from '../../services/api';
+import { projectAPI, deploymentAPI, userAPI } from '../../services/api';
 
 // Form component for new deployments
 const NewDeploymentForm = ({ onSubmit, onCancel, projects }) => {
@@ -31,22 +31,23 @@ const NewDeploymentForm = ({ onSubmit, onCancel, projects }) => {
     setError('');
     
     try {
-      // Basic validation
-      if (!formData.projectId) {
-        throw new Error('Please select a project');
-      }
+      // Basic validation - only check for branch, project is now optional
       if (!formData.branch) {
         throw new Error('Branch is required');
       }
       
-      // Call the API
-      await deploymentAPI.create({
+      // Prepare deployment data
+      const deploymentData = {
         ...formData,
-        // Add any additional fields required by your API
+        // Only include projectId if it exists
+        ...(formData.projectId ? { projectId: formData.projectId } : {}),
         status: 'pending',
         deployedBy: 'current-user-id', // You'll want to get this from auth context
         startedAt: new Date().toISOString()
-      });
+      };
+      
+      // Call the API
+      await deploymentAPI.create(deploymentData);
       
       // Call the success callback
       onSubmit();
@@ -76,15 +77,18 @@ const NewDeploymentForm = ({ onSubmit, onCancel, projects }) => {
               name="projectId"
               value={formData.projectId}
               onChange={handleChange}
-              required
               disabled={loading}
             >
               <option value="">Select a project</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
+              {Array.isArray(projects) && projects.length > 0 ? (
+                projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No projects available</option>
+              )}
             </select>
           </div>
           
@@ -185,30 +189,124 @@ const Deployment = () => {
   const [sortBy, setSortBy] = useState('recent');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Fetch deployments and projects
+  // Fetch deployments, projects, and users
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('Fetching deployments, projects, and users...');
         
-        // Fetch deployments
-        const [deploymentsRes, projectsRes] = await Promise.all([
-          deploymentAPI.getAll(),
-          projectAPI.getAll()
+        // Fetch deployments, projects, and users
+        const [deploymentsRes, projectsRes, usersRes] = await Promise.all([
+          deploymentAPI.getAll().catch(err => {
+            console.error('Error fetching deployments:', err);
+            return { data: [] }; // Return empty array if there's an error
+          }),
+          projectAPI.getAll().catch(err => {
+            console.error('Error fetching projects:', err);
+            return { data: [] }; // Return empty array if there's an error
+          }),
+          userAPI.getAll().catch(err => {
+            console.error('Error fetching users:', err);
+            return { data: [] }; // Return empty array if there's an error
+          })
         ]);
         
-        if (deploymentsRes.data) {
-          setDeployments(deploymentsRes.data);
-          setFilteredDeployments(deploymentsRes.data);
+        console.log('Deployments API response:', deploymentsRes);
+        console.log('Projects API response:', projectsRes);
+        
+        // Log the raw data received
+        // Ensure we have valid data for projects
+        const projectsData = Array.isArray(projectsRes?.data) 
+          ? projectsRes.data 
+          : (projectsRes?.data?.data || []);
+        
+        console.log('Deployments data:', deploymentsRes?.data);
+        console.log('Projects data:', projectsData);
+        console.log('Users data:', usersRes?.data);
+        
+        // Set projects state
+        setProjects(projectsData);
+        
+        if (deploymentsRes && deploymentsRes.data) {
+          console.log('Raw deployments data:', deploymentsRes.data);
+          // Map the deployment data to match the expected format
+          const formattedDeployments = deploymentsRes.data.map(deploy => {
+            // Handle project name
+            let projectName = 'No Project';
+            if (deploy.project) {
+              projectName = deploy.project.name;
+            } else if (deploy.projectId) {
+              const project = projectsData?.find(p => p.id === deploy.projectId);
+              projectName = project?.name || 'Unknown Project';
+            }
+            
+            // Handle user name
+            let deployedByName = 'Unknown User';
+            if (deploy.deployedByUser) {
+              deployedByName = deploy.deployedByUser.name;
+            } else if (deploy.deployedBy) {
+              const user = usersRes.data?.find(u => u.id === deploy.deployedBy);
+              deployedByName = user?.name || `User ${deploy.deployedBy}`;
+            }
+            
+            // Calculate duration if start and end times are available
+            let duration = 'N/A';
+            if (deploy.startedAt && deploy.completedAt) {
+              const start = new Date(deploy.startedAt);
+              const end = new Date(deploy.completedAt);
+              const diffMs = end - start;
+              const diffMins = Math.floor((diffMs / 1000) / 60);
+              const diffSecs = Math.floor((diffMs / 1000) % 60);
+              duration = `${diffMins}m ${diffSecs}s`;
+            } else if (deploy.startedAt) {
+              duration = 'In Progress';
+            }
+            
+            // Normalize status values to match frontend expectations
+            const normalizedStatus = deploy.status === 'in_progress' ? 'in-progress' : (deploy.status || 'pending');
+            
+            const deployment = {
+              id: deploy.id,
+              project: projectName,
+              branch: deploy.branch || 'main',
+              commit: deploy.commitHash || 'N/A',
+              commitMessage: deploy.commitMessage || 'No commit message',
+              status: normalizedStatus,
+              environment: deploy.environment || 'development',
+              deployedBy: deployedByName,
+              deployedAt: new Date(deploy.startedAt || new Date()),
+              duration: duration,
+              progress: normalizedStatus === 'in-progress' ? 50 : 100,
+              url: `https://${deploy.environment || 'dev'}.example.com`
+            };
+            console.log('Formatted deployment:', deployment);
+            return deployment;
+          });
+          
+          console.log('Setting deployments:', formattedDeployments);
+          setDeployments(formattedDeployments);
+          setFilteredDeployments(formattedDeployments);
+        } else {
+          console.log('No deployments data received');
+          setDeployments([]);
+          setFilteredDeployments([]);
         }
         
-        if (projectsRes.data) {
+        if (projectsRes && projectsRes.data) {
+          console.log('Setting projects:', projectsRes.data);
           setProjects(projectsRes.data);
+        } else {
+          console.log('No projects data received');
+          setProjects([]);
         }
         
       } catch (err) {
         console.error('Error fetching data:', err);
-        // Handle error (show toast/notification)
+        // Reset states on error
+        setDeployments([]);
+        setFilteredDeployments([]);
+        setProjects([]);
       } finally {
         setLoading(false);
       }

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { FiCode, FiGitBranch, FiClock, FiUser, FiAlertCircle, FiCheckCircle, FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiEye } from 'react-icons/fi';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Prism as SyntaxHighlighter } from 'prism-react-renderer';
 import './Code.css';
 import { codeAPI } from '../../services/api';
 
 const Code = () => {
+  // State declarations at the top
+  // State declarations at the top
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
   const [files, setFiles] = useState([
     {
       id: 1,
@@ -73,67 +79,143 @@ export default App;`,
     language: 'javascript'
   });
 
-  // Fetch code files and set active file
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        // Simulate API call with a timeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // If you want to fetch from API, uncomment this:
-        // const response = await codeAPI.getAll();
-        // setFiles(response.data);
-        
-        // For now, use the mock data already in state
-        if (files.length > 0 && !activeFile) {
-          setActiveFile(files[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching files:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchFiles();
-    
-    // Cleanup function
-    return () => {
-      // Any cleanup code if needed
-    };
-  }, [files, activeFile]);
+  // Fetch files function is defined inside the useEffect
 
   const handleFileSelect = (file) => {
     setActiveFile(file);
   };
 
-  const handleFileUpdate = (content) => {
-    setFiles(prevFiles => 
-      prevFiles.map(file => 
-        file.id === activeFile.id ? { ...file, content, lastUpdated: new Date().toISOString() } : file
-      )
-    );
-    setActiveFile(prevFile => ({...prevFile, content, lastUpdated: new Date().toISOString()}));
+  const handleFileUpdate = async (content) => {
+    if (!activeFile) return;
+    
+    try {
+      const updatedFile = {
+        ...activeFile,
+        content,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Update local state immediately for better UX
+      setFiles(prevFiles => 
+        prevFiles.map(file => 
+          file.id === activeFile.id ? updatedFile : file
+        )
+      );
+      setActiveFile(updatedFile);
+      
+      // Call API to update the file
+      await codeAPI.update(activeFile.id, { content });
+      
+      // Show success message
+      toast.success('File saved successfully!');
+    } catch (error) {
+      console.error('Error updating file:', error);
+      toast.error('Failed to save file. Please try again.');
+      
+      // Revert local state on error
+      setActiveFile(prevFile => ({
+        ...prevFile,
+        content: activeFile.content // Revert to previous content
+      }));
+    }
   };
 
-  const handleCreateFile = () => {
-    const newId = Math.max(0, ...files.map(f => f.id)) + 1;
-    const extension = newFile.language === 'javascript' ? 'js' : newFile.language;
-    const fileName = newFile.name.endsWith(`.${extension}`) ? newFile.name : `${newFile.name}.${extension}`;
-    
-    const file = {
-      id: newId,
-      name: fileName,
-      content: newFile.content || `// New ${newFile.language} file\n`,
-      language: newFile.language,
-      lastUpdated: new Date().toISOString(),
-      updatedBy: 'Current User'
-    };
+  const handleCreateFile = async () => {
+    if (!newFile.name.trim()) {
+      setError('File name is required');
+      return;
+    }
 
-    setFiles([...files, file]);
-    setActiveFile(file);
-    setNewFile({ name: '', content: '', language: 'javascript' });
-    setIsNewFileModalOpen(false);
+    // Basic validation for file name
+    const invalidChars = /[<>:"\/\\|?*\x00-\x1F]/g;
+    if (invalidChars.test(newFile.name)) {
+      setError('File name contains invalid characters');
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const extension = newFile.language === 'javascript' ? 'js' : newFile.language;
+      const fileName = newFile.name.endsWith(`.${extension}`) 
+        ? newFile.name 
+        : `${newFile.name}.${extension}`;
+      
+      // Prepare the data according to the backend's expected format
+      const fileData = {
+        name: fileName,  // Required field
+        content: newFile.content || `// New ${newFile.language} file\n`,
+        language: newFile.language.toLowerCase(), // Ensure lowercase language
+        path: '/src'
+      };
+      
+      // Get project ID from URL or use a default value (1 for now)
+      const pathSegments = window.location.pathname.split('/');
+      let projectId = 1; // Default project ID if not found in URL
+      
+      // Try to get project ID from URL
+      const urlProjectId = pathSegments[pathSegments.length - 1];
+      if (urlProjectId && !isNaN(parseInt(urlProjectId, 10))) {
+        projectId = parseInt(urlProjectId, 10);
+      }
+      
+      // Always include projectId as it's required by the backend
+      fileData.projectId = projectId;
+      
+      console.log('Creating file with data:', fileData);
+      
+      // Call the API to create the file
+      const response = await codeAPI.create(fileData);
+      
+      console.log('API Response:', response);
+      
+      if (response.data) {
+        // Format the new file data to match the frontend's expected structure
+        const newFileData = {
+          id: response.data.id || Date.now(),
+          name: response.data.name,
+          content: response.data.content,
+          language: response.data.language,
+          path: response.data.path || '/src',
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'Current User',
+          branch: 'main',
+          issues: 0
+        };
+        
+        // Update local state with the new file
+        setFiles(prevFiles => [...prevFiles, newFileData]);
+        setActiveFile(newFileData);
+        setNewFile({ name: '', content: '', language: 'javascript' });
+        setIsNewFileModalOpen(false);
+        
+        // Show success message
+        toast.success('File created successfully!');
+      }
+    } catch (error) {
+      console.error('Error creating file:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      let errorMessage = 'Failed to create file. Please try again.';
+      
+      if (error.response?.data?.errors) {
+        // Handle validation errors from backend
+        errorMessage = error.response.data.errors.map(err => err.msg).join(' ');
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteFile = (id) => {
@@ -192,6 +274,58 @@ export default App;`,
     }
   };
 
+  // Fetch files when component mounts
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        setIsLoading(true);
+        // Get project ID from URL or use a default value (1 for now)
+        const pathSegments = window.location.pathname.split('/');
+        let projectId = 1; // Default project ID if not found in URL
+        
+        // Try to get project ID from URL
+        const urlProjectId = pathSegments[pathSegments.length - 1];
+        if (urlProjectId && !isNaN(parseInt(urlProjectId, 10))) {
+          projectId = parseInt(urlProjectId, 10);
+        }
+        
+        // Fetch files for the current project
+        const response = await codeAPI.getByProject(projectId);
+        
+        if (response.data && response.data.length > 0) {
+          // Format the files to match the expected structure
+          const formattedFiles = response.data.map(file => ({
+            id: file.id,
+            name: file.name,
+            content: file.content || '',
+            language: file.language || 'javascript',
+            path: file.path || '/src',
+            lastUpdated: file.updatedAt || new Date().toISOString(),
+            updatedBy: file.updatedBy || 'Current User',
+            branch: file.branch || 'main',
+            issues: file.issues || 0
+          }));
+          
+          setFiles(formattedFiles);
+          if (!activeFile) {
+            setActiveFile(formattedFiles[0]);
+          }
+        } else {
+          // If no files found, keep the default files
+          setError('No files found for this project.');
+        }
+      } catch (error) {
+        console.error('Error fetching files:', error);
+        setError('Failed to load files. Please try again later.');
+        // Keep the existing files in state instead of resetting
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, [activeFile]); // Add activeFile to dependencies to prevent unnecessary re-fetches
+
   if (isLoading) {
     return (
       <div className="code-loading">
@@ -203,6 +337,17 @@ export default App;`,
 
   return (
     <div className="code-container">
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       {/* New File Modal */}
       {isNewFileModalOpen && (
         <div className="modal-overlay">
@@ -246,17 +391,39 @@ export default App;`,
             <div className="form-actions">
               <button 
                 className="btn btn-secondary" 
-                onClick={() => setIsNewFileModalOpen(false)}
+                onClick={() => {
+                  setIsNewFileModalOpen(false);
+                  setError(null);
+                }}
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button 
                 className="btn btn-primary" 
                 onClick={handleCreateFile}
-                disabled={!newFile.name.trim()}
+                disabled={!newFile.name.trim() || isSubmitting}
               >
-                Create File
+                {isSubmitting ? (
+                  <>
+                    <span className="spinner"></span>
+                    Creating...
+                  </>
+                ) : 'Create File'}
               </button>
+              {error && (
+                <div className="error-message" style={{ 
+                  color: '#ef4444', 
+                  marginTop: '10px', 
+                  padding: '8px', 
+                  backgroundColor: '#fef2f2', 
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  gridColumn: '1 / -1'
+                }}>
+                  {error}
+                </div>
+              )}
             </div>
           </div>
         </div>

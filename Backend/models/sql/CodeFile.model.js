@@ -80,7 +80,12 @@ const CodeFile = sequelize.define('CodeFile', {
     withTrashed: {
       paranoid: false
     }
-  }
+  },
+  tableName: 'codefiles',
+  timestamps: true,
+  paranoid: true,
+  underscored: false,
+  freezeTableName: true
 });
 
 // Add associations

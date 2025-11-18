@@ -23,9 +23,16 @@ const sequelize = new Sequelize(
   }
 );
 
+// Import the Deployment model first
+const Deployment = require('./deployment.model');
+
+// Add it to the db object
+db.Deployment = Deployment;
+
 // Import all models from sql directory
 const modelDir = path.join(__dirname, 'sql');
 
+// Load all models from the sql directory
 fs.readdirSync(modelDir)
   .filter(file => {
     return (
@@ -54,5 +61,37 @@ Object.keys(db).forEach(modelName => {
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+
+// Add Deployment model to db object
+db.Deployment = Deployment;
+
+// Set up associations
+if (db.Project && db.Deployment) {
+  // A Project has many Deployments
+  db.Project.hasMany(db.Deployment, {
+    foreignKey: 'projectId',
+    as: 'deployments'
+  });
+  
+  // A Deployment belongs to a Project
+  db.Deployment.belongsTo(db.Project, {
+    foreignKey: 'projectId',
+    as: 'project'
+  });
+}
+
+if (db.User && db.Deployment) {
+  // A User has many Deployments
+  db.User.hasMany(db.Deployment, {
+    foreignKey: 'deployedBy',
+    as: 'deployments'
+  });
+  
+  // A Deployment belongs to a User (who deployed it)
+  db.Deployment.belongsTo(db.User, {
+    foreignKey: 'deployedBy',
+    as: 'deployedByUser'
+  });
+}
 
 module.exports = db;

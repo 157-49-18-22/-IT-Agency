@@ -1,4 +1,4 @@
-const { CodeFile } = require('../models/sql');
+const { CodeFile, User } = require('../models/sql');
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 
@@ -23,8 +23,8 @@ exports.getProjectCodeFiles = async (req, res) => {
     const codeFiles = await CodeFile.findAll({
       where,
       include: [
-        { model: req.db.User, as: 'creator', attributes: ['id', 'name', 'email'] },
-        { model: req.db.User, as: 'updater', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'updater', attributes: ['id', 'name', 'email'] }
       ],
       order: [['updatedAt', 'DESC']]
     });
@@ -45,8 +45,8 @@ exports.getCodeFile = async (req, res) => {
     
     const codeFile = await CodeFile.findByPk(id, {
       include: [
-        { model: req.db.User, as: 'creator', attributes: ['id', 'name', 'email'] },
-        { model: req.db.User, as: 'updater', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'updater', attributes: ['id', 'name', 'email'] }
       ]
     });
     

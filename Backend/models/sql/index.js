@@ -20,8 +20,15 @@ const StageTransition = require('./StageTransition.model');
 const Prototype = require('./Prototype.model');
 const Wireframe = require('./Wireframe.model');
 const Mockup = require('./Mockup.model');
+const CodeFile = require('./CodeFile.model');
+const Deployment = require('../deployment.model');
 
 // Define relationships
+
+// CodeFile relationships
+CodeFile.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+CodeFile.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+CodeFile.belongsTo(User, { foreignKey: 'updatedBy', as: 'updater' });
 
 // User relationships
 User.hasMany(Project, { foreignKey: 'projectManagerId', as: 'managedProjects' });
@@ -42,6 +49,13 @@ User.hasMany(Wireframe, { foreignKey: 'updatedBy', as: 'updatedWireframes' });
 User.hasMany(Mockup, { foreignKey: 'createdBy', as: 'createdMockups' });
 User.hasMany(Mockup, { foreignKey: 'approvedBy', as: 'approvedMockups' });
 
+// CodeFile relationships
+User.hasMany(CodeFile, { foreignKey: 'createdBy', as: 'createdCodeFiles' });
+User.hasMany(CodeFile, { foreignKey: 'updatedBy', as: 'updatedCodeFiles' });
+User.hasMany(Deployment, { foreignKey: 'deployedBy', as: 'deployments' });
+
+Project.hasMany(CodeFile, { foreignKey: 'projectId', as: 'codeFiles' });
+
 // Client relationships
 Client.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
 
@@ -58,6 +72,8 @@ Project.hasMany(CalendarEvent, { foreignKey: 'projectId', as: 'events' });
 Project.hasMany(Prototype, { foreignKey: 'projectId', as: 'prototypes' });
 Project.hasMany(Wireframe, { foreignKey: 'projectId', as: 'wireframes' });
 Project.hasMany(Mockup, { foreignKey: 'projectId', as: 'mockups' });
+Project.hasMany(CodeFile, { foreignKey: 'projectId', as: 'files' });
+Project.hasMany(Deployment, { foreignKey: 'projectId', as: 'deployments' });
 
 // Task relationships
 Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
@@ -150,5 +166,7 @@ module.exports = {
   StageTransition,
   Prototype,
   Wireframe,
-  Mockup
+  Mockup,
+  CodeFile,
+  Deployment
 };
