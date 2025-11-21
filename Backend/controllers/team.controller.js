@@ -1,5 +1,6 @@
-const { User } = require('../models');
-const { Op } = require('sequelize');
+const { User } = require('../models/sql');
+const { Op, Sequelize } = require('sequelize');
+const sequelize = require('../config/database');
 
 /**
  * Get all team members with department counts
@@ -20,7 +21,7 @@ exports.getTeamMembers = async (req, res) => {
       where: { status: 'active' },
       attributes: [
         'department',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
       ],
       group: ['department'],
       raw: true
@@ -56,6 +57,18 @@ exports.addTeamMember = async (req, res) => {
   try {
     const { name, email, role, department, phone } = req.body;
 
+    // Define valid roles
+    const validRoles = ['Admin', 'Project Manager', 'Developer', 'Designer', 'Tester', 'Client'];
+    
+    // Validate role
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+        validRoles: validRoles
+      });
+    }
+
     // Check if user with email already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -65,16 +78,27 @@ exports.addTeamMember = async (req, res) => {
       });
     }
 
+    // Generate a default password (you might want to implement a proper password generation logic)
+    const defaultPassword = 'welcome123'; // In a real app, generate a secure random password and send it via email
+    
     // Create new team member
     const newMember = await User.create({
       name,
       email,
+      password: defaultPassword, // Add the default password
       role,
       department,
       phone,
       status: 'active',
       joinDate: new Date(),
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+      preferences: {
+        theme: 'light',
+        pushNotifications: true,
+        emailNotifications: true
+      },
+      skills: [],
+      socialLinks: {}
     });
 
     // Remove sensitive data from response

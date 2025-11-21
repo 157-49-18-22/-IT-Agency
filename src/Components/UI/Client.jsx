@@ -7,7 +7,16 @@ import 'react-toastify/dist/ReactToastify.css';
 const Client = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-  const [clients, setClients] = useState([]);
+  // Ensure clients is always an array, even if the API returns null/undefined
+  const [clients, setClients] = useState(() => {
+    try {
+      const savedClients = localStorage.getItem('cachedClients');
+      return savedClients ? JSON.parse(savedClients) : [];
+    } catch (error) {
+      console.error('Error parsing cached clients:', error);
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -23,11 +32,29 @@ const Client = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const clientsPerPage = 10;
+  
+  // Create axios instance with auth header
+  const api = axios.create({
+    baseURL: 'http://localhost:5000/api',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  });
 
   // Fetch clients from API
   const fetchClients = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/clients', {
+      // Ensure we have the latest token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      const response = await api.get('/clients', {
         params: {
           page: currentPage,
           limit: clientsPerPage,
@@ -36,7 +63,53 @@ const Client = () => {
           search: searchTerm
         }
       });
-      setClients(response.data);
+      
+      // Log the response for debugging
+      console.log('API Response:', response.data);
+      
+      // Handle the response based on its structure
+      let clientsData = [];
+      
+      if (Array.isArray(response.data)) {
+        // If response.data is an array, use it directly
+        clientsData = response.data;
+      } else if (response.data && Array.isArray(response.data.clients)) {
+        // If response.data has a clients array, use that
+        clientsData = response.data.clients;
+      } else if (response.data && Array.isArray(response.data.rows)) {
+        // If response.data has a rows array (from findAndCountAll), use that
+        clientsData = response.data.rows;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // If response.data has a data array, use that
+        clientsData = response.data.data;
+      }
+      
+      // Ensure we have a valid array
+      clientsData = Array.isArray(clientsData) ? clientsData : [];
+      
+      // Add default values for any missing required fields
+      const processedClients = clientsData.map(client => ({
+        id: client.id || Date.now() + Math.random(),
+        name: client.name || 'Unnamed Client',
+        contact: client.contact || 'N/A',
+        email: client.email || 'no-email@example.com',
+        phone: client.phone || 'N/A',
+        company: client.company || 'N/A',
+        status: client.status || 'Active',
+        address: client.address || 'N/A',
+        logo: client.logo || '👤',
+        projects: client.projects || 0,
+        ...client // Spread any additional properties
+      }));
+      
+      setClients(processedClients);
+      
+      // Cache the clients data
+      try {
+        localStorage.setItem('cachedClients', JSON.stringify(processedClients));
+      } catch (cacheError) {
+        console.error('Error caching clients:', cacheError);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -60,19 +133,18 @@ const Client = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Ensure we have the latest token
+      api.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
       if (editingClient) {
         // Update existing client
-        const response = await axios.put(
-          `http://localhost:5000/api/clients/${editingClient.id}`,
-          formData
-        );
+        const response = await api.put(`/clients/${editingClient.id}`, formData);
         setClients(clients.map(client => 
           client.id === editingClient.id ? response.data : client
         ));
         toast.success('Client updated successfully!');
       } else {
         // Add new client
-        const response = await axios.post('http://localhost:5000/api/clients', formData);
+        const response = await api.post('/clients', formData);
         setClients([response.data, ...clients]);
         toast.success('Client added successfully!');
       }
@@ -130,13 +202,24 @@ const Client = () => {
     setCurrentPage(pageNumber);
   };
 
-  const filteredClients = [...clients]
-    .filter(client => {
-      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'All Status' || client.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    })
+  // Ensure we're always working with an array
+  const clientsArray = Array.isArray(clients) ? clients : [];
+  
+  const filteredClients = clientsArray.filter(client => {
+    if (!client || typeof client !== 'object') return false;
+    
+    const searchTermLower = searchTerm.toLowerCase();
+    const nameMatch = client.name && typeof client.name === 'string' 
+      ? client.name.toLowerCase().includes(searchTermLower)
+      : false;
+    const emailMatch = client.email && typeof client.email === 'string'
+      ? client.email.toLowerCase().includes(searchTermLower)
+      : false;
+      
+    const matchesSearch = nameMatch || emailMatch;
+    const matchesStatus = statusFilter === 'All Status' || client.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  })
     .sort((a, b) => {
       switch (sortBy) {
         case 'name-asc':
@@ -318,39 +401,91 @@ const Client = () => {
       </div>
 
       {loading ? (
-        <div className="loading">Loading clients...</div>
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading clients...</p>
+        </div>
       ) : filteredClients.length === 0 ? (
-        <div className="no-results">No clients found matching your criteria.</div>
+        <div className="no-results">
+          <div className="no-results-icon">🔍</div>
+          <h3>No clients found</h3>
+          <p>Try adjusting your search or filter criteria</p>
+          <button 
+            className="btn-primary"
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('All Status');
+            }}
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="client-grid">
-        {filteredClients.map(client => (
-          <div key={client.id} className="client-card">
-            <div className="client-logo">{client.logo}</div>
-            <div className="client-details">
-              <h3>{client.name}</h3>
-              <p className="client-contact">👤 {client.contact}</p>
-              <p className="client-email">✉️ {client.email}</p>
-              <p className="client-phone">📞 {client.phone || 'N/A'}</p>
-              <div className="client-meta">
-                <span className="project-count">📊 {client.projects || 0} Projects</span>
-                <span className={`status-badge ${client.status ? client.status.toLowerCase() : 'active'}`}>
-                  {client.status || 'Active'}
-                </span>
+          {filteredClients.map(client => (
+            <div key={client.id} className="client-card">
+              <div className="client-logo" title={client.name}>
+                {client.logo || client.name.charAt(0).toUpperCase()}
               </div>
-            </div>
-            <div className="client-actions">
-              <button 
-                className="btn-icon" 
-                title="Edit"
-                onClick={() => handleEdit(client)}
-              >
-                ✏️
-              </button>
-              <button 
-                className="btn-icon" 
-                title="Delete"
-                onClick={() => handleDelete(client.id)}
-                style={{ color: '#e53e3e' }}
+              <div className="client-details">
+                <h3 title={client.name}>
+                  {client.name || 'Unnamed Client'}
+                </h3>
+                {client.contact && (
+                  <p className="client-contact" title="Contact">
+                    <span className="icon">👤</span> 
+                    {client.contact}
+                  </p>
+                )}
+                {client.email && (
+                  <p className="client-email" title="Email">
+                    <span className="icon">✉️</span> 
+                    <a href={`mailto:${client.email}`}>{client.email}</a>
+                  </p>
+                )}
+                {client.phone && (
+                  <p className="client-phone" title="Phone">
+                    <span className="icon">📞</span> 
+                    <a href={`tel:${client.phone.replace(/[^0-9+]/g, '')}`}>
+                      {client.phone}
+                    </a>
+                  </p>
+                )}
+                {client.company && (
+                  <p className="client-company" title="Company">
+                    <span className="icon">🏢</span> 
+                    {client.company}
+                  </p>
+                )}
+                <div className="client-meta">
+                  {client.projects !== undefined && (
+                    <span className="project-count" title="Projects">
+                      📊 {client.projects} {client.projects === 1 ? 'Project' : 'Projects'}
+                    </span>
+                  )}
+                  <span 
+                    className={`status-badge ${(client.status || 'active').toLowerCase()}`}
+                    title={`Status: ${client.status || 'Active'}`}
+                  >
+                    {client.status || 'Active'}
+                  </span>
+                </div>
+              </div>
+              <div className="client-actions">
+                <button 
+                  className="btn-icon" 
+                  title="Edit"
+                  onClick={() => handleEdit(client)}
+                  aria-label={`Edit ${client.name || 'client'}`}
+                >
+                  ✏️
+                </button>
+                <button 
+                  className="btn-icon" 
+                  title="Delete"
+                  onClick={() => handleDelete(client.id)}
+                  aria-label={`Delete ${client.name || 'client'}`}
+                  style={{ color: '#e53e3e' }}
               >
                 🗑️
               </button>

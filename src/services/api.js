@@ -89,11 +89,12 @@ export const clientAPI = {
 
 // Team APIs
 export const teamAPI = {
-  getAll: (params) => api.get('/team', { params }),
-  getById: (id) => api.get(`/team/${id}`),
-  addMember: (data) => api.post('/team', data),
-  removeMember: (id) => api.delete(`/team/${id}`),
-  updateRole: (id, role) => api.put(`/team/${id}/role`, { role }),
+  getAll: (params) => api.get('/teams', { params }),
+  getById: (id) => api.get(`/teams/${id}`),
+  addMember: (data) => api.post('/teams', data),
+  updateMember: (id, data) => api.put(`/teams/${id}`, data),
+  removeMember: (id) => api.delete(`/teams/${id}`),
+  updateRole: (id, role) => api.put(`/teams/${id}/role`, { role }),
 };
 
 // Approval APIs

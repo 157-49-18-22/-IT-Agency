@@ -35,8 +35,8 @@ const Team = () => {
   const fetchTeamMembers = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.getAll();
-      const membersData = response.data || [];
+      const response = await teamAPI.getAll();
+      const membersData = response.data?.data?.members || [];
       
       setMembers(membersData);
       setFilteredMembers(membersData);
@@ -53,14 +53,40 @@ const Team = () => {
   };
 
   const handleDeleteMember = async (id) => {
-    if (window.confirm('Remove this team member?')) {
+    if (window.confirm('Are you sure you want to remove this team member?')) {
       try {
-        await userAPI.delete(id);
-        fetchTeamMembers();
+        await teamAPI.removeMember(id);
+        // Update the members list after deletion
+        const updatedMembers = members.filter(member => member.id !== id);
+        setMembers(updatedMembers);
+        setFilteredMembers(updatedMembers);
+        updateDepartmentCounts(updatedMembers);
+        alert('Team member removed successfully!');
       } catch (error) {
-        alert('Error removing member');
+        console.error('Error removing team member:', error);
+        alert('Failed to remove team member. Please try again.');
       }
     }
+  };
+
+  // Handle editing a team member
+  const handleEditMember = (member) => {
+    setFormData({
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department,
+      phone: member.phone || '',
+      status: member.status || 'active',
+      id: member.id
+    });
+    setShowAddMemberModal(true);
+  };
+
+  // Reset form when opening the add member modal
+  const openAddMemberModal = () => {
+    resetForm();
+    setShowAddMemberModal(true);
   };
 
   if (loading) {
@@ -197,30 +223,109 @@ const Team = () => {
 
       // Create member data
       const newMember = {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        department: formData.department,
+        phone: formData.phone || '',
+        status: 'active',
         joinDate: new Date().toISOString().split('T')[0],
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
       };
 
-      // Call API to add member
-      const response = await userAPI.create(newMember);
+      // Call the API to add the team member
+      const response = await teamAPI.addMember(newMember);
       
-      // Update local state
-      setMembers(prev => [...prev, response.data]);
-      setFilteredMembers(prev => [...prev, response.data]);
-      
-      // Update department counts
-      updateDepartmentCounts([...members, response.data]);
-      
-      // Close modal and reset form
-      setShowAddMemberModal(false);
-      resetForm();
-      
-    } catch (err) {
-      console.error('Error adding team member:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to add team member');
+      if (response.data) {
+        // Update the members list with the new member
+        const updatedMembers = [...members, response.data];
+        setMembers(updatedMembers);
+        setFilteredMembers(updatedMembers);
+        
+        // Update department counts
+        updateDepartmentCounts(updatedMembers);
+        
+        // Close the modal and reset the form
+        setShowAddMemberModal(false);
+        resetForm();
+        
+        // Show success message
+        alert('Team member added successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to add team member');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle updating an existing team member
+  const handleUpdateMember = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      if (!formData.id) throw new Error('Invalid member ID');
+      
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.role || !formData.department) {
+        throw new Error('All fields are required');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      // Prepare updated member data
+      const updatedMember = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        department: formData.department,
+        phone: formData.phone || '',
+        status: formData.status || 'active'
+      };
+
+      // Call the API to update the team member
+      const response = await teamAPI.updateMember(formData.id, updatedMember);
+      
+      if (response.data) {
+        // Update the members list with the updated member
+        const updatedMembers = members.map(member => 
+          member.id === formData.id ? { ...member, ...response.data } : member
+        );
+        
+        setMembers(updatedMembers);
+        setFilteredMembers(updatedMembers);
+        
+        // Update department counts
+        updateDepartmentCounts(updatedMembers);
+        
+        // Close the modal and reset the form
+        setShowAddMemberModal(false);
+        resetForm();
+        
+        // Show success message
+        alert('Team member updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating team member:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to update team member');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle form submission (add or update)
+  const handleSubmit = async (e) => {
+    if (formData.id) {
+      await handleUpdateMember(e);
+    } else {
+      await handleAddMember(e);
     }
   };
 
@@ -247,7 +352,7 @@ const Team = () => {
         </div>
         <button 
           className="add-member-btn"
-          onClick={() => setShowAddMemberModal(true)}
+          onClick={openAddMemberModal}
         >
           <FiPlus /> Add Member
         </button>
@@ -324,15 +429,23 @@ const Team = () => {
                 <div className="member-info">
                   <h3>{member.name}</h3>
                   <p className="member-role">{member.role}</p>
-                  <span className={`member-department ${member.department.toLowerCase()}`}>
-                    {member.department}
+                  <span className={`member-department ${member.department ? member.department.toLowerCase() : ''}`}>
+                    {member.department || 'No Department'}
                   </span>
                 </div>
                 <div className="member-actions">
-                  <button className="icon-btn" title="Edit">
+                  <button 
+                    className="icon-btn" 
+                    title="Edit"
+                    onClick={() => handleEditMember(member)}
+                  >
                     <FiEdit2 />
                   </button>
-                  <button className="icon-btn" title="Delete">
+                  <button 
+                    className="icon-btn" 
+                    title="Delete"
+                    onClick={() => handleDeleteMember(member.id)}
+                  >
                     <FiTrash2 />
                   </button>
                 </div>
@@ -364,7 +477,7 @@ const Team = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Add New Team Member</h3>
+              <h3>{formData.id ? 'Edit Team Member' : 'Add New Team Member'}</h3>
               <button 
                 className="close-btn"
                 onClick={() => setShowAddMemberModal(false)}
@@ -372,7 +485,7 @@ const Team = () => {
                 &times;
               </button>
             </div>
-            <form onSubmit={handleAddMember}>
+            <form onSubmit={handleSubmit}>
               {error && <div className="error-message">{error}</div>}
               <div className="form-group">
                 <label>Full Name</label>
@@ -408,14 +521,20 @@ const Team = () => {
               </div>
               <div className="form-group">
                 <label>Role</label>
-                <input 
-                  type="text" 
+                <select 
                   name="role"
                   value={formData.role}
                   onChange={handleInputChange}
-                  placeholder="Enter role" 
-                  required 
-                />
+                  required
+                >
+                  <option value="">Select Role</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Project Manager">Project Manager</option>
+                  <option value="Developer">Developer</option>
+                  <option value="Designer">Designer</option>
+                  <option value="Tester">Tester</option>
+                  <option value="Client">Client</option>
+                </select>
               </div>
               <div className="form-group">
                 <label>Department</label>
@@ -450,7 +569,7 @@ const Team = () => {
                   className="btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Adding...' : 'Add Member'}
+                  {isSubmitting ? 'Saving...' : (formData.id ? 'Update Member' : 'Add Member')}
                 </button>
               </div>
             </form>
