@@ -7,8 +7,8 @@ const {
   updateTestCase,
   deleteTestCase,
   addTestResult
-} = require('../controllers/testCase.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
+} = require('../../controllers/sql/testCase.controller');
+const { protect, authorize } = require('../../middleware/auth.middleware');
 
 // Include other resource routers
 const testResultRouter = require('./testResult.routes');

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { 
   FiSearch, 
   FiFilter, 
@@ -12,8 +14,58 @@ import {
   FiXCircle,
   FiPlusCircle
 } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './Cases.css';
-import { testCaseAPI } from '../../services/api';
+
+// Initial empty test cases array
+const initialTestCases = [];
+
+// Create a mock API service with access to component state
+export const createMockAPI = (testCases, setTestCases) => ({
+  getAll: async (params = {}) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    let filtered = [...testCases];
+    
+    if (params.projectId) {
+      filtered = filtered.filter(tc => tc.projectId === parseInt(params.projectId));
+    }
+    
+    if (params._sort && params._order) {
+      filtered.sort((a, b) => {
+        const aVal = a[params._sort];
+        const bVal = b[params._sort];
+        if (aVal < bVal) return params._order === 'asc' ? -1 : 1;
+        if (aVal > bVal) return params._order === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return { data: filtered };
+  },
+  
+  create: async (data) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const newTestCase = {
+      id: Date.now(), // Use timestamp as ID to ensure uniqueness
+      ...data,
+      status: 'not_run',
+      projectId: 1,
+      createdBy: 1,
+      assignedTo: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Update the test cases in the component state
+    const updatedTestCases = [newTestCase, ...testCases];
+    setTestCases(updatedTestCases);
+    
+    return { data: newTestCase };
+  }
+});
+
+// Toast configuration is handled by the main App component
 
 // New Test Case Form Component
 const NewTestCaseForm = ({ onSave, onCancel }) => {
@@ -73,8 +125,6 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
       <h3>Add New Test Case</h3>
       {error && <div className="form-error"><FiAlertCircle /> {error}</div>}
       <form onSubmit={handleSubmit} className="test-case-form">
-        {error && <div className="alert alert-danger">{error}</div>}
-        
         <div className="form-group">
           <label>Title <span className="text-danger">*</span></label>
           <input
@@ -146,6 +196,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             placeholder="Enter test steps, one per line"
             rows="5"
             className="form-control"
+            required
           />
           <small className="text-muted">Each line will be treated as a separate test step</small>
         </div>
@@ -159,6 +210,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             placeholder="Enter expected result"
             rows="3"
             className="form-control"
+            required
           />
         </div>
         
@@ -193,58 +245,142 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
   );
 };
 
-
 const Cases = () => {
-  const [testCases, setTestCases] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const [testCases, setTestCases] = useState(initialTestCases);
+  const [loading, setLoading] = useState(false);
   const [showNewTestCaseForm, setShowNewTestCaseForm] = useState(false);
-  
-  useEffect(() => {
-    const fetchTestCases = async () => {
-      try {
-        const res = await testCaseAPI.getAll();
-        setTestCases(res.data || []);
-      } catch (err) {
-        console.error('Error fetching test cases:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTestCases();
-  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   
-  const handleSaveTestCase = async (newTestCase) => {
+  const fetchTestCases = async () => {
     try {
-      // Format steps if needed
-      const formattedTestCase = {
-        ...newTestCase,
-        steps: newTestCase.steps ? newTestCase.steps.split('\n').map(step => ({
-          step: step.trim(),
-          expected: '' // You can modify this based on your form
-        })) : [],
-        projectId: 1, // Replace with actual project ID
-        createdBy: 1, // Replace with actual user ID from auth context
-        assignedTo: 1, // Replace with actual assigned user ID
-        status: 'not_run',
-        expectedResult: newTestCase.expectedResult || ''
-      };
-
-      const response = await testCaseAPI.create(formattedTestCase);
-      setTestCases(prev => [response.data, ...prev]);
-      setShowNewTestCaseForm(false);
-      return response.data;
-    } catch (err) {
-      console.error('Error saving test case:', err);
-      throw new Error('Failed to save test case');
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('http://localhost:5000/api/test-cases', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch test cases');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Transform the data to match the expected format
+        const formattedTestCases = result.data.map(tc => ({
+          id: tc.id,
+          title: tc.title,
+          description: tc.description,
+          type: tc.type,
+          priority: tc.priority,
+          status: tc.status || 'not_run',
+          steps: tc.steps || [],
+          expectedResult: tc.expectedResult || '',
+          projectId: tc.projectId,
+          createdBy: tc.createdBy,
+          assignedTo: tc.assignedTo,
+          createdAt: tc.createdAt,
+          updatedAt: tc.updatedAt
+        }));
+        
+        setTestCases(formattedTestCases);
+      } else {
+        throw new Error(result.message || 'Failed to load test cases');
+      }
+    } catch (error) {
+      console.error('Error fetching test cases:', error);
+      toast.error(error.message || 'Failed to load test cases');
+      // Fallback to empty array if there's an error
+      setTestCases([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  useEffect(() => {
+    fetchTestCases();
+  }, []);
+  
+  const handleSaveTestCase = async (newTestCase) => {
+    try {
+      // Process steps
+      let stepsArray = [];
+      if (newTestCase.steps) {
+        stepsArray = typeof newTestCase.steps === 'string' 
+          ? newTestCase.steps.split('\n').filter(step => step.trim() !== '')
+          : Array.isArray(newTestCase.steps) 
+            ? newTestCase.steps.filter(step => step && step.trim() !== '')
+            : [];
+      }
 
-  // Test cases will be loaded from the API
+      // Create the test case object for MySQL/Sequelize
+      const testCaseToSave = {
+        title: newTestCase.title || 'Untitled Test Case',
+        description: newTestCase.description || '',
+        type: newTestCase.type || 'functional',
+        priority: newTestCase.priority || 'medium',
+        expectedResult: newTestCase.expectedResult || '',
+        steps: stepsArray.map((step, index) => ({
+          step: `Step ${index + 1}`,
+          expected: step
+        })),
+        status: 'not_run',
+        projectId: currentUser?.projectId || 1,
+        createdBy: currentUser?.id || 1  // Use the numeric user ID for MySQL
+      };
+
+      // Send the request to the backend
+      const response = await fetch('http://localhost:5000/api/test-cases', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(testCaseToSave)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save test case');
+      }
+
+      const savedTestCase = await response.json();
+      
+      // Update the local state with the saved test case from the server
+      setTestCases([savedTestCase.data, ...testCases]);
+      setShowNewTestCaseForm(false);
+      
+      toast.success('Test case created successfully!', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
+    } catch (error) {
+      console.error('Error saving test case:', error);
+      toast.error(`Failed to save test case: ${error.message}`, {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
+    }
+  };
 
   const filteredCases = testCases.filter(testCase => {
     if (!testCase) return false;
@@ -256,6 +392,8 @@ const Cases = () => {
     
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="cases-container">
@@ -304,7 +442,7 @@ const Cases = () => {
                 <option value="all">All Status</option>
                 <option value="passed">Passed</option>
                 <option value="failed">Failed</option>
-                <option value="not-run">Not Run</option>
+                <option value="not_run">Not Run</option>
               </select>
 
               <select 
@@ -316,7 +454,6 @@ const Cases = () => {
                 <option value="functional">Functional</option>
                 <option value="integration">Integration</option>
                 <option value="regression">Regression</option>
-                <option value="smoke">Smoke</option>
               </select>
             </div>
           </div>
@@ -330,28 +467,35 @@ const Cases = () => {
               {filteredCases.map(testCase => (
                 <div key={testCase.id} className="case-card">
                   <div className="case-card-header">
-                    <span className={`case-status ${testCase.status}`}>
-                      {testCase.status === 'passed' ? (
-                        <FiCheck size={14} />
-                      ) : testCase.status === 'failed' ? (
-                        <FiX size={14} />
-                      ) : (
-                        <FiAlertCircle size={14} />
-                      )}
-                      {testCase.status}
-                    </span>
-                    <span className="case-type">{testCase.type}</span>
-                  </div>
-                  <h3>{testCase.title}</h3>
-                  <p className="case-description">{testCase.description}</p>
-                  <div className="case-footer">
-                    <span className="case-steps">{testCase.steps} steps</span>
-                    <div className="case-meta">
-                      <span className="case-assignee">
-                        <FiUser size={14} /> {testCase.assignedTo}
+                    <div className="case-meta-tags">
+                      <span className={`status-badge ${testCase.status || 'not_run'}`}>
+                        {testCase.status === 'passed' ? (
+                          <FiCheck size={14} className="mr-1" />
+                        ) : testCase.status === 'failed' ? (
+                          <FiX size={14} className="mr-1" />
+                        ) : (
+                          <FiAlertCircle size={14} className="mr-1" />
+                        )}
+                        {testCase.status ? testCase.status.replace('_', ' ') : 'Not Run'}
                       </span>
+                      <span className="type-badge">
+                        {testCase.type || 'functional'}
+                      </span>
+                      <span className={`priority-badge ${testCase.priority?.toLowerCase() || 'medium'}`}>
+                        {testCase.priority ? testCase.priority.charAt(0).toUpperCase() + testCase.priority.slice(1) : 'Medium'}
+                      </span>
+                    </div>
+                  </div>
+                  <h3>{testCase.title || 'Untitled Test Case'}</h3>
+                  <p className="case-description">{testCase.description || 'No description provided'}</p>
+                  <div className="case-footer">
+                    <span className="case-steps">
+                      {Array.isArray(testCase.steps) ? testCase.steps.length : 
+                       typeof testCase.steps === 'string' ? 1 : 0} steps
+                    </span>
+                    <div className="case-meta">
                       <span className="case-date">
-                        <FiClock size={14} /> {testCase.lastRun}
+                        <FiClock size={14} /> {testCase.createdAt ? new Date(testCase.createdAt).toLocaleDateString() : 'Unknown date'}
                       </span>
                     </div>
                   </div>

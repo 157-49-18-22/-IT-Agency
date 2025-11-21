@@ -1,17 +1,26 @@
-// Get authentication header with JWT token
+// Get authentication header
 export const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  
-  if (user && user.token) {
-    return { 'x-auth-token': user.token };
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+// Store the authentication token
+export const setAuthToken = (token) => {
+  if (token) {
+    localStorage.setItem('token', token);
   } else {
-    return {};
+    localStorage.removeItem('token');
   }
+};
+
+// Get the authentication token
+export const getAuthToken = () => {
+  return localStorage.getItem('token');
 };
 
 // Check if user is authenticated
 export const isAuthenticated = () => {
-  return localStorage.getItem('user') !== null;
+  return !!getAuthToken();
 };
 
 // Get current user
@@ -22,10 +31,16 @@ export const getCurrentUser = () => {
 
 // Set user data in local storage
 export const setUser = (userData) => {
-  localStorage.setItem('user', JSON.stringify(userData));
+  if (userData) {
+    localStorage.setItem('user', JSON.stringify(userData));
+    if (userData.token) {
+      setAuthToken(userData.token);
+    }
+  }
 };
 
 // Remove user data from local storage
 export const removeUser = () => {
   localStorage.removeItem('user');
+  localStorage.removeItem('token');
 };

@@ -1,5 +1,5 @@
-const db = require('../models');
-const { UAT, User, Project } = db;
+const { sequelize } = require('../config/database');
+const { UAT, User, Project } = require('../models/sql');
 const { Op } = require('sequelize');
 
 // Create a new UAT test case

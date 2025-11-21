@@ -22,16 +22,22 @@ const Wireframe = require('./Wireframe.model');
 const Mockup = require('./Mockup.model');
 const CodeFile = require('./CodeFile.model');
 const Deployment = require('../deployment.model');
+const Bug = require('./Bug.model');
+const BugComment = require('./BugComment.model');
+const UAT = require('./UAT.model');
 
 // Define relationships
 
-// CodeFile relationships
-CodeFile.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-CodeFile.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-CodeFile.belongsTo(User, { foreignKey: 'updatedBy', as: 'updater' });
+// CodeFile relationships - Moved to CodeFile.model.js
+// CodeFile.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+// CodeFile.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// CodeFile.belongsTo(User, { foreignKey: 'updatedBy', as: 'updater' });
 
 // User relationships
 User.hasMany(Project, { foreignKey: 'projectManagerId', as: 'managedProjects' });
+User.hasMany(Bug, { foreignKey: 'reported_by', as: 'reportedBugs' });
+User.hasMany(Bug, { foreignKey: 'assigned_to', as: 'assignedBugs' });
+User.hasMany(BugComment, { foreignKey: 'user_id', as: 'bugComments' });
 User.hasMany(Task, { foreignKey: 'assigneeId', as: 'assignedTasks' });
 User.hasMany(Task, { foreignKey: 'reporterId', as: 'reportedTasks' });
 User.hasMany(Approval, { foreignKey: 'requestedById', as: 'requestedApprovals' });
@@ -42,6 +48,7 @@ User.hasMany(Notification, { foreignKey: 'recipientId', as: 'notifications' });
 User.hasMany(Activity, { foreignKey: 'userId', as: 'activities' });
 User.hasMany(TimeTracking, { foreignKey: 'userId', as: 'timeEntries' });
 User.hasMany(CalendarEvent, { foreignKey: 'organizerId', as: 'organizedEvents' });
+User.hasMany(UAT, { foreignKey: 'createdBy', as: 'createdUATs' });
 User.hasMany(Prototype, { foreignKey: 'createdBy', as: 'createdPrototypes' });
 User.hasMany(Prototype, { foreignKey: 'updatedBy', as: 'updatedPrototypes' });
 User.hasMany(Wireframe, { foreignKey: 'createdBy', as: 'createdWireframes' });
@@ -62,24 +69,29 @@ Client.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
 // Project relationships
 Project.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
 Project.belongsTo(User, { foreignKey: 'projectManagerId', as: 'projectManager' });
-Project.hasMany(Task, { foreignKey: 'projectId', as: 'tasks' });
+Project.hasMany(Bug, { foreignKey: 'project_id', as: 'bugs' });
+// Tasks association is defined in Project.model.js
 Project.hasMany(Approval, { foreignKey: 'projectId', as: 'approvals' });
 Project.hasMany(Deliverable, { foreignKey: 'projectId', as: 'deliverables' });
 Project.hasMany(Message, { foreignKey: 'projectId', as: 'messages' });
 Project.hasMany(Activity, { foreignKey: 'projectId', as: 'activities' });
 Project.hasMany(TimeTracking, { foreignKey: 'projectId', as: 'timeEntries' });
 Project.hasMany(CalendarEvent, { foreignKey: 'projectId', as: 'events' });
+// These associations are now defined in the Project model's associate method
 Project.hasMany(Prototype, { foreignKey: 'projectId', as: 'prototypes' });
 Project.hasMany(Wireframe, { foreignKey: 'projectId', as: 'wireframes' });
-Project.hasMany(Mockup, { foreignKey: 'projectId', as: 'mockups' });
+// Mockup and Tasks associations are defined in Project.model.js
 Project.hasMany(CodeFile, { foreignKey: 'projectId', as: 'files' });
 Project.hasMany(Deployment, { foreignKey: 'projectId', as: 'deployments' });
 
-// Task relationships
-Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Task.belongsTo(User, { foreignKey: 'assigneeId', as: 'assignee' });
-Task.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
+// Task relationships - defined in Task.model.js
+// Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' }); // Defined in Task.model.js
+// Task.belongsTo(User, { foreignKey: 'assigneeId', as: 'assignee' }); // Moved to Task.model.js
+// Task.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' }); // Moved to Task.model.js
 Task.hasMany(TimeTracking, { foreignKey: 'taskId', as: 'timeEntries' });
+
+// UAT relationships
+// Note: UAT associations are defined in the UAT model's associate method
 
 // Approval relationships
 Approval.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
@@ -139,15 +151,26 @@ StageTransition.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' }
 Project.hasMany(StageTransition, { foreignKey: 'projectId', as: 'transitions' });
 
 // Wireframe relationships
-Wireframe.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Wireframe.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// Wireframe.belongsTo(Project, { foreignKey: 'projectId', as: 'project' }); // Moved to Wireframe.model.js
+// Wireframe.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' }); // Moved to Wireframe.model.js
 
-// Mockup relationships
-Mockup.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Mockup.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-Mockup.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
+// Mockup relationships - Moved to Mockup.model.js
+// Mockup.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+// Mockup.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// Mockup.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
 
-module.exports = {
+// Bug relationships
+Bug.belongsTo(Project, { foreignKey: 'project_id', as: 'project' });
+Bug.belongsTo(User, { foreignKey: 'reported_by', as: 'reportedBy' });
+Bug.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignedTo' });
+// Note: Project.hasMany(Bug) is already defined above, no need to define it again
+
+// BugComment relationships
+// Note: BugComment.belongsTo(Bug) is defined in BugComment.model.js
+BugComment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Initialize models object
+const models = {
   sequelize,
   User,
   Client,
@@ -168,5 +191,21 @@ module.exports = {
   Wireframe,
   Mockup,
   CodeFile,
-  Deployment
+  Deployment,
+  Bug,
+  BugComment,
+  UAT
+};
+
+// Run associations for each model
+Object.values(models).forEach(model => {
+  if (model.associate) {
+    model.associate(models);
+  }
+});
+
+// Export all models
+module.exports = {
+  sequelize,
+  ...models
 };

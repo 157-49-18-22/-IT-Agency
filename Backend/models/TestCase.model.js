@@ -49,25 +49,33 @@ const testCaseSchema = new mongoose.Schema({
   lastRun: {
     type: Date
   },
-  testResults: [{
-    status: {
-      type: String,
-      enum: ['passed', 'failed', 'blocked'],
-      required: true
-    },
-    executedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    executedAt: {
-      type: Date,
-      default: Date.now
-    },
-    notes: String
-  }]
+  // Store SQL user ID for compatibility with SQL databases
+  sqlUserId: {
+    type: Number,
+    index: true
+  }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('TestCase', testCaseSchema);
+// Add a virtual for test results
+testCaseSchema.virtual('testResults', {
+  ref: 'TestResult',
+  localField: '_id',
+  foreignField: 'testCase',
+  justOne: false
+});
+
+// Cascade delete test results when a test case is deleted
+testCaseSchema.pre('remove', async function(next) {
+  await this.model('TestResult').deleteMany({ testCase: this._id });
+  next();
+});
+
+// Enable virtuals in toJSON
+testCaseSchema.set('toJSON', { virtuals: true });
+testCaseSchema.set('toObject', { virtuals: true });
+
+const TestCase = mongoose.model('TestCase', testCaseSchema);
+
+module.exports = TestCase;

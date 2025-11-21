@@ -50,7 +50,7 @@ const Bug = sequelize.define('Bug', {
 Bug.associate = (models) => {
   Bug.belongsTo(models.Project, {
     foreignKey: 'project_id',
-    as: 'project'
+    as: 'bugProject'
   });
   
   Bug.belongsTo(models.User, {

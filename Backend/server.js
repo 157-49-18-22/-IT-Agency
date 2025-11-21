@@ -6,7 +6,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const { connectDB } = require('./config/database.sql');
+const { connectDB } = require('./config/database');
 
 const app = express();
 
@@ -37,6 +37,7 @@ const bugRoutes = require('./routes/bug.routes');
 const uatRoutes = require('./routes/uat.routes');
 const stageTransitionRoutes = require('./routes/stageTransition.routes');
 const deploymentRoutes = require('./routes/deployment.routes');
+const testCaseRoutes = require('./routes/testCase.routes');
 
 // Middleware
 app.use(helmet()); // Security headers@stage
@@ -123,21 +124,14 @@ app.use('/api/approvals', approvalRoutes);
 app.use('/api/deliverables', deliverableRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/activity', activityRoutes);
-app.use('/api/team', teamRoutes);
-
-// Client routes with authentication and authorization
-app.use('/api/clients', (req, res, next) => {
-  // Log request for debugging
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-}, clientRoutes);
-
+app.use('/api/activities', activityRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/clients', clientRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/time-tracking', timeTrackingRoutes);
 // NEW API Routes
-app.use('/api/uploads', uploadRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/wireframes', wireframeRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
@@ -148,6 +142,7 @@ app.use('/api/bugs', bugRoutes);
 app.use('/api/uat', uatRoutes);
 app.use('/api/stage-transitions', stageTransitionRoutes);
 app.use('/api/deployments', deploymentRoutes);
+app.use('/api/test-cases', testCaseRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

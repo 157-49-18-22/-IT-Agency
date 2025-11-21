@@ -1,25 +1,79 @@
-const TestCase = require('../models/TestCase.model');
+const TestCase = require('../models/sql/TestCase.model');
+const User = require('../models/sql/User.model');
+const Project = require('../models/sql/Project.model');
 const { ErrorResponse } = require('../utils/errorResponse');
+const { Op } = require('sequelize');
+
+// The TestCase model is already initialized with the sequelize instance in the model file
+const TestCaseModel = TestCase;
 
 // @desc    Create a new test case
 // @route   POST /api/test-cases
 // @access  Private
 exports.createTestCase = async (req, res, next) => {
   try {
-    const testCase = new TestCase({
-      ...req.body,
-      createdBy: req.user.id
-    });
-
-    await testCase.save();
+    // Format the steps array if it's a string or not in the correct format
+    let { steps, ...rest } = req.body;
     
-    // Populate createdBy and assignedTo fields with user details
-    await testCase.populate('createdBy', 'name email');
-    if (testCase.assignedTo) {
-      await testCase.populate('assignedTo', 'name email');
+    // Convert steps to proper format if it's a string
+    let formattedSteps = [];
+    if (typeof steps === 'string') {
+      // If it's a string, split by newline and create step objects
+      formattedSteps = steps
+        .split('\n')
+        .filter(step => step.trim() !== '')
+        .map((step, index) => ({
+          step: `Step ${index + 1}`,
+          expected: step.trim()
+        }));
+    } else if (Array.isArray(steps)) {
+      // If it's already an array, ensure each item has the correct structure
+      formattedSteps = steps.map((item, index) => {
+        if (typeof item === 'string') {
+          return {
+            step: `Step ${index + 1}`,
+            expected: item.trim()
+          };
+        }
+        // If it's already an object, ensure it has required fields
+        return {
+          step: item.step || `Step ${index + 1}`,
+          expected: item.expected || ''
+        };
+      });
     }
-    if (testCase.project) {
-      await testCase.populate('project', 'name');
+
+    // Create the test case with formatted data
+    const testCaseData = {
+      ...rest,
+      steps: formattedSteps,
+      createdBy: req.user.id, // Use the numeric user ID from the authenticated user
+      status: rest.status || 'not_run' // Ensure status has a default value
+    };
+
+    // Create the test case in the database
+    const testCase = await TestCaseModel.create(testCaseData);
+    
+    // Include user details in the response
+    const response = {
+      ...testCase.get({ plain: true }),
+      createdBy: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
+      }
+    };
+    
+    // If assignedTo is present, include assigned user details
+    if (testCase.assignedTo) {
+      const assignedUser = await User.findByPk(testCase.assignedTo);
+      if (assignedUser) {
+        response.assignedTo = {
+          id: assignedUser.id,
+          name: assignedUser.name,
+          email: assignedUser.email
+        };
+      }
     }
 
     res.status(201).json({
@@ -27,6 +81,7 @@ exports.createTestCase = async (req, res, next) => {
       data: testCase
     });
   } catch (error) {
+    console.error('Error creating test case:', error);
     next(error);
   }
 };
@@ -51,11 +106,37 @@ exports.getTestCases = async (req, res, next) => {
     // Create operators ($gt, $gte, etc)
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-    // Finding resource
-    let query = TestCase.find(JSON.parse(queryStr))
-      .populate('createdBy', 'name email')
-      .populate('assignedTo', 'name email')
-      .populate('project', 'name');
+    // Set up where clause
+    const where = JSON.parse(queryStr);
+    
+    // Set up includes for associations
+    const include = [
+      {
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      },
+      {
+        model: User,
+        as: 'assignee',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      },
+      {
+        model: Project,
+        as: 'project',
+        attributes: ['id', 'name'],
+        required: false
+      }
+    ];
+    
+    // Set up query options
+    const queryOptions = {
+      where,
+      include,
+      order: [['createdAt', 'DESC']]
+    };
 
     // Select Fields
     if (req.query.select) {
@@ -80,31 +161,66 @@ exports.getTestCases = async (req, res, next) => {
 
     query = query.skip(startIndex).limit(limit);
 
-    // Executing query
-    const testCases = await query;
+    // Execute query with pagination
+    const { count, rows: testCases } = await TestCaseModel.findAndCountAll({
+      where,
+      include,
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+      offset: (page - 1) * limit,
+      raw: true,
+      nest: true
+    });
 
-    // Pagination result
-    const pagination = {};
+    // Calculate pagination
+    const totalPages = Math.ceil(count / limit);
+    const pagination = {
+      total: count,
+      pages: totalPages,
+      page: page,
+      limit: limit
+    };
 
-    if (endIndex < total) {
+    if (page < totalPages) {
       pagination.next = {
         page: page + 1,
         limit
       };
     }
 
-    if (startIndex > 0) {
+    if (page > 1) {
       pagination.prev = {
         page: page - 1,
         limit
       };
     }
 
+    // Format the response
+    const formattedTestCases = testCases.map(tc => ({
+      id: tc.id,
+      title: tc.title,
+      description: tc.description,
+      type: tc.type,
+      priority: tc.priority,
+      status: tc.status,
+      steps: tc.steps || [],
+      expectedResult: tc.expectedResult || '',
+      projectId: tc.projectId,
+      createdBy: tc.createdBy,
+      assignedTo: tc.assignedTo,
+      createdAt: tc.createdAt,
+      updatedAt: tc.updatedAt,
+      creator: tc.creator,
+      assignee: tc.assignee,
+      project: tc.project
+    }));
+
     res.status(200).json({
       success: true,
-      count: testCases.length,
+      count: formattedTestCases.length,
+      total: count,
       pagination,
-      data: testCases
+      data: formattedTestCases
     });
   } catch (error) {
     next(error);
@@ -116,10 +232,20 @@ exports.getTestCases = async (req, res, next) => {
 // @access  Private
 exports.getTestCase = async (req, res, next) => {
   try {
-    const testCase = await TestCase.findById(req.params.id)
-      .populate('createdBy', 'name email')
-      .populate('assignedTo', 'name email')
-      .populate('project', 'name');
+    const testCase = await TestCase.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'name', 'email']
+        },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'name', 'email']
+        }
+      ]
+    });
 
     if (!testCase) {
       return next(new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404));
@@ -139,28 +265,55 @@ exports.getTestCase = async (req, res, next) => {
 // @access  Private
 exports.updateTestCase = async (req, res, next) => {
   try {
-    let testCase = await TestCase.findById(req.params.id);
+    const testCase = await TestCase.findByPk(req.params.id);
 
     if (!testCase) {
-      return next(new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404));
+      return next(
+        new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404)
+      );
     }
 
-    // Make sure user is the creator or admin
-    if (testCase.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
-      return next(new ErrorResponse(`User ${req.user.id} is not authorized to update this test case`, 401));
+    // Format steps if provided
+    if (req.body.steps) {
+      if (typeof req.body.steps === 'string') {
+        req.body.steps = req.body.steps
+          .split('\n')
+          .filter(step => step.trim() !== '')
+          .map((step, index) => ({
+            step: `Step ${index + 1}`,
+            expected: step.trim()
+          }));
+      }
     }
 
-    testCase = await TestCase.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    })
-      .populate('createdBy', 'name email')
-      .populate('assignedTo', 'name email')
-      .populate('project', 'name');
+    // Update the test case
+    const updatedTestCase = await testCase.update(req.body);
+
+    // Include user details in the response
+    const response = {
+      ...updatedTestCase.get({ plain: true }),
+      createdBy: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
+      }
+    };
+
+    // If assignedTo is present, include assigned user details
+    if (updatedTestCase.assignedTo) {
+      const assignedUser = await User.findByPk(updatedTestCase.assignedTo);
+      if (assignedUser) {
+        response.assignedTo = {
+          id: assignedUser.id,
+          name: assignedUser.name,
+          email: assignedUser.email
+        };
+      }
+    }
 
     res.status(200).json({
       success: true,
-      data: testCase
+      data: response
     });
   } catch (error) {
     next(error);
@@ -172,18 +325,15 @@ exports.updateTestCase = async (req, res, next) => {
 // @access  Private
 exports.deleteTestCase = async (req, res, next) => {
   try {
-    const testCase = await TestCase.findById(req.params.id);
+    const testCase = await TestCase.findByPk(req.params.id);
 
     if (!testCase) {
-      return next(new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404));
+      return next(
+        new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404)
+      );
     }
 
-    // Make sure user is the creator or admin
-    if (testCase.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
-      return next(new ErrorResponse(`User ${req.user.id} is not authorized to delete this test case`, 401));
-    }
-
-    await testCase.remove();
+    await testCase.destroy();
 
     res.status(200).json({
       success: true,
@@ -199,34 +349,45 @@ exports.deleteTestCase = async (req, res, next) => {
 // @access  Private
 exports.addTestResult = async (req, res, next) => {
   try {
-    const { status, notes } = req.body;
-    
-    const testCase = await TestCase.findById(req.params.id);
-    
+    const testCase = await TestCase.findByPk(req.params.id);
+
     if (!testCase) {
-      return next(new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404));
+      return next(
+        new ErrorResponse(`Test case not found with id of ${req.params.id}`, 404)
+      );
     }
 
-    const testResult = {
-      status,
-      notes,
-      executedBy: req.user.id
+    // Create test result
+    const TestResult = require('../models/sql/TestResult.model');
+    const testResult = await TestResult.create({
+      ...req.body,
+      testCaseId: req.params.id,
+      executedBy: req.user.id,
+      executionDate: new Date()
+    });
+
+    // Update test case status
+    await testCase.update({
+      status: req.body.status,
+      lastRun: new Date()
+    });
+
+    // Include user details in the response
+    const response = {
+      ...testResult.get({ plain: true }),
+      executedBy: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
+      }
     };
 
-    testCase.testResults.push(testResult);
-    testCase.status = status;
-    testCase.lastRun = Date.now();
-    
-    await testCase.save();
-    
-    // Populate the test result with user details
-    await testCase.populate('testResults.executedBy', 'name email');
-    
     res.status(201).json({
       success: true,
-      data: testCase
+      data: response
     });
   } catch (error) {
+    console.error('Error adding test result:', error);
     next(error);
   }
 };

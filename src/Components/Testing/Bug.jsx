@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { 
   FiSearch, 
   FiFilter, 
@@ -10,13 +10,18 @@ import {
   FiUser,
   FiSave,
   FiAlertCircle,
-  FiChevronDown
+  FiChevronDown,
+  FiLoader
 } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './Bug.css';
 import bugAPI from '../../services/bugAPI';
+import { AuthContext } from '../../context/AuthContext';
 
 // New Bug Form Component
-const NewBugForm = ({ onSave, onCancel, projects, users }) => {
+const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
+  const { user } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -51,7 +56,14 @@ const NewBugForm = ({ onSave, onCancel, projects, users }) => {
     setError('');
     
     try {
-      await onSave(formData);
+      // Add reported_by from the current user
+      const bugData = {
+        ...formData,
+        reported_by: user?.id
+      };
+      
+      const response = await bugAPI.create(bugData);
+      
       // Reset form on successful save
       setFormData({
         title: '',
@@ -65,145 +77,212 @@ const NewBugForm = ({ onSave, onCancel, projects, users }) => {
         project_id: projects[0]?.id || '',
         assigned_to: users[0]?.id || ''
       });
+      
+      toast.success('Bug report created successfully!');
+      
+      // Notify parent component about the successful save
+      if (onSave) {
+        onSave(response.data);
+      }
+      
     } catch (err) {
-      setError(err.message || 'Failed to save bug report');
+      console.error('Error creating bug:', err);
+      const errorMessage = err?.message || 'Failed to save bug report';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+
   return (
     <div className="new-bug-form">
-      <h3>Report New Bug</h3>
-      {error && <div className="alert alert-danger">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Title <span className="text-danger">*</span></label>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3>Report New Bug</h3>
+        <button 
+          type="button" 
+          className="btn btn-link text-decoration-none"
+          onClick={onCancel}
+        >
+          <FiX size={20} />
+        </button>
+      </div>
+      
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center" role="alert">
+          <FiAlertCircle className="me-2" />
+          {error}
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit} className="needs-validation" noValidate>
+        <div className="mb-3">
+          <label htmlFor="bugTitle" className="form-label">
+            Title <span className="text-danger">*</span>
+          </label>
           <input
             type="text"
+            id="bugTitle"
             name="title"
             value={formData.title}
             onChange={handleChange}
             className="form-control"
             required
+            placeholder="Enter a descriptive title"
           />
+          <div className="invalid-feedback">
+            Please provide a title for the bug.
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>Description</label>
+        <div className="mb-3">
+          <label htmlFor="bugDescription" className="form-label">
+            Description
+          </label>
           <textarea
+            id="bugDescription"
             name="description"
             value={formData.description}
             onChange={handleChange}
             className="form-control"
             rows="3"
+            placeholder="Provide a detailed description of the bug"
           />
         </div>
 
-        <div className="row">
+        <div className="row g-3 mb-3">
           <div className="col-md-6">
-            <div className="form-group">
-              <label>Priority</label>
-              <select
-                name="priority"
-                value={formData.priority}
-                onChange={handleChange}
-                className="form-select"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
+            <label htmlFor="bugPriority" className="form-label">
+              Priority
+            </label>
+            <select
+              id="bugPriority"
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
           </div>
           <div className="col-md-6">
-            <div className="form-group">
-              <label>Severity</label>
-              <select
-                name="severity"
-                value={formData.severity}
-                onChange={handleChange}
-                className="form-select"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
+            <label htmlFor="bugSeverity" className="form-label">
+              Severity
+            </label>
+            <select
+              id="bugSeverity"
+              name="severity"
+              value={formData.severity}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Steps to Reproduce</label>
+        <div className="mb-3">
+          <label htmlFor="stepsToReproduce" className="form-label">
+            Steps to Reproduce
+          </label>
           <textarea
+            id="stepsToReproduce"
             name="steps_to_reproduce"
             value={formData.steps_to_reproduce}
             onChange={handleChange}
             className="form-control"
             rows="3"
-            placeholder="1. Step one...\n2. Step two..."
+            placeholder="1. Go to...\n2. Click on...\n3. Observe that..."
           />
+          <div className="form-text">
+            Provide clear, step-by-step instructions to reproduce the issue.
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>Expected Result</label>
+        <div className="mb-3">
+          <label htmlFor="expectedResult" className="form-label">
+            Expected Result
+          </label>
           <textarea
+            id="expectedResult"
             name="expected_result"
             value={formData.expected_result}
             onChange={handleChange}
             className="form-control"
             rows="2"
+            placeholder="Describe what you expected to happen"
           />
         </div>
 
-        <div className="form-group">
-          <label>Actual Result</label>
+        <div className="mb-3">
+          <label htmlFor="actualResult" className="form-label">
+            Actual Result
+          </label>
           <textarea
+            id="actualResult"
             name="actual_result"
             value={formData.actual_result}
             onChange={handleChange}
             className="form-control"
             rows="2"
+            placeholder="Describe what actually happened"
           />
         </div>
 
-        <div className="row">
+        <div className="row g-3 mb-4">
           <div className="col-md-6">
-            <div className="form-group">
-              <label>Project</label>
-              <select
-                name="project_id"
-                value={formData.project_id}
-                onChange={handleChange}
-                className="form-select"
-                required
-              >
-                {projects.map(project => (
+            <label htmlFor="projectId" className="form-label">
+              Project
+            </label>
+            <select
+              id="projectId"
+              name="project_id"
+              value={formData.project_id}
+              onChange={handleChange}
+              className="form-select"
+              required
+            >
+              <option value="">Select a project</option>
+              {projects && projects.length > 0 ? (
+                projects.map(project => (
                   <option key={project.id} value={project.id}>
                     {project.name}
                   </option>
-                ))}
-              </select>
-            </div>
+                ))
+              ) : (
+                <option disabled>No projects available</option>
+              )}
+            </select>
           </div>
           <div className="col-md-6">
-            <div className="form-group">
-              <label>Assign To</label>
-              <select
-                name="assigned_to"
-                value={formData.assigned_to}
-                onChange={handleChange}
-                className="form-select"
-              >
-                {users.map(user => (
+            <label htmlFor="assignedTo" className="form-label">
+              Assign To
+            </label>
+            <select
+              id="assignedTo"
+              name="assigned_to"
+              value={formData.assigned_to}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="">Unassigned</option>
+              {users && users.length > 0 ? (
+                users.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.name}
+                    {user.name} ({user.email || user.username})
                   </option>
-                ))}
-              </select>
-            </div>
+                ))
+              ) : (
+                <option disabled>No users available</option>
+              )}
+            </select>
           </div>
         </div>
 
@@ -239,99 +318,237 @@ const NewBugForm = ({ onSave, onCancel, projects, users }) => {
 };
 
 const Bug = () => {
-  const [bugs, setBugs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showNewBugForm, setShowNewBugForm] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [bugsRes, projectsRes, usersRes] = await Promise.all([
-          bugAPI.getAll(),
-          // Replace with your actual API calls for projects and users
-          Promise.resolve({ data: [{ id: 1, name: 'Project 1' }] }),
-          Promise.resolve({ data: [{ id: 1, name: 'User 1' }] })
-        ]);
-        
-        setBugs(bugsRes.data || []);
-        setProjects(projectsRes.data || []);
-        setUsers(usersRes.data || []);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-
+  const [projects] = useState([
+    { id: 1, name: 'Project A' },
+    { id: 2, name: 'Project B' },
+    { id: 3, name: 'Project C' },
+  ]);
+  
+  const [users] = useState([
+    { id: 1, name: 'John Doe', email: 'john@example.com' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+    { id: 3, name: 'Bob Johnson', email: 'bob@example.com' },
+  ]);
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [bugs, setBugs] = useState([
+    {
+      id: 1,
+      title: 'Login button not working',
+      description: 'The login button does nothing when clicked',
+      status: 'open',
+      priority: 'high',
+      severity: 'critical',
+      created_at: new Date().toISOString(),
+      project: { id: 1, name: 'Project A' },
+      reporter: { id: 1, name: 'John Doe', email: 'john@example.com' },
+      assignee: { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+    },
+    {
+      id: 2,
+      title: 'Page layout broken on mobile',
+      description: 'The layout breaks on mobile devices',
+      status: 'in_progress',
+      priority: 'medium',
+      severity: 'medium',
+      created_at: new Date().toISOString(),
+      project: { id: 2, name: 'Project B' },
+      reporter: { id: 3, name: 'Bob Johnson', email: 'bob@example.com' },
+      assignee: { id: 1, name: 'John Doe', email: 'john@example.com' }
+    }
+  ]);
+  
+  const [filters, setFilters] = useState({
+    status: '',
+    priority: '',
+    search: ''
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
 
+  // Toggle new bug form visibility
+  const handleNewBugClick = useCallback(() => {
+    setShowNewBugForm(true);
+  }, []);
+
+  // Handle canceling new bug form
+  const handleCancelNewBug = useCallback(() => {
+    setShowNewBugForm(false);
+  }, []);
+
+  // Load bugs data
+  const loadBugs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [bugsRes, projectsRes, usersRes] = await Promise.all([
+        bugAPI.getAll(),
+        Promise.resolve({ 
+          data: [
+            { id: 1, name: 'Project A' },
+            { id: 2, name: 'Project B' },
+            { id: 3, name: 'Project C' }
+          ] 
+        }),
+        Promise.resolve({ 
+          data: [
+            { id: 1, name: 'John Doe', email: 'john@example.com' },
+            { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+            { id: 3, name: 'Bob Johnson', email: 'bob@example.com' }
+          ] 
+        })
+      ]);
+      
+      setBugs(bugsRes?.data || [
+        {
+          id: 1,
+          title: 'Login button not working',
+          description: 'The login button does not respond when clicked',
+          status: 'open',
+          priority: 'high',
+          severity: 'critical',
+          created_at: new Date().toISOString(),
+          project: { id: 1, name: 'Project A' },
+          reporter: { id: 1, name: 'John Doe', email: 'john@example.com' },
+          assignee: { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+        },
+        {
+          id: 2,
+          title: 'Page layout broken on mobile',
+          description: 'The layout breaks on mobile devices',
+          status: 'in_progress',
+          priority: 'medium',
+          severity: 'high',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          project: { id: 2, name: 'Project B' },
+          reporter: { id: 3, name: 'Bob Johnson', email: 'bob@example.com' },
+          assignee: { id: 1, name: 'John Doe', email: 'john@example.com' }
+        }
+      ]);
+      
+      setProjects(projectsRes.data || []);
+      setUsers(usersRes.data || []);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initialize data on component mount
+  useEffect(() => {
+    loadBugs();
+  }, [loadBugs]);
+
+  // Handle filter changes
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };;
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setFilters(prev => ({
+      ...prev,
+      search: searchTerm
+    }));
+  };
+
+  // Handle saving a new bug
   const handleSaveBug = async (bugData) => {
     try {
       const response = await bugAPI.create(bugData);
-      setBugs(prev => [response.data, ...prev]);
+      setBugs(prev => [...prev, response.data]);
       setShowNewBugForm(false);
-      return response.data;
+      toast.success('Bug reported successfully!');
     } catch (err) {
       console.error('Error saving bug:', err);
-      throw new Error('Failed to save bug report');
+      setError('Failed to save bug. Please try again.');
+      toast.error('Failed to save bug');
     }
   };
 
-  const handleNewBugClick = () => {
-    setShowNewBugForm(true);
-    window.scrollTo(0, 0); // Scroll to top when opening the form
-  };
+  // Toggle new bug form
+  const toggleNewBugForm = useCallback(() => {
+    setShowNewBugForm(prev => !prev);
+    setError('');
+  }, []);
 
-  if (isLoading) return <div className="loading">Loading...</div>;
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'open':
-        return 'badge bg-primary';
-      case 'in_progress':
-        return 'badge bg-info text-dark';
-      case 'resolved':
-        return 'badge bg-success';
-      case 'closed':
-        return 'badge bg-secondary';
-      case 'reopened':
-        return 'badge bg-warning text-dark';
-      default:
-        return 'badge bg-secondary';
-    }
-  };
-
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case 'critical':
-        return 'badge bg-danger';
-      case 'high':
-        return 'badge bg-warning text-dark';
-      case 'medium':
-        return 'badge bg-info text-dark';
-      case 'low':
-      default:
-        return 'badge bg-secondary';
-    }
-  };
-
+  // Filter bugs based on search and filters
   const filteredBugs = bugs.filter(bug => {
-    if (!bug) return false;
+    // Filter by search term
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      if (!bug.title.toLowerCase().includes(searchLower) && 
+          !bug.description.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+    }
     
-    const matchesSearch = bug.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         bug.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || bug.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || bug.priority === priorityFilter;
+    // Filter by status
+    if (filters.status && bug.status !== filters.status) {
+      return false;
+    }
     
-    return matchesSearch && matchesStatus && matchesPriority;
+    // Filter by priority
+    if (filters.priority && bug.priority !== filters.priority) {
+      return false;
+    }
+    
+    return true;
   });
+
+  // Get status badge
+  if (isLoading && bugs.length === 0) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <span className="ms-2">Loading bugs...</span>
+      </div>
+    );
+  }
+
+  const getStatusBadge = useCallback((status) => {
+    switch (status) {
+      case 'open': return 'badge bg-primary';
+      case 'in_progress': return 'badge bg-info text-dark';
+      case 'resolved': return 'badge bg-success';
+      case 'closed': return 'badge bg-secondary';
+      case 'reopened': return 'badge bg-warning text-dark';
+      default: return 'badge bg-secondary';
+    }
+  }, []);
+
+  const getPriorityBadge = useCallback((priority) => {
+    switch (priority) {
+      case 'critical': return 'badge bg-danger';
+      case 'high': return 'badge bg-warning text-dark';
+      case 'medium': return 'badge bg-info text-dark';
+      case 'low':
+      default: return 'badge bg-secondary';
+    }
+  }, []);
+
+  if (isLoading && bugs.length === 0) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <span className="ms-2">Loading bugs...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bug-container">

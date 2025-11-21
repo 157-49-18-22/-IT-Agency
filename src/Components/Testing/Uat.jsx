@@ -1,39 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isAuthenticated, getCurrentUser } from '../../services/auth';
 import { 
   FiSearch, 
   FiPlus, 
-  FiX, 
-  FiClock, 
+  FiFilter, 
   FiUser, 
+  FiClock,
+  FiCheck,
+  FiX,
+  FiAlertTriangle,
+  FiPause,
+  FiEdit2,
+  FiTrash2,
+  FiDownload,
+  FiUpload,
+  FiRefreshCw,
+  FiChevronDown,
+  FiChevronUp,
+  FiExternalLink,
+  FiCopy,
+  FiTag,
+  FiFlag,
+  FiBarChart2,
+  FiPieChart,
+  FiGrid,
+  FiList,
+  FiColumns,
+  FiSliders,
+  FiSettings,
+  FiFilter as FiFilterIcon,
+  FiX as FiXIcon,
+  FiCheck as FiCheckIcon,
   FiAlertCircle,
-  FiThumbsUp,
-  FiThumbsDown,
-  FiMessageSquare,
-  FiSave,
-  FiTrash2
+  FiInfo,
+  FiLock,
+  FiUnlock,
+  FiCalendar,
+  FiClock as FiClockIcon,
+  FiCheckCircle,
+  FiAlertTriangle as FiAlertTriangleIcon,
+  FiPauseCircle,
+  FiCircle,
+  FiZap,
+  FiMessageSquare
 } from 'react-icons/fi';
 import './Uat.css';
 import uatAPI from '../../services/uatAPI';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const statusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'blocked', label: 'Blocked' }
+];
+
+const priorityOptions = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' }
+];
+
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'passed':
+      return <FiCheckCircle className="status-icon passed" />;
+    case 'failed':
+      return <FiX className="status-icon failed" />;
+    case 'in_progress':
+      return <FiZap className="status-icon in-progress" />;
+    case 'blocked':
+      return <FiAlertTriangleIcon className="status-icon blocked" />;
+    case 'pending':
+    default:
+      return <FiCircle className="status-icon pending" />;
+  }
+};
+
 const Uat = () => {
+  const navigate = useNavigate();
   const [uatTests, setUatTests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTest, setCurrentTest] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    steps: [''],
+    testSteps: [''],
+    expectedResult: '',
+    actualResult: '',
     status: 'pending',
-    tester: '',
-    priority: 'medium'
+    priority: 'medium',
+    testerName: ''
   });
-  
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
+    if (!isAuthenticated()) {
+      toast.error('Please login to access UAT tests');
+      navigate('/login');
+      return;
+    }
     fetchTests();
-  }, []);
+  }, [navigate]);
 
   const fetchTests = async () => {
     try {
@@ -47,106 +127,76 @@ const Uat = () => {
       setIsLoading(false);
     }
   };
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
-  if (isLoading) return <div className="loading">Loading...</div>;
-
-  // OLD Mock data - REMOVED
-  const oldUatTests = [
-    {
-      id: 1,
-      title: 'Checkout Process',
-      status: 'approved',
-      tester: 'John Smith',
-      lastUpdated: '2023-10-28 14:30:00',
-      comments: 3,
-      description: 'Verify the complete checkout process with multiple payment methods',
-      steps: [
-        'Add items to cart',
-        'Proceed to checkout',
-        'Select payment method',
-        'Complete purchase'
-      ]
-    },
-    // Add more UAT tests here
-  ];
-
-  const filteredTests = uatTests.filter(test => {
-    const matchesSearch = test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         test.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || test.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved':
-        return <FiThumbsUp className="status-icon approved" />;
-      case 'rejected':
-        return <FiThumbsDown className="status-icon rejected" />;
-      case 'pending':
-        return <FiClock className="status-icon pending" />;
-      default:
-        return <FiAlertCircle className="status-icon" />;
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'searchTerm') {
+      setSearchTerm(value);
+    } else if (name === 'statusFilter') {
+      setStatusFilter(value);
+    } else if (name === 'priorityFilter') {
+      setPriorityFilter(value);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleStepChange = (index, value) => {
-    const newSteps = [...formData.steps];
+  const handleTestStepChange = (index, value) => {
+    const newSteps = [...formData.testSteps];
     newSteps[index] = value;
-    setFormData(prev => ({
-      ...prev,
-      steps: newSteps
-    }));
+    setFormData(prev => ({ ...prev, testSteps: newSteps }));
   };
 
-  const addStep = () => {
-    setFormData(prev => ({
-      ...prev,
-      steps: [...prev.steps, '']
-    }));
+  const addTestStep = () => {
+    setFormData(prev => ({ ...prev, testSteps: [...prev.testSteps, ''] }));
   };
 
-  const removeStep = (index) => {
-    const newSteps = formData.steps.filter((_, i) => i !== index);
-    setFormData(prev => ({
-      ...prev,
-      steps: newSteps
-    }));
+  const removeTestStep = (index) => {
+    const newSteps = formData.testSteps.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, testSteps: newSteps }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    if (!isAuthenticated()) {
+      toast.error('Your session has expired. Please login again.');
+      navigate('/login');
+      return;
+    }
+
     try {
-      // Filter out empty steps
       const testData = {
         ...formData,
-        steps: formData.steps.filter(step => step.trim() !== ''),
+        testSteps: formData.testSteps.filter(step => step.trim() !== ''),
         lastUpdated: new Date().toISOString(),
-        comments: 0
+        comments: 0,
+        createdBy: getCurrentUser().id
       };
-      
-      await uatAPI.createTest(testData);
-      toast.success('Test case created successfully!');
+
+      if (isEditing) {
+        await uatAPI.updateTest(currentTest._id, testData);
+        toast.success('Test case updated successfully!');
+      } else {
+        await uatAPI.createTest(testData);
+        toast.success('Test case created successfully!');
+      }
+
       setShowModal(false);
       resetForm();
       fetchTests();
     } catch (err) {
-      console.error('Error creating test case:', err);
-      toast.error('Failed to create test case');
+      console.error('Error creating/updating test case:', err);
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        toast.error(err.message || 'Failed to save test case');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -156,23 +206,153 @@ const Uat = () => {
     setFormData({
       title: '',
       description: '',
-      steps: [''],
+      testSteps: [''],
+      expectedResult: '',
+      actualResult: '',
       status: 'pending',
-      tester: '',
-      priority: 'medium'
+      priority: 'medium',
+      testerName: ''
     });
   };
 
+  const handleEdit = (test) => {
+    setIsEditing(true);
+    setCurrentTest(test);
+    setFormData({
+      title: test.title,
+      description: test.description,
+      testSteps: test.testSteps,
+      expectedResult: test.expectedResult,
+      actualResult: test.actualResult,
+      status: test.status,
+      priority: test.priority,
+      testerName: test.testerName
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!isAuthenticated()) {
+      toast.error('Your session has expired. Please login again.');
+      navigate('/login');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this test case?')) {
+      return;
+    }
+
+    try {
+      await uatAPI.deleteTest(id);
+      toast.success('Test case deleted successfully!');
+      fetchTests();
+    } catch (err) {
+      console.error('Error deleting test case:', err);
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        toast.error(err.message || 'Failed to delete test case');
+      }
+    }
+  };
+
+  const updateStatus = async (id, status) => {
+    try {
+      await uatAPI.updateTestStatus(id, status);
+      toast.success('Test case status updated successfully!');
+      fetchTests();
+    } catch (err) {
+      console.error('Error updating test case status:', err);
+      toast.error('Failed to update test case status');
+    }
+  };
+
+  const getPriorityBadgeClass = (priority) => {
+    switch (priority) {
+      case 'low':
+        return 'info';
+      case 'medium':
+        return 'warning';
+      case 'high':
+        return 'danger';
+      case 'critical':
+        return 'dark';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const filteredTests = uatTests.filter(test => {
+    if (!test) return false;
+    
+    const matchesSearch = searchTerm === '' || 
+      (test.title && test.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (test.description && test.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || test.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || test.priority === priorityFilter;
+    
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
   return (
     <div className="uat-container">
-      <div className="uat-header">
-        <h2>User Acceptance Testing</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>User Acceptance Testing</h1>
         <button 
-          className="btn-primary"
-          onClick={() => setShowModal(true)}
+          className="btn btn-primary"
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
         >
-          <FiPlus size={16} /> New Test Case
+          <FiPlus className="me-2" /> Create New Test Case
         </button>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="row mb-4">
+        <div className="col-md-4 mb-2">
+          <div className="search-box">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              className="form-control search-input"
+              placeholder="Search test cases..."
+              value={searchTerm}
+              onChange={handleFilterChange}
+              name="searchTerm"
+            />
+          </div>
+        </div>
+        <div className="col-md-4 mb-2">
+          <select 
+            className="form-select" 
+            value={statusFilter}
+            onChange={handleFilterChange}
+            name="statusFilter"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div className="col-md-4 mb-2">
+          <select 
+            className="form-select"
+            value={priorityFilter}
+            onChange={handleFilterChange}
+            name="priorityFilter"
+          >
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
       </div>
 
       {/* New Test Case Modal */}
@@ -219,21 +399,21 @@ const Uat = () => {
               
               <div className="form-group">
                 <label>Test Steps *</label>
-                {formData.steps.map((step, index) => (
+                {formData.testSteps.map((step, index) => (
                   <div key={index} className="step-input">
                     <span className="step-number">{index + 1}.</span>
                     <input
                       type="text"
                       value={step}
-                      onChange={(e) => handleStepChange(index, e.target.value)}
+                      onChange={(e) => handleTestStepChange(index, e.target.value)}
                       required={index === 0}
                       placeholder={`Step ${index + 1}`}
                     />
-                    {formData.steps.length > 1 && (
+                    {formData.testSteps.length > 1 && (
                       <button 
                         type="button" 
                         className="remove-step"
-                        onClick={() => removeStep(index)}
+                        onClick={() => removeTestStep(index)}
                         aria-label="Remove step"
                       >
                         <FiX size={16} />
@@ -244,7 +424,7 @@ const Uat = () => {
                 <button 
                   type="button" 
                   className="add-step"
-                  onClick={addStep}
+                  onClick={addTestStep}
                 >
                   + Add Step
                 </button>
@@ -283,8 +463,8 @@ const Uat = () => {
                 <label>Tester Name</label>
                 <input
                   type="text"
-                  name="tester"
-                  value={formData.tester}
+                  name="testerName"
+                  value={formData.testerName}
                   onChange={handleInputChange}
                   placeholder="Enter tester's name"
                 />
@@ -322,15 +502,18 @@ const Uat = () => {
             type="text"
             placeholder="Search UAT tests..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleFilterChange}
+            name="searchTerm"
+            className="form-control"
           />
         </div>
 
         <div className="filters">
           <select 
             value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="filter-select"
+            onChange={handleFilterChange}
+            name="statusFilter"
+            className="form-select"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>

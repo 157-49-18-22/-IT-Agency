@@ -56,14 +56,6 @@ const Wireframe = sequelize.define('Wireframe', {
       key: 'id',
     },
   },
-  updatedBy: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'Users',
-      key: 'id',
-    },
-  },
 }, {
   timestamps: true,
   paranoid: true, // Enable soft delete

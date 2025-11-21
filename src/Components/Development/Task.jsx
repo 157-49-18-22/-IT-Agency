@@ -5,6 +5,13 @@ import {
   FiCalendar, FiFlag, FiMoreVertical, FiEdit2, 
   FiTrash2, FiCheck, FiX, FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
+import { 
+  getTasks, 
+  createTask, 
+  updateTask, 
+  deleteTask, 
+  toggleTaskStatus 
+} from '../../services/taskService';
 import './Task.css';
 
 const Task = () => {
@@ -13,6 +20,18 @@ const Task = () => {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Map between frontend and backend status values
+  const statusMap = {
+    'to_do': 'To Do',
+    'in_progress': 'In Progress',
+    'completed': 'Completed'
+  };
+  
+  // Get status display text
+  const getStatusDisplay = (status) => {
+    return statusMap[status] || status;
+  };
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('dueDate');
@@ -22,84 +41,50 @@ const Task = () => {
     description: '',
     dueDate: '',
     priority: 'medium',
-    status: 'todo',
+    status: 'to_do',
     assignee: ''
   });
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // Mock data for tasks
+  // Fetch tasks from API
   useEffect(() => {
-    const fetchTasks = () => {
+    const fetchTasksData = async () => {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockTasks = [
-          {
-            id: 'task-001',
-            title: 'Implement user authentication',
-            description: 'Set up JWT authentication for the application',
-            dueDate: '2023-11-15',
-            priority: 'high',
-            status: 'in-progress',
-            assignee: 'John Doe',
-            createdAt: new Date('2023-10-20'),
-            updatedAt: new Date('2023-10-25')
-          },
-          {
-            id: 'task-002',
-            title: 'Design dashboard layout',
-            description: 'Create wireframes for the admin dashboard',
-            dueDate: '2023-11-05',
-            priority: 'medium',
-            status: 'todo',
-            assignee: 'Jane Smith',
-            createdAt: new Date('2023-10-18'),
-            updatedAt: new Date('2023-10-18')
-          },
-          {
-            id: 'task-003',
-            title: 'Fix login page styling',
-            description: 'Adjust responsive design for mobile devices',
-            dueDate: '2023-10-30',
-            priority: 'low',
-            status: 'completed',
-            assignee: 'Alex Johnson',
-            createdAt: new Date('2023-10-15'),
-            updatedAt: new Date('2023-10-22')
-          },
-          {
-            id: 'task-004',
-            title: 'API integration for user profile',
-            description: 'Connect frontend with backend API for user profile management',
-            dueDate: '2023-11-10',
-            priority: 'high',
-            status: 'in-progress',
-            assignee: 'Mike Brown',
-            createdAt: new Date('2023-10-22'),
-            updatedAt: new Date('2023-10-26')
-          },
-          {
-            id: 'task-005',
-            title: 'Write unit tests',
-            description: 'Add test coverage for authentication module',
-            dueDate: '2023-11-08',
-            priority: 'medium',
-            status: 'todo',
-            assignee: 'Sarah Williams',
-            createdAt: new Date('2023-10-24'),
-            updatedAt: new Date('2023-10-24')
-          }
-        ];
+      try {
+        const filters = {
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+          assignee: assigneeFilter !== 'all' ? assigneeFilter : undefined
+        };
         
-        setTasks(mockTasks);
-        setFilteredTasks(mockTasks);
+        const tasksData = await getTasks(filters);
+        
+        // Transform the API response to match our frontend structure
+        const transformedTasks = tasksData.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description || '',
+          dueDate: task.dueDate,
+          priority: task.priority,
+          status: task.status,
+          assignee: task.assignee?.name || 'Unassigned',
+          createdAt: new Date(task.createdAt),
+          updatedAt: new Date(task.updatedAt)
+        }));
+        
+        setTasks(transformedTasks);
+        setFilteredTasks(transformedTasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        // You might want to show an error message to the user here
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
-    fetchTasks();
-  }, []);
+    fetchTasksData();
+  }, [statusFilter, priorityFilter, assigneeFilter]);
 
   // Apply filters and search
   useEffect(() => {
@@ -159,7 +144,7 @@ const Task = () => {
   }, [searchTerm, statusFilter, priorityFilter, assigneeFilter, sortBy, sortOrder, tasks]);
 
   // Get unique assignees for filter
-  const assignees = [...new Set(tasks.map(task => task.assignee))];
+  const assignees = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Mike Brown', 'Sarah Williams'];
 
   // Handle input change for new task
   const handleInputChange = (e) => {
@@ -171,47 +156,88 @@ const Task = () => {
   };
 
   // Add new task
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!newTask.title.trim()) return;
     
-    const task = {
-      id: `task-${Date.now()}`,
-      ...newTask,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    setTasks(prev => [task, ...prev]);
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: '',
-      priority: 'medium',
-      status: 'todo',
-      assignee: ''
-    });
-    setIsAddingTask(false);
+    try {
+      setLoading(true);
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: newTask.dueDate,
+        priority: newTask.priority,
+        status: newTask.status,
+        assigneeId: 1 // This should be replaced with actual assignee ID from your user management
+      };
+      
+      const createdTask = await createTask(taskData);
+      
+      // Transform and add the new task to the local state
+      const transformedTask = {
+        id: createdTask.id,
+        title: createdTask.title,
+        description: createdTask.description || '',
+        dueDate: createdTask.dueDate,
+        priority: createdTask.priority,
+        status: createdTask.status,
+        assignee: createdTask.assignee?.name || 'Unassigned',
+        createdAt: new Date(createdTask.createdAt),
+        updatedAt: new Date(createdTask.updatedAt)
+      };
+      
+      setTasks(prev => [transformedTask, ...prev]);
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: '',
+        priority: 'medium',
+        status: 'to_do',
+        assignee: ''
+      });
+      setIsAddingTask(false);
+    } catch (error) {
+      console.error('Error creating task:', error);
+      // Show error message to user
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Update task status
-  const toggleTaskStatus = (taskId, currentStatus) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === taskId 
-          ? { 
-              ...task, 
-              status: currentStatus === 'completed' ? 'todo' : 'completed',
-              updatedAt: new Date()
-            } 
-          : task
-      )
-    );
+  const toggleTaskStatus = async (taskId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'completed' ? 'to_do' : 'completed';
+      await updateTask(taskId, { status: newStatus });
+      
+      // Update local state
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === taskId 
+            ? { 
+                ...task, 
+                status: newStatus,
+                updatedAt: new Date()
+              } 
+            : task
+        )
+      );
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      // Show error message to user
+    }
   };
 
   // Delete task
-  const handleDeleteTask = (taskId) => {
+  const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+      try {
+        await deleteTask(taskId);
+        // Update local state
+        setTasks(prev => prev.filter(task => task.id !== taskId));
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        // Show error message to user
+      }
     }
   };
 
@@ -229,30 +255,51 @@ const Task = () => {
   };
 
   // Save edited task
-  const saveEditedTask = () => {
+  const saveEditedTask = async () => {
     if (!newTask.title.trim()) return;
     
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === editingTaskId
-          ? { 
-              ...task, 
-              ...newTask,
-              updatedAt: new Date()
-            }
-          : task
-      )
-    );
-    
-    setEditingTaskId(null);
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: '',
-      priority: 'medium',
-      status: 'todo',
-      assignee: ''
-    });
+    try {
+      setLoading(true);
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: newTask.dueDate,
+        priority: newTask.priority,
+        status: newTask.status,
+        assigneeId: 1 // This should be replaced with actual assignee ID from your user management
+      };
+      
+      const updatedTask = await updateTask(editingTaskId, taskData);
+      
+      // Update local state
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === editingTaskId
+            ? { 
+                ...task, 
+                ...updatedTask,
+                assignee: updatedTask.assignee?.name || 'Unassigned',
+                updatedAt: new Date()
+              }
+            : task
+        )
+      );
+      
+      setEditingTaskId(null);
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: '',
+        priority: 'medium',
+        status: 'to_do',
+        assignee: ''
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      // Show error message to user
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Cancel editing
@@ -263,7 +310,7 @@ const Task = () => {
       description: '',
       dueDate: '',
       priority: 'medium',
-      status: 'todo',
+      status: 'to_do',
       assignee: ''
     });
   };
@@ -283,9 +330,9 @@ const Task = () => {
     switch (status) {
       case 'completed':
         return 'status-badge completed';
-      case 'in-progress':
+      case 'in_progress':
         return 'status-badge in-progress';
-      case 'todo':
+      case 'to_do':
       default:
         return 'status-badge todo';
     }
@@ -485,8 +532,8 @@ const Task = () => {
                 onChange={handleInputChange}
                 className="form-control"
               >
-                <option value="todo">To Do</option>
-                <option value="in-progress">In Progress</option>
+                <option value="to_do">To Do</option>
+                <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
               </select>
             </div>
@@ -630,8 +677,7 @@ const Task = () => {
                 </div>
                 <div className="task-status">
                   <span className={getStatusBadgeClass(task.status)}>
-                    {task.status === 'in-progress' ? 'In Progress' : 
-                     task.status === 'todo' ? 'To Do' : 'Completed'}
+                    {getStatusDisplay(task.status)}
                   </span>
                 </div>
                 <div className="task-due-date">
