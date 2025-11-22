@@ -51,14 +51,6 @@ const TimeTracking = sequelize.define('TimeTracking', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   },
-  hourlyRate: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0
-  },
-  status: {
-    type: DataTypes.ENUM('Running', 'Stopped', 'Approved', 'Rejected'),
-    defaultValue: 'Stopped'
-  },
   tags: {
     type: DataTypes.JSON,
     defaultValue: []

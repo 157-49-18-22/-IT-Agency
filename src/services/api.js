@@ -154,13 +154,83 @@ export const calendarAPI = {
 
 // Time Tracking APIs
 export const timeTrackingAPI = {
-  getAll: (params) => api.get('/time-tracking', { params }),
-  start: (data) => api.post('/time-tracking/start', data),
-  stop: (id) => api.put(`/time-tracking/${id}/stop`),
-  create: (data) => api.post('/time-tracking', data),
-  update: (id, data) => api.put(`/time-tracking/${id}`, data),
-  delete: (id) => api.delete(`/time-tracking/${id}`),
-  getByProject: (projectId) => api.get(`/time-tracking/project/${projectId}`),
+  getAll: async (params) => {
+    try {
+      console.log('Fetching all time entries with params:', params);
+      const response = await api.get('/time-tracking', { params });
+      console.log('Time entries fetched successfully');
+      return response;
+    } catch (error) {
+      console.error('Error fetching time entries:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  start: async (data) => {
+    try {
+      console.log('Starting time tracking with data:', data);
+      const response = await api.post('/time-tracking/start', data);
+      console.log('Time tracking started successfully');
+      return response;
+    } catch (error) {
+      console.error('Error starting time tracking:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  stop: async (id) => {
+    try {
+      console.log('Stopping time tracking for entry:', id);
+      const response = await api.put(`/time-tracking/${id}/stop`);
+      console.log('Time tracking stopped successfully');
+      return response;
+    } catch (error) {
+      console.error('Error stopping time tracking:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  create: async (data) => {
+    try {
+      console.log('Creating time entry with data:', JSON.stringify(data, null, 2));
+      const response = await api.post('/time-tracking', data);
+      console.log('Time entry created successfully');
+      return response;
+    } catch (error) {
+      console.error('Error creating time entry:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  update: async (id, data) => {
+    try {
+      console.log(`Updating time entry ${id} with data:`, data);
+      const response = await api.put(`/time-tracking/${id}`, data);
+      console.log('Time entry updated successfully');
+      return response;
+    } catch (error) {
+      console.error('Error updating time entry:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  delete: async (id) => {
+    try {
+      console.log('Deleting time entry:', id);
+      const response = await api.delete(`/time-tracking/${id}`);
+      console.log('Time entry deleted successfully');
+      return response;
+    } catch (error) {
+      console.error('Error deleting time entry:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  getByProject: async (projectId) => {
+    try {
+      console.log('Fetching time entries for project:', projectId);
+      const response = await api.get(`/time-tracking/project/${projectId}`);
+      console.log('Project time entries fetched successfully');
+      return response;
+    } catch (error) {
+      console.error('Error fetching project time entries:', error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 // Report APIs
