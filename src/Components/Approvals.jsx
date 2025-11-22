@@ -1,187 +1,1238 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { FiCheck, FiX, FiSearch, FiFilter, FiChevronRight, FiClock, FiFile, FiUser, FiCalendar } from 'react-icons/fi';
+import React, { useMemo, useState, useEffect, useContext, useCallback } from 'react';
+import { 
+  FiCheck, 
+  FiX, 
+  FiSearch, 
+  FiFilter, 
+  FiChevronRight, 
+  FiClock, 
+  FiFile, 
+  FiUser, 
+  FiCalendar,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiXCircle,
+  FiInfo,
+  FiDownload,
+  FiEye,
+  FiRefreshCw,
+  FiChevronLeft,
+  FiChevronRight as FiChevronRightIcon,
+  FiChevronsLeft,
+  FiChevronsRight
+} from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './Approvals.css';
+import { AuthContext } from '../context/AuthContext';
 import { approvalAPI } from '../services/api';
 
 const Approvals = () => {
+  const { user } = useContext(AuthContext);
   const [approvals, setApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('Pending');
-  const [q, setQ] = useState('');
-  const [type, setType] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
   const [selected, setSelected] = useState([]);
   const [detail, setDetail] = useState(null);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    sortField: 'createdAt',
+    sortOrder: 'desc'
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchApprovals();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, activeTab]);
 
-  const fetchApprovals = async () => {
+  const fetchApprovals = useCallback(async () => {
     try {
-      setLoading(true);
-      const response = await approvalAPI.getAll();
-      setApprovals(response.data || []);
-    } catch (error) {
-      console.error('Error:', error);
+      if (!refreshing) setLoading(true);
+      setError(null);
+      
+      const params = {
+        status: activeTab === 'All' ? undefined : activeTab,
+        search: searchQuery || undefined,
+        type: typeFilter === 'All' ? undefined : typeFilter,
+        priority: priorityFilter === 'All' ? undefined : priorityFilter,
+        page: pagination.page,
+        limit: pagination.limit,
+        sortBy: pagination.sortField,
+        order: pagination.sortOrder,
+        assignedTo: user?.id // Only fetch approvals assigned to the current user
+      };
+
+      const response = await approvalAPI.getAll(params);
+      
+      if (response && response.data) {
+        setApprovals(response.data.items || []);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data.total || 0,
+          totalPages: response.data.totalPages || 1
+        }));
+      } else {
+        throw new Error('Invalid response format from server');
+      }
+      
+    } catch (err) {
+      console.error('Error fetching approvals:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to load approvals. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setApprovals([]); // Reset approvals on error
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [activeTab, searchQuery, typeFilter, priorityFilter, pagination, user?.id, refreshing]);
 
-  const handleApprove = async (id) => {
+  // Effect to fetch approvals when dependencies change
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
+
+  const handleApprove = async (id, notes = '') => {
     try {
-      await approvalAPI.approve(id, {});
-      fetchApprovals();
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const approvalData = { 
+        approvedBy: user.id,
+        approvedAt: new Date().toISOString(),
+        notes: notes || `Approved by ${user.name || user.email}`,
+        status: 'Approved'
+      };
+
+      // Optimistic update
+      setApprovals(prev => 
+        prev.map(item => 
+          item.id === id 
+            ? { ...item, status: 'Approved', ...approvalData }
+            : item
+        )
+      );
+      
+      // Remove from selected
+      setSelected(prev => prev.filter(itemId => itemId !== id));
+      
+      // Make API call
+      await approvalAPI.approve(id, approvalData);
+      
+      toast.success('Approval completed successfully');
+      
+      // Refresh the list if we're running low on items
+      if (approvals.length <= 2) {
+        fetchApprovals();
+      }
+      
+      return true;
     } catch (error) {
-      alert('Error approving');
+      console.error('Error approving:', error);
+      
+      // Revert optimistic update on error
+      fetchApprovals();
+      
+      const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'Failed to approve. Please try again.';
+      
+      toast.error(errorMessage);
+      return false;
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (id, reason = '') => {
+    if (!reason) {
+      const userReason = window.prompt('Please provide a reason for rejection:');
+      if (!userReason || !userReason.trim()) {
+        toast.warning('Rejection reason is required');
+        return false;
+      }
+      reason = userReason;
+    }
+    
     try {
-      await approvalAPI.reject(id, {});
-      fetchApprovals();
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const rejectionData = { 
+        rejectedBy: user.id,
+        rejectedAt: new Date().toISOString(),
+        reason,
+        status: 'Rejected'
+      };
+
+      // Optimistic update
+      setApprovals(prev => 
+        prev.map(item => 
+          item.id === id 
+            ? { ...item, status: 'Rejected', ...rejectionData }
+            : item
+        )
+      );
+      
+      // Remove from selected
+      setSelected(prev => prev.filter(itemId => itemId !== id));
+      
+      // Make API call
+      await approvalAPI.reject(id, rejectionData);
+      
+      toast.success('Rejection completed successfully');
+      
+      // Refresh the list if we're running low on items
+      if (approvals.length <= 2) {
+        fetchApprovals();
+      }
+      
+      return true;
     } catch (error) {
-      alert('Error rejecting');
+      console.error('Error rejecting:', error);
+      
+      // Revert optimistic update on error
+      fetchApprovals();
+      
+      const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'Failed to reject. Please try again.';
+      
+      toast.error(errorMessage);
+      return false;
     }
   };
 
+  const refreshApprovals = useCallback(() => {
+    setRefreshing(true);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    // fetchApprovals will be called by the effect
+  }, []);
+
+  const handleSearch = useCallback((e) => {
+    e?.preventDefault();
+    setPagination(prev => ({ ...prev, page: 1 }));
+    // fetchApprovals will be called by the effect
+  }, []);
+
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  }, [pagination.totalPages]);
+
+  const handleSort = useCallback((field) => {
+    setPagination(prev => ({
+      ...prev,
+      sortField: field,
+      sortOrder: prev.sortField === field && prev.sortOrder === 'asc' ? 'desc' : 'asc',
+      page: 1 // Reset to first page when sorting
+    }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery('');
+    setTypeFilter('All');
+    setPriorityFilter('All');
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      sortField: 'createdAt',
+      sortOrder: 'desc'
+    }));
+  }, []);
+
+  // Calculate counts for tabs
   const counts = useMemo(() => {
-    return approvals.reduce((acc, it) => { acc[it.status] = (acc[it.status] || 0) + 1; return acc; }, {});
+    return approvals.reduce((acc, it) => { 
+      if (it.status) {
+        acc[it.status] = (acc[it.status] || 0) + 1; 
+      }
+      return acc; 
+    }, { Pending: 0, Approved: 0, Rejected: 0 });
   }, [approvals]);
 
-  const filtered = useMemo(() => {
-    return approvals.filter(it => (activeTab === 'All' || it.status === activeTab))
-      .filter(it => (type === 'All' || it.type === type))
-      .filter(it => Object.values(it).join(' ').toLowerCase().includes(q.toLowerCase()));
-  }, [approvals, activeTab, type, q]);
+  // Get unique priorities and types for filters
+  const filterOptions = useMemo(() => {
+    const priorities = new Set();
+    const types = new Set();
+    
+    approvals.forEach(item => {
+      if (item.priority) priorities.add(item.priority);
+      if (item.type) types.add(item.type);
+    });
+    
+    return {
+      priorities: ['All', ...Array.from(priorities).sort()],
+      types: ['All', ...Array.from(types).sort()]
+    };
+  }, [approvals]);
 
-  if (loading) return <div className="loading">Loading...</div>;
+  // Filter and sort approvals
+  const filteredApprovals = useMemo(() => {
+    return [...approvals]
+      .filter(approval => {
+        if (!approval) return false;
+        
+        // Search across all string fields
+        const matchesSearch = !searchQuery || 
+          Object.entries(approval).some(([key, value]) => {
+            if (typeof value === 'string') {
+              return value.toLowerCase().includes(searchQuery.toLowerCase());
+            } else if (typeof value === 'number') {
+              return value.toString().includes(searchQuery);
+            }
+            return false;
+          });
+        
+        // Filter by type
+        const matchesType = typeFilter === 'All' || approval.type === typeFilter;
+        
+        // Filter by priority
+        const matchesPriority = priorityFilter === 'All' || approval.priority === priorityFilter;
+        
+        // Filter by status
+        const matchesStatus = activeTab === 'All' || approval.status === activeTab;
+        
+        return matchesSearch && matchesType && matchesPriority && matchesStatus;
+      })
+      .sort((a, b) => {
+        // Handle sorting
+        const { sortField, sortOrder } = pagination;
+        if (!sortField) return 0;
+        
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+        
+        // Handle date fields
+        if (sortField.includes('Date') || sortField.includes('At')) {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        }
+        
+        // Handle string comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortOrder === 'asc' 
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
+        
+        // Handle number comparison
+        return sortOrder === 'asc' 
+          ? (aValue || 0) - (bValue || 0)
+          : (bValue || 0) - (aValue || 0);
+      });
+  }, [approvals, searchQuery, typeFilter, priorityFilter, activeTab, pagination.sortField, pagination.sortOrder]);
 
-  const toggleSelect = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
+  if (loading && !refreshing) {
+    return (
+      <div className="loading-overlay">
+        <div className="spinner"></div>
+        <p>Loading approvals...</p>
+      </div>
+    );
+  }
 
-  const quickApprove = (id) => handleApprove(id);
-  const quickReject = (id) => handleReject(id);
-  
-  const setStatus = async (ids, status) => {
-    try {
-      const promises = ids.map(id => 
-        status === 'Approved' ? handleApprove(id) : handleReject(id)
-      );
-      await Promise.all(promises);
-      setSelected([]);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert(`Error ${status.toLowerCase()} items`);
+  // Render empty state
+  if (!loading && approvals.length === 0) {
+    return (
+      <div className="empty-state">
+        <FiInfo className="empty-icon" />
+        <h3>No approvals found</h3>
+        <p>There are no pending approvals at the moment.</p>
+        <button 
+          className="btn primary" 
+          onClick={refreshApprovals}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error && !refreshing) {
+    return (
+      <div className="error-state">
+        <FiAlertCircle className="error-icon" />
+        <h3>Error loading approvals</h3>
+        <p>{error}</p>
+        <button 
+          className="btn primary" 
+          onClick={refreshApprovals}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Retrying...' : 'Retry'}
+        </button>
+      </div>
+    );
+  }
+
+  const toggleSelect = useCallback((id) => {
+    setSelected(prev => 
+      prev.includes(id) 
+        ? prev.filter(x => x !== id) 
+        : [...prev, id]
+    );
+  }, []);
+
+  const selectAll = useCallback(() => {
+    const currentPageItems = filteredApprovals
+      .slice(
+        (pagination.page - 1) * pagination.limit,
+        pagination.page * pagination.limit
+      )
+      .map(item => item.id);
+    
+    // If all current page items are selected, deselect all
+    if (currentPageItems.every(id => selected.includes(id))) {
+      setSelected(prev => prev.filter(id => !currentPageItems.includes(id)));
+    } else {
+      // Otherwise select all current page items
+      setSelected(prev => [...new Set([...prev, ...currentPageItems])]);
     }
+  }, [filteredApprovals, pagination.page, pagination.limit, selected]);
+
+  const quickApprove = useCallback(async (id) => {
+    const confirmed = window.confirm('Are you sure you want to approve this item?');
+    if (confirmed) {
+      await handleApprove(id, 'Approved via quick action');
+    }
+  }, [handleApprove]);
+
+  const quickReject = useCallback(async (id) => {
+    const reason = window.prompt('Please provide a reason for rejection:');
+    if (reason && reason.trim()) {
+      await handleReject(id, reason);
+    } else if (reason !== null) {
+      toast.warning('Rejection reason cannot be empty');
+    }
+  }, [handleReject]);
+
+  const renderStatusBadge = (status) => {
+    const statusMap = {
+      'Pending': { color: 'var(--warning)', icon: <FiClock /> },
+      'Approved': { color: 'var(--success)', icon: <FiCheckCircle /> },
+      'Rejected': { color: 'var(--danger)', icon: <FiXCircle /> }
+    };
+    
+    const statusInfo = statusMap[status] || { color: 'var(--gray)', icon: <FiInfo /> };
+    
+    return (
+      <span 
+        className="status-badge" 
+        style={{ 
+          backgroundColor: `${statusInfo.color}15`,
+          color: statusInfo.color,
+          borderColor: statusInfo.color
+        }}
+      >
+        {statusInfo.icon}
+        <span>{status}</span>
+      </span>
+    );
   };
+  
+  const renderPriorityBadge = (priority) => {
+    const priorityMap = {
+      'High': 'danger',
+      'Medium': 'warning',
+      'Low': 'info'
+    };
+    
+    const priorityClass = priorityMap[priority] || 'default';
+    
+    return (
+      <span className={`priority-badge ${priorityClass}`}>
+        {priority || 'N/A'}
+      </span>
+    );
+  };
+  
+  const batchUpdateStatus = useCallback(async (status) => {
+    if (!selected.length) {
+      toast.warning('Please select at least one approval');
+      return;
+    }
+    
+    const action = status.toLowerCase();
+    const confirmMessage = `Are you sure you want to ${action} ${selected.length} selected item(s)?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const results = await Promise.allSettled(
+        selected.map(id => 
+          status === 'Approved' 
+            ? handleApprove(id, `Batch approved by ${user?.name || user?.email || 'Admin'} on ${new Date().toLocaleString()}`)
+            : handleReject(id, `Batch rejected by ${user?.name || user?.email || 'Admin'} on ${new Date().toLocaleString()}`)
+        )
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
+      const failed = results.length - successful;
+      
+      if (successful > 0) {
+        toast.success(`Successfully processed ${successful} item(s)`);
+      }
+      
+      if (failed > 0) {
+        toast.error(`Failed to process ${failed} item(s)`);
+      }
+      
+      // Refresh the list
+      fetchApprovals();
+      
+    } catch (error) {
+      console.error(`Error ${action}ing items:`, error);
+      toast.error(`Error ${action}ing items. Please try again.`);
+    } finally {
+      setLoading(false);
+      setSelected([]);
+    }
+  }, [selected, user, handleApprove, handleReject, fetchApprovals]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredApprovals.length / pagination.limit);
+  const startIdx = (pagination.page - 1) * pagination.limit;
+  const paginatedItems = filteredApprovals.slice(startIdx, startIdx + pagination.limit);
+  const totalCount = filteredApprovals.length;
 
   return (
     <div className="approvals">
       <div className="approvals-header">
-        <div className="title">Approvals</div>
-        <div className="meta">
-          <span className="badge">Pending {counts.Pending || 0}</span>
-          <span className="badge success">Approved {counts.Approved || 0}</span>
-          <span className="badge danger">Rejected {counts.Rejected || 0}</span>
+        <div className="header-left">
+          <h1 className="title">Approvals</h1>
+          <div className="meta">
+            <span className="badge" onClick={() => setActiveTab('Pending')}>
+              <FiClock /> Pending {counts.Pending || 0}
+            </span>
+            <span className="badge success" onClick={() => setActiveTab('Approved')}>
+              <FiCheckCircle /> Approved {counts.Approved || 0}
+            </span>
+            <span className="badge danger" onClick={() => setActiveTab('Rejected')}>
+              <FiXCircle /> Rejected {counts.Rejected || 0}
+            </span>
+            <button 
+              className="btn icon" 
+              onClick={refreshApprovals} 
+              disabled={refreshing}
+              title="Refresh"
+            >
+              <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+            </button>
+          </div>
+        </div>
+        
+        <div className="header-actions">
+          <button 
+            className={`btn ${showFilters ? 'active' : ''}`} 
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FiFilter /> {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+          
+          <button 
+            className="btn secondary" 
+            onClick={resetFilters}
+            disabled={!searchQuery && typeFilter === 'All' && priorityFilter === 'All'}
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
+      {/* Tabs */}
       <div className="tabs">
-        {['Pending','Approved','Rejected','All'].map(t => (
-          <button key={t} className={`tab ${activeTab===t?'active':''}`} onClick={() => setActiveTab(t)}>{t}</button>
+        {['Pending', 'Approved', 'Rejected', 'All'].map(tab => (
+          <button 
+            key={tab}
+            className={`tab ${activeTab === tab ? 'active' : ''}`} 
+            onClick={() => {
+              setActiveTab(tab);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+          >
+            {tab} {tab !== 'All' && `(${counts[tab] || 0})`}
+          </button>
         ))}
       </div>
 
-      <div className="toolbar">
-        <div className="search">
-          <FiSearch />
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search approvals, projects, users" />
+      {/* Search and Filters */}
+      <div className={`filters-container ${showFilters ? 'expanded' : ''}`}>
+        <form onSubmit={handleSearch} className="search-form">
+          <div className="search">
+            <FiSearch className="search-icon" />
+            <input 
+              type="text"
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)}
+              onBlur={handleSearch}
+              placeholder="Search by title, ID, requester..." 
+              className="search-input"
+              aria-label="Search approvals"
+            />
+            {searchQuery && (
+              <button 
+                type="button" 
+                className="clear-search"
+                onClick={() => {
+                  setSearchQuery('');
+                  handleSearch();
+                }}
+                aria-label="Clear search"
+              >
+                <FiX />
+              </button>
+            )}
+          </div>
+          
+          <div className="filter-options">
+            <div className="filter-group">
+              <label htmlFor="type-filter">Type</label>
+              <select 
+                id="type-filter"
+                value={typeFilter} 
+                onChange={e => {
+                  setTypeFilter(e.target.value);
+                  handleSearch();
+                }}
+                className="filter-select"
+              >
+                <option value="All">All Types</option>
+                {filterOptions.types
+                  .filter(type => type !== 'All')
+                  .map(type => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label htmlFor="priority-filter">Priority</label>
+              <select 
+                id="priority-filter"
+                value={priorityFilter} 
+                onChange={e => {
+                  setPriorityFilter(e.target.value);
+                  handleSearch();
+                }}
+                className="filter-select"
+              >
+                <option value="All">All Priorities</option>
+                {filterOptions.priorities
+                  .filter(priority => priority !== 'All')
+                  .map(priority => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label>Results per page</label>
+              <select 
+                value={pagination.limit}
+                onChange={e => {
+                  setPagination(prev => ({
+                    ...prev,
+                    limit: parseInt(e.target.value, 10),
+                    page: 1 // Reset to first page
+                  }));
+                }}
+                className="filter-select"
+              >
+                <option value="10">10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      {/* Bulk Actions */}
+      {selected.length > 0 && (
+        <div className="bulk-actions-bar">
+          <div className="selected-count">
+            <input 
+              type="checkbox" 
+              checked={selected.length > 0}
+              onChange={selectAll}
+              aria-label="Select all items"
+            />
+            <span>{selected.length} item{selected.length !== 1 ? 's' : ''} selected</span>
+          </div>
+          
+          <div className="bulk-buttons">
+            <button 
+              className="btn success" 
+              onClick={() => batchUpdateStatus('Approved')}
+              disabled={loading}
+              title="Approve selected items"
+            >
+              <FiCheckCircle /> Approve Selected
+            </button>
+            
+            <button 
+              className="btn danger" 
+              onClick={() => batchUpdateStatus('Rejected')}
+              disabled={loading}
+              title="Reject selected items"
+            >
+              <FiXCircle /> Reject Selected
+            </button>
+            
+            <button 
+              className="btn icon" 
+              onClick={() => setSelected([])}
+              title="Clear selection"
+            >
+              <FiX />
+            </button>
+          </div>
         </div>
-        <div className="filters">
-          <FiFilter />
-          <select value={type} onChange={e=>setType(e.target.value)}>
-            {['All','Deliverable','Stage Transition','Bug Fix'].map(o=> <option key={o}>{o}</option>)}
-          </select>
-          {selected.length>0 && (
-            <div className="bulk">
-              <button className="approve" onClick={()=>setStatus(selected,'Approved')}><FiCheck/> Approve {selected.length}</button>
-              <button className="reject" onClick={()=>setStatus(selected,'Rejected')}><FiX/> Reject</button>
+      )}
+
+      {/* Main Content */}
+      <div className="list-container">
+        {loading && (
+          <div className="loading-overlay">
+            <div className="spinner"></div>
+            <p>Loading approvals...</p>
+          </div>
+        )}
+        
+        <div className="list">
+          <div className="list-head">
+            <div className="cell w-5">
+              <label className="checkbox">
+                <input 
+                  type="checkbox" 
+                  checked={selected.length > 0 && 
+                    paginatedItems.every(item => selected.includes(item.id))}
+                  onChange={selectAll}
+                  aria-label={selected.length ? 'Deselect all' : 'Select all'}
+                />
+                <span></span>
+              </label>
+            </div>
+            
+            <div 
+              className={`cell w-30 sortable ${pagination.sortField === 'title' ? 'sorted' : ''}`}
+              onClick={() => handleSort('title')}
+            >
+              Item
+              {pagination.sortField === 'title' && (
+                <span className="sort-indicator">
+                  {pagination.sortOrder === 'asc' ? '↑' : '↓'}
+                </span>
+              )}
+            </div>
+            
+            <div 
+              className={`cell w-20 sortable ${pagination.sortField === 'project' ? 'sorted' : ''}`}
+              onClick={() => handleSort('project')}
+            >
+              Project
+              {pagination.sortField === 'project' && (
+                <span className="sort-indicator">
+                  {pagination.sortOrder === 'asc' ? '↑' : '↓'}
+                </span>
+              )}
+            </div>
+            
+            <div 
+              className={`cell w-15 sortable ${pagination.sortField === 'priority' ? 'sorted' : ''}`}
+              onClick={() => handleSort('priority')}
+            >
+              Priority
+              {pagination.sortField === 'priority' && (
+                <span className="sort-indicator">
+                  {pagination.sortOrder === 'asc' ? '↑' : '↓'}
+                </span>
+              )}
+            </div>
+            
+            <div 
+              className={`cell w-15 sortable ${pagination.sortField === 'requestedBy' ? 'sorted' : ''}`}
+              onClick={() => handleSort('requestedBy')}
+            >
+              Requested By
+              {pagination.sortField === 'requestedBy' && (
+                <span className="sort-indicator">
+                  {pagination.sortOrder === 'asc' ? '↑' : '↓'}
+                </span>
+              )}
+            </div>
+            
+            <div 
+              className={`cell w-15 sortable ${pagination.sortField === 'createdAt' ? 'sorted' : ''}`}
+              onClick={() => handleSort('createdAt')}
+            >
+              Requested On
+              {pagination.sortField === 'createdAt' && (
+                <span className="sort-indicator">
+                  {pagination.sortOrder === 'asc' ? '↑' : '↓'}
+                </span>
+              )}
+            </div>
+            
+            <div className="cell w-15 right">Status</div>
+            <div className="cell w-15 right">Actions</div>
+          </div>
+
+          <div className="list-body">
+            {paginatedItems.length > 0 ? (
+              paginatedItems.map(item => (
+                <div key={item.id} className={`row ${item.status.toLowerCase()}`}>
+                  <div className="cell w-5">
+                    <label className="checkbox">
+                      <input 
+                        type="checkbox" 
+                        checked={selected.includes(item.id)} 
+                        onChange={() => toggleSelect(item.id)}
+                        disabled={item.status !== 'Pending' && activeTab === 'Pending'}
+                        aria-label={`Select ${item.title}`}
+                      />
+                      <span></span>
+                    </label>
+                  </div>
+                  
+                  <div className="cell w-30">
+                    <div className="item-meta">
+                      <div className="item-title">
+                        <FiFile className="item-icon" />
+                        <span className="text-ellipsis">{item.title || 'Untitled'}</span>
+                        <span className={`pill ${(item.type || '').replace(/\s/g,'').toLowerCase()}`}>
+                          {item.type || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="item-sub">
+                        <span className="item-id">#{item.id}</span>
+                        {item.requester && (
+                          <>
+                            <span className="separator">•</span>
+                            <span className="requester">
+                              <FiUser className="icon" /> {item.requester}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="cell w-20">
+                    <div className="project-cell">
+                      <span className="text-ellipsis" title={item.project || 'N/A'}>
+                        {item.project || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="cell w-15">
+                    {renderPriorityBadge(item.priority)}
+                  </div>
+                  
+                  <div className="cell w-15">
+                    <div className="requester-info">
+                      <div className="requester-avatar">
+                        {item.requestedBy 
+                          ? item.requestedBy
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')
+                              .toUpperCase()
+                              .substring(0, 2)
+                          : 'NA'}
+                      </div>
+                      <span className="requester-name text-ellipsis" title={item.requestedBy || 'N/A'}>
+                        {item.requestedBy || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="cell w-15">
+                    <div className="date-cell">
+                      {item.createdAt 
+                        ? new Date(item.createdAt).toLocaleDateString()
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  
+                  <div className="cell w-15 right">
+                    {renderStatusBadge(item.status)}
+                  </div>
+                  
+                  <div className="cell w-15 right actions">
+                    <div className="action-buttons">
+                      {item.status === 'Pending' ? (
+                        <>
+                          <button 
+                            className="btn-icon success"
+                            onClick={() => quickApprove(item.id)}
+                            disabled={loading}
+                            title="Approve"
+                            aria-label={`Approve ${item.title}`}
+                          >
+                            <FiCheck />
+                          </button>
+                          <button 
+                            className="btn-icon danger"
+                            onClick={() => quickReject(item.id)}
+                            disabled={loading}
+                            title="Reject"
+                            aria-label={`Reject ${item.title}`}
+                          >
+                            <FiX />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="status-message">
+                          {item.status} by {item[`${item.status.toLowerCase()}By`] || 'System'}
+                        </span>
+                      )}
+                      
+                      <button 
+                        className="btn-icon primary"
+                        onClick={() => setDetail(item)}
+                        title="View Details"
+                        aria-label={`View details for ${item.title}`}
+                      >
+                        <FiEye />
+                      </button>
+                      
+                      {item.attachmentUrl && (
+                        <a 
+                          href={item.attachmentUrl} 
+                          className="btn-icon"
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          title="Download Attachment"
+                          aria-label="Download attachment"
+                        >
+                          <FiDownload />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <FiInfo className="empty-icon" />
+                <h3>No approvals found</h3>
+                <p>
+                  {activeTab !== 'All' 
+                    ? `There are no ${activeTab.toLowerCase()} approvals matching your criteria.`
+                    : 'No approvals found with the current filters.'}
+                </p>
+                <button 
+                  className="btn primary" 
+                  onClick={resetFilters}
+                  disabled={!searchQuery && typeFilter === 'All' && priorityFilter === 'All'}
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <div className="pagination-info">
+                Showing {Math.min(startIdx + 1, totalCount)}-{Math.min(startIdx + pagination.limit, totalCount)} of {totalCount}
+              </div>
+              
+              <div className="pagination-controls">
+                <button 
+                  className="pagination-button" 
+                  onClick={() => handlePageChange(1)}
+                  disabled={pagination.page === 1}
+                  aria-label="First page"
+                >
+                  <FiChevronsLeft />
+                </button>
+                
+                <button 
+                  className="pagination-button" 
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  aria-label="Previous page"
+                >
+                  <FiChevronLeft />
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Calculate page numbers to show (current page in the middle if possible)
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (pagination.page <= 3) {
+                    pageNum = i + 1;
+                  } else if (pagination.page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = pagination.page - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`pagination-button ${pagination.page === pageNum ? 'active' : ''}`}
+                      onClick={() => handlePageChange(pageNum)}
+                      aria-label={`Page ${pageNum}`}
+                      aria-current={pagination.page === pageNum ? 'page' : undefined}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button 
+                  className="pagination-button" 
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= totalPages}
+                  aria-label="Next page"
+                >
+                  <FiChevronRight />
+                </button>
+                
+                <button 
+                  className="pagination-button" 
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={pagination.page >= totalPages}
+                  aria-label="Last page"
+                >
+                  <FiChevronsRight />
+                </button>
+              </div>
+              
+              <div className="pagination-size">
+                <span>Show:</span>
+                <select 
+                  value={pagination.limit}
+                  onChange={e => {
+                    setPagination(prev => ({
+                      ...prev,
+                      limit: parseInt(e.target.value, 10),
+                      page: 1 // Reset to first page
+                    }));
+                  }}
+                  aria-label="Items per page"
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="list">
-        <div className="list-head">
-          <div className="cell w-40">Item</div>
-          <div className="cell w-20">Project</div>
-          <div className="cell w-12">Priority</div>
-          <div className="cell w-14">Requested</div>
-          <div className="cell w-14 right">Actions</div>
-        </div>
-
-        {filtered.map(it => (
-          <div key={it.id} className={`row ${it.status.toLowerCase()}`}>
-            <div className="cell w-40">
-              <label className="checkbox">
-                <input type="checkbox" checked={selected.includes(it.id)} onChange={()=>toggleSelect(it.id)} />
-                <span></span>
-              </label>
-              <div className="item-meta">
-                <div className="item-title"><FiFile/> {it.title} <span className={`pill ${it.type.replace(/\s/g,'').toLowerCase()}`}>{it.type}</span></div>
-                <div className="item-sub"><span>#{it.id}</span> <span className="dot">•</span> <FiUser/> {it.requestedBy} <span className="dot">•</span> <FiCalendar/> {it.date}</div>
-              </div>
-            </div>
-            <div className="cell w-20 ellipsis">{it.project}</div>
-            <div className={`cell w-12`}>
-              <span className={`priority ${it.priority.toLowerCase()}`}>{it.priority}</span>
-            </div>
-            <div className="cell w-14">{it.requestedTo}</div>
-            <div className="cell w-14 right actions">
-              {it.status==='Pending' ? (
-                <>
-                  <button className="approve ghost" onClick={()=>quickApprove(it.id)}><FiCheck/> Approve</button>
-                  <button className="reject ghost" onClick={()=>quickReject(it.id)}><FiX/> Reject</button>
-                </>
-              ) : (
-                <span className={`status-tag ${it.status.toLowerCase()}`}>{it.status}</span>
-              )}
-              <button className="view" onClick={()=>setDetail(it)}><FiChevronRight/></button>
-            </div>
-          </div>
-        ))}
-        {filtered.length===0 && (
-          <div className="empty">
-            <FiClock/>
-            <p>No {activeTab.toLowerCase()} items found.</p>
-          </div>
-        )}
-      </div>
-
+      {/* Detail View Modal */}
       {detail && (
-        <div className="drawer" onClick={()=>setDetail(null)}>
-          <div className="drawer-panel" onClick={e=>e.stopPropagation()}>
-            <div className="drawer-head">
-              <div className="drawer-title">{detail.title}</div>
-              <div className="drawer-sub">{detail.type} • {detail.project} • {detail.id}</div>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setDetail(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Approval Details</h3>
+              <button 
+                className="close" 
+                onClick={() => setDetail(null)}
+                aria-label="Close modal"
+              >
+                <FiX />
+              </button>
             </div>
-            <div className="drawer-body">
-              <div className="field"><span>Requested By</span><b>{detail.requestedBy}</b></div>
-              <div className="field"><span>Requested To</span><b>{detail.requestedTo}</b></div>
-              <div className="field"><span>Date</span><b>{detail.date}</b></div>
-              <div className="field"><span>Priority</span><b className={`priority ${detail.priority.toLowerCase()}`}>{detail.priority}</b></div>
-              <div className="field"><span>Version</span><b>{detail.version}</b></div>
-              <div className="notes">{detail.notes}</div>
-            </div>
-            {detail.status==='Pending' && (
-              <div className="drawer-actions">
-                <button className="approve" onClick={()=>{quickApprove(detail.id); setDetail(null);}}><FiCheck/> Approve</button>
-                <button className="reject" onClick={()=>{quickReject(detail.id); setDetail(null);}}><FiX/> Reject</button>
+            
+            <div className="modal-body">
+              <div className="detail-grid">
+                <div className="detail-section">
+                  <h4>Basic Information</h4>
+                  <div className="detail-row">
+                    <div className="detail-label">Title</div>
+                    <div className="detail-value">{detail.title || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Status</div>
+                    <div className="detail-value">
+                      {renderStatusBadge(detail.status || 'Pending')}
+                    </div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Type</div>
+                    <div className="detail-value">{detail.type || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Project</div>
+                    <div className="detail-value">{detail.project || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Priority</div>
+                    <div className="detail-value">
+                      {renderPriorityBadge(detail.priority || 'Medium')}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="detail-section">
+                  <h4>Request Details</h4>
+                  <div className="detail-row">
+                    <div className="detail-label">Requested By</div>
+                    <div className="detail-value">{detail.requestedBy || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Assigned To</div>
+                    <div className="detail-value">{detail.assignedTo || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-label">Requested On</div>
+                    <div className="detail-value">
+                      {detail.createdAt 
+                        ? new Date(detail.createdAt).toLocaleString() 
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  {detail.updatedAt && (
+                    <div className="detail-row">
+                      <div className="detail-label">Last Updated</div>
+                      <div className="detail-value">
+                        {new Date(detail.updatedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                  {detail.dueDate && (
+                    <div className="detail-row">
+                      <div className="detail-label">Due Date</div>
+                      <div className="detail-value">
+                        {new Date(detail.dueDate).toLocaleDateString()}
+                        {new Date(detail.dueDate) < new Date() && (
+                          <span className="overdue"> (Overdue)</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {detail.description && (
+                  <div className="detail-section full-width">
+                    <h4>Description</h4>
+                    <div className="detail-description">
+                      {detail.description.split('\n').map((para, i) => (
+                        <p key={i}>{para || <br />}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {(detail.notes || detail.reason) && (
+                  <div className="detail-section full-width">
+                    <h4>{detail.status === 'Approved' ? 'Approval Notes' : 'Rejection Reason'}</h4>
+                    <div className="detail-notes">
+                      {detail.notes || detail.reason || 'N/A'}
+                    </div>
+                    {detail.approvedBy && (
+                      <div className="detail-meta">
+                        Approved by {detail.approvedBy} on {detail.approvedAt ? new Date(detail.approvedAt).toLocaleString() : 'N/A'}
+                      </div>
+                    )}
+                    {detail.rejectedBy && (
+                      <div className="detail-meta">
+                        Rejected by {detail.rejectedBy} on {detail.rejectedAt ? new Date(detail.rejectedAt).toLocaleString() : 'N/A'}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {detail.attachmentUrl && (
+                  <div className="detail-section full-width">
+                    <h4>Attachments</h4>
+                    <div className="attachments">
+                      <a 
+                        href={detail.attachmentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="attachment"
+                      >
+                        <FiFile className="attachment-icon" />
+                        <span className="attachment-name">
+                          {detail.attachmentUrl.split('/').pop() || 'Download'}
+                        </span>
+                        <FiDownload className="download-icon" />
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+            
+            <div className="modal-footer">
+              {detail.status === 'Pending' && (
+                <>
+                  <button 
+                    className="btn success"
+                    onClick={() => {
+                      const notes = prompt('Enter approval notes (optional):');
+                      if (notes !== null) {
+                        handleApprove(detail.id, notes || 'Approved via details view');
+                        setDetail(null);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <FiCheck /> Approve
+                  </button>
+                  <button 
+                    className="btn danger"
+                    onClick={() => {
+                      const reason = prompt('Please provide a reason for rejection:');
+                      if (reason && reason.trim()) {
+                        handleReject(detail.id, reason);
+                        setDetail(null);
+                      } else if (reason !== null) {
+                        toast.warning('Rejection reason cannot be empty');
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <FiX /> Reject
+                  </button>
+                </>
+              )}
+              
+              <div className="spacer"></div>
+              
+              <button 
+                className="btn secondary"
+                onClick={() => setDetail(null)}
+                disabled={loading}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -189,4 +1240,4 @@ const Approvals = () => {
   );
 };
 
-export default Approvals;
+export default React.memo(Approvals);
