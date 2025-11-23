@@ -1,21 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth.middleware');
+const { getTeamPerformance, getFinancial } = require('../controllers/report.controller');
+const { Project, Task, User } = require('../models/sql');
 
+// Protect all routes with authentication
 router.use(protect);
+
+// Get team performance data
+router.get('/team-performance', getTeamPerformance);
+
+// Financial reports
+router.get('/financial', getFinancial);
 
 // Dashboard stats
 router.get('/dashboard', async (req, res) => {
   try {
-    const Project = require('../models/sql');
-    const Task = require('../models/sql');
-    const User = require('../models/sql');
-
-    const totalProjects = await Project.countDocuments();
-    const activeProjects = await Project.countDocuments({ status: 'In Progress' });
-    const totalTasks = await Task.countDocuments();
-    const completedTasks = await Task.countDocuments({ status: 'completed' });
-    const teamMembers = await User.countDocuments({ status: 'active' });
+    const [
+      totalProjects,
+      activeProjects,
+      totalTasks,
+      completedTasks,
+      teamMembers
+    ] = await Promise.all([
+      Project.count(),
+      Project.count({ where: { status: 'In Progress' } }),
+      Task.count(),
+      Task.count({ where: { status: 'completed' } }),
+      User.count({ where: { status: 'active' } })
+    ]);
 
     res.json({
       success: true,
@@ -28,7 +41,12 @@ router.get('/dashboard', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching dashboard stats',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

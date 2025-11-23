@@ -28,7 +28,7 @@ exports.getAllProjects = async (req, res) => {
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'name', 'companyName', 'email']
+          attributes: ['id', 'name', 'company', 'email']
         },
         {
           model: User,
@@ -69,7 +69,7 @@ exports.getProject = async (req, res) => {
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'name', 'companyName', 'email', 'phone', 'address']
+          attributes: ['id', 'name', 'company', 'email', 'phone', 'address']
         },
         {
           model: User,

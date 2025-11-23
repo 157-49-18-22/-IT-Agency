@@ -146,7 +146,7 @@ function App() {
             </Route>
 
             {/* Stage Management */}
-            <Route path="/stage-transition" element={<StageTransition />} />
+            <Route path="/stage-transition/:projectId?" element={<StageTransition />} />
 
             {/* Client Portal Routes */}
             <Route path="/client">

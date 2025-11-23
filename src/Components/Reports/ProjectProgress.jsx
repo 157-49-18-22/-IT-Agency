@@ -1,54 +1,106 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { FiFilter, FiChevronDown, FiSearch, FiFlag, FiUsers, FiCalendar } from 'react-icons/fi';
 import './ProjectProgress.css';
-import { reportAPI } from '../../services/api';
+import { projectAPI } from '../../services/api';
+import { format } from 'date-fns';
 
-const projects = [
-  { id: 'p1', name: 'Website Revamp', manager: 'John Doe', due: '2025-12-10', status: 'On Track', progress: 72, team: 8, milestones: [
-    { t: 'Kickoff', d: '2025-10-01' }, { t: 'Design', d: '2025-10-20' }, { t: 'Dev', d: '2025-11-20' }, { t: 'Launch', d: '2025-12-10' }
-  ]},
-  { id: 'p2', name: 'Mobile App', manager: 'Jane Smith', due: '2026-01-15', status: 'At Risk', progress: 44, team: 6, milestones: [
-    { t: 'MVP', d: '2025-11-30' }, { t: 'Beta', d: '2025-12-20' }, { t: 'Release', d: '2026-01-15' }
-  ]},
-  { id: 'p3', name: 'API Backend', manager: 'Alex Johnson', due: '2025-11-30', status: 'Delayed', progress: 58, team: 5, milestones: [
-    { t: 'Auth', d: '2025-10-25' }, { t: 'Core', d: '2025-11-15' }, { t: 'Docs', d: '2025-11-28' }
-  ]},
-];
+// Helper function to calculate project status based on progress and due date
+const getProjectStatus = (project) => {
+  const today = new Date();
+  const dueDate = new Date(project.endDate);
+  const timeDiff = dueDate - today;
+  const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  
+  // Calculate progress percentage
+  const totalTasks = project.tasks?.length || 0;
+  const completedTasks = project.tasks?.filter(t => t.status === 'completed').length || 0;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
+  // Determine status based on progress and due date
+  let status = 'On Track';
+  if (progress < 50 && daysRemaining < 7) {
+    status = 'At Risk';
+  } else if (progress < 30 && daysRemaining < 14) {
+    status = 'Delayed';
+  } else if (daysRemaining < 0) {
+    status = 'Overdue';
+  }
+  
+  return { progress, status };
+};
 
 export default function ProjectProgress() {
-  // State hooks at the top
-  const [reportData, setReportData] = useState(null);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   
-  // Fetch data effect
+  // Fetch projects data
   useEffect(() => {
-    const fetchReport = async () => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await reportAPI.getProjectProgress();
-        setReportData(response.data);
+        console.log('Fetching projects...');
+        const response = await projectAPI.getAll();
+        console.log('API Response:', response);
+        
+        if (!response || !response.data) {
+          console.error('No data in response');
+          return;
+        }
+        
+        // Check if data is an array, if not, try to get the array from a property
+        const projectsData = Array.isArray(response.data) 
+          ? response.data 
+          : response.data.projects || response.data.data || [];
+        
+        // Process projects to include calculated fields
+        const processedProjects = projectsData.map(project => {
+          const { progress, status } = getProjectStatus(project);
+          return {
+            id: project.id,
+            name: project.name,
+            manager: project.projectManager?.name || 'Unassigned',
+            endDate: project.endDate,
+            due: project.endDate, // Keep both for backward compatibility
+            status,
+            progress,
+            team: project.teamMembers?.length || 0,
+            milestones: project.milestones || [],
+            tasks: project.tasks || []
+          };
+        });
+        
+        setProjects(processedProjects);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching projects:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchReport();
+    
+    fetchProjects();
   }, []);
 
   // Filtered projects
   const filtered = useMemo(() => {
     if (loading) return [];
     return projects.filter(p => {
-      const okQ = !q || p.name.toLowerCase().includes(q.toLowerCase());
-      const okS = status === 'all' || p.status === status;
-      return okQ && okS;
+      const matchesSearch = !q || p.name.toLowerCase().includes(q.toLowerCase()) || 
+                          p.manager.toLowerCase().includes(q.toLowerCase());
+      const matchesStatus = status === 'all' || p.status === status;
+      return matchesSearch && matchesStatus;
     });
-  }, [q, status, loading]);
+  }, [q, status, loading, projects]);
 
-  if (loading) return <div className="loading">Loading report...</div>;
+  if (loading) return <div className="loading">Loading projects...</div>;
+  
+  console.log('Projects:', projects);
+  console.log('Filtered projects:', filtered);
+  
+  if (!projects.length) {
+    return <div className="no-data">No projects found. Create a project to get started.</div>;
+  }
 
   return (
     <div className="rep-container">
@@ -85,22 +137,28 @@ export default function ProjectProgress() {
             <div className="meta">
               <div className="m"><FiUsers/> {p.team} members</div>
               <div className="m"><FiFlag/> {p.manager}</div>
-              <div className="m"><FiCalendar/> Due {p.due}</div>
+              <div className="m"><FiCalendar/> Due {format(new Date(p.due), 'MMM dd, yyyy')}</div>
             </div>
             <div className="progress">
               <div className="bar"><div className="fill" style={{width: `${p.progress}%`}} /></div>
               <div className="pct">{p.progress}%</div>
             </div>
             <div className="timeline">
-              {p.milestones.map((m, i) => (
-                <div key={i} className="milestone">
-                  <div className="dot" />
-                  <div className="ml-body">
-                    <div className="ml-title">{m.t}</div>
-                    <div className="ml-date">{m.d}</div>
+              {p.milestones && p.milestones.length > 0 ? (
+                p.milestones.map((milestone, i) => (
+                  <div key={i} className="milestone">
+                    <div className="dot" />
+                    <div className="ml-body">
+                      <div className="ml-title">{milestone.title || `Milestone ${i + 1}`}</div>
+                      <div className="ml-date">
+                        {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM dd, yyyy') : 'No date'}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="no-milestones">No milestones defined</div>
+              )}
             </div>
           </div>
         ))}

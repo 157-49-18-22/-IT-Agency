@@ -237,7 +237,24 @@ export const timeTrackingAPI = {
 export const reportAPI = {
   getProjectProgress: (params) => api.get('/reports/project-progress', { params }),
   getTeamPerformance: (params) => api.get('/reports/team-performance', { params }),
-  getFinancial: (params) => api.get('/reports/financial', { params }),
+  getFinancial: (params = {}) => {
+    // Default to last 6 months if no date range provided
+    const defaultParams = {
+      startDate: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      ...params
+    };
+    return api.get('/reports/financial', { params: defaultParams });
+  },
+  getFinancialSummary: (params = {}) => {
+    return api.get('/reports/financial/summary', { params });
+  },
+  exportFinancials: (params) => {
+    return api.get('/reports/financial/export', { 
+      params,
+      responseType: 'blob'
+    });
+  },
   getCustom: (params) => api.get('/reports/custom', { params }),
   export: (type, params) => api.get(`/reports/export/${type}`, { params, responseType: 'blob' }),
 };

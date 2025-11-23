@@ -11,9 +11,9 @@ const Client = sequelize.define('Client', {
     type: DataTypes.STRING(100),
     allowNull: false
   },
-  companyName: {
+  company: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
   email: {
     type: DataTypes.STRING(100),
