@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 import { authAPI } from '../services/api';
 
 const Login = () => {
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -12,7 +14,11 @@ const Login = () => {
     password: ''
   });
   const [formErrors, setFormErrors] = useState({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  
+  const navigate = useNavigate();
+
+  // No auto-redirect here - let ProtectedRoute handle it
 
   useEffect(() => {
     // Add animation class to form elements on mount
@@ -27,12 +33,10 @@ const Login = () => {
     if (!formData.email) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
+      errors.email = 'Please enter a valid email address';
     }
     if (!formData.password) {
       errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
     }
     return errors;
   };
@@ -45,15 +49,14 @@ const Login = () => {
     }));
     
     // Clear error when user starts typing
-    if (formErrors[name]) {
+    if (formErrors[name] || loginError) {
       setFormErrors(prev => ({
         ...prev,
         [name]: ''
       }));
+      setLoginError('');
     }
   };
-
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,28 +64,48 @@ const Login = () => {
     
     if (Object.keys(errors).length === 0) {
       setIsLoading(true);
+      setLoginError('');
+      setFormErrors({});
       
-      // Real API call to backend
       try {
+        // Call the login API
         const response = await authAPI.login({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password
         });
         
-        console.log('Login successful:', response.data);
-        setIsSubmitted(true);
+        console.log('Login API response:', response);
         
-        // Store authentication data in localStorage
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
+        if (response.data && response.data.user) {
+          // Store token in localStorage if it exists
+          if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+          }
+          
+          // Call the login function from AuthContext with complete user data
+          const loginSuccess = await login({
+            ...response.data.user,
+            id: response.data.user.id || Date.now().toString(),
+            role: response.data.user.role || 'user'
+          });
+          
+          if (loginSuccess) {
+            console.log('Login successful, redirecting to dashboard');
+            // Force a full page reload to ensure all state is properly initialized
+            window.location.href = '/dashboard';
+          } else {
+            throw new Error('Failed to initialize user session');
+          }
+        } else {
+          throw new Error('Invalid response from server');
+        }
       } catch (error) {
         console.error('Login error:', error);
+        const errorMessage = error.response?.data?.message || 'Invalid email or password';
+        setLoginError(errorMessage);
         setFormErrors({
-          password: error.response?.data?.message || 'Invalid email or password'
+          email: ' ', // Add empty space to maintain form layout
+          password: ' '
         });
       } finally {
         setIsLoading(false);
@@ -98,6 +121,11 @@ const Login = () => {
         <div className="login-header">
           <h2>Welcome Back!</h2>
           <p>Sign in to your IT Agency account</p>
+          {loginError && (
+            <div className="alert alert-danger" role="alert">
+              {loginError}
+            </div>
+          )}
         </div>
         
         <form onSubmit={handleSubmit} className="login-form">

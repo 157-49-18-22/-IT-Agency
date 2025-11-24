@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
+
+// Import Layouts
+import MainLayout from './Components/Sidebar';
+import DeveloperLayout from './Components/Layouts/DeveloperLayout';
 
 // Import your components
 import Login from './Components/Login';
@@ -11,7 +15,6 @@ import AllProjects from './Components/AllProjects';
 import NewProjects from './Components/NewProjects';
 import Active from './Components/Active';
 import Completed from './Components/Completed';
-import Sidebar from './Components/Sidebar';
 
 // Import UI/UX Components
 import Design from './Components/UI/Design';
@@ -57,11 +60,35 @@ import StageTransition from './Components/StageManagement/StageTransition';
 import ClientDashboard from './Components/ClientPortal/ClientDashboard';
 import ClientApprovals from './Components/ClientPortal/ClientApprovals';
 
-// Layout component that includes the Sidebar
-const MainLayout = () => {
+// Protected route with role-based layouts
+const ProtectedRoute = () => {
+  const { currentUser, isLoading } = useAuth();
+  
+  console.log('ProtectedRoute - currentUser:', currentUser);
+  console.log('ProtectedRoute - isLoading:', isLoading);
+  
+  // Show loading state while checking auth
+  if (isLoading) {
+    console.log('ProtectedRoute - Loading user data...');
+    return <div className="loading">Loading...</div>;
+  }
+  
+  // Only redirect to login if we're done loading and there's no user
+  if (!isLoading && !currentUser) {
+    console.log('ProtectedRoute - No user found, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Check if user is a developer (case-insensitive comparison)
+  const isDeveloper = currentUser && String(currentUser.role || '').toLowerCase() === 'developer';
+  console.log('ProtectedRoute - isDeveloper:', isDeveloper);
+  
+  // Use the appropriate layout based on user role
+  const Layout = isDeveloper ? DeveloperLayout : MainLayout;
+  
   return (
     <div className="app-container">
-      <Sidebar />
+      <Layout />
       <main className="main-content">
         <Outlet />
       </main>
@@ -69,26 +96,50 @@ const MainLayout = () => {
   );
 };
 
-// A simple protected route component
-const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? <MainLayout>{children}</MainLayout> : <Navigate to="/" replace />;
-};
-
-function App() {
+// Main App Routes
+const AppRoutes = () => {
+  const { currentUser } = useAuth();
+  // Case-insensitive role comparison
+  const isDeveloper = currentUser && String(currentUser.role || '').toLowerCase() === 'developer';
+  
+  console.log('AppRoutes - currentUser:', currentUser);
+  console.log('AppRoutes - isDeveloper:', isDeveloper);
+  
   return (
-    <AuthProvider>
-      <ProjectProvider>
-        <Router>
-        <div className="app">
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects" element={<AllProjects />} />
-            <Route path="/projects/new" element={<NewProjects />} />
-            <Route path="/projects/active" element={<Active />} />
-            <Route path="/projects/completed" element={<Completed />} />
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
+        {/* Common routes for all authenticated users */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/calendar" element={<Calendar />} />
+        
+        {/* Developer specific routes */}
+        {isDeveloper && (
+          <Route path="/development">
+            <Route index element={<Navigate to="code" replace />} />
+            <Route path="backlog" element={<Backlog />} />
+            <Route path="sprints" element={<Sprints />} />
+            <Route path="code" element={<Code />} />
+            <Route path="deployment" element={<Deployment />} />
+            <Route path="task" element={<Task />} />
+            <Route path="version" element={<Version />} />
+          </Route>
+        )}
+        
+        {/* Admin only routes */}
+        {!isDeveloper && currentUser && (
+          <>
+            <Route path="/projects">
+              <Route index element={<AllProjects />} />
+              <Route path="new" element={<NewProjects />} />
+              <Route path="active" element={<Active />} />
+              <Route path="completed" element={<Completed />} />
+            </Route>
+            
             <Route path="/team" element={<Team />} />
             
             {/* UI/UX Design Routes */}
@@ -97,8 +148,6 @@ function App() {
               <Route path="wireframes" element={<Wireframes />} />
               <Route path="mockups" element={<Mockups />} />
               <Route path="prototypes" element={<Prototypes />} />
-              <Route path="design-system" element={<div>Design System</div>} />
-              <Route path="client-approval" element={<div>Client Approval</div>} />
             </Route>
             
             <Route path="/clients" element={<Client />} />
@@ -118,27 +167,22 @@ function App() {
             <Route path="/testing">
               <Route index element={<Navigate to="bug" replace />} />
               <Route path="bug" element={<Bug />} />
-              <Route path="Bug" element={<Bug />} />
               <Route path="cases" element={<Cases />} />
-              <Route path="Cases" element={<Cases />} />
               <Route path="performance" element={<Performance />} />
-              <Route path="Performance" element={<Performance />} />
               <Route path="uat" element={<Uat />} />
-              <Route path="Uat" element={<Uat />} />
-              <Route path="Runs" element={<div>Test Runs</div>} />
             </Route>
             
             <Route path="/tasks" element={<DevelopmentTask />} />
-            <Route path="/calendar" element={<Calendar />} />
             <Route path="/time-tracking" element={<Tracking />} />
-            {/* New top-level routes from sidebar */}
             <Route path="/approvals" element={<Approvals />} />
             <Route path="/files" element={<Deliverables />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/activity" element={<Activity />} />
+            
             {/* Reports Routes */}
             <Route path="/reports">
+              <Route index element={<Navigate to="project-progress" replace />} />
               <Route path="project-progress" element={<ProjectProgress />} />
               <Route path="team-performance" element={<TeamPerformance />} />
               <Route path="financial" element={<Finacial />} />
@@ -148,29 +192,32 @@ function App() {
             {/* Stage Management */}
             <Route path="/stage-transition/:projectId?" element={<StageTransition />} />
 
-            {/* Client Portal Routes */}
-            <Route path="/client">
-              <Route path="dashboard" element={<ClientDashboard />} />
+            {/* Client Portal */}
+            <Route path="/client-portal">
+              <Route index element={<ClientDashboard />} />
               <Route path="approvals" element={<ClientApprovals />} />
             </Route>
+          </>
+        )}
+        
+        {/* Catch all other routes */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Route>
+    </Routes>
+  );
+};
 
-            {/* Settings placeholders */}
-            <Route path="/settings">
-              <Route path="project" element={<div>Project Settings</div>} />
-              <Route path="organization" element={<div>Organization Settings</div>} />
-              <Route path="integrations" element={<div>Integrations & Webhooks</div>} />
-              <Route path="templates" element={<div>Templates</div>} />
-              <Route path="audit" element={<div>Audit Trail</div>} />
-            </Route>
-            
-            {/* Add other protected routes here */}
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
-  </ProjectProvider>
-  </AuthProvider>
+function App() {
+  return (
+    <AuthProvider>
+      <ProjectProvider>
+        <Router>
+          <div className="app">
+            <AppRoutes />
+          </div>
+        </Router>
+      </ProjectProvider>
+    </AuthProvider>
   );
 }
 

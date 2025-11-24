@@ -1,7 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUpload, FaCalendarAlt, FaUserTie, FaUsers, FaFileAlt, FaArrowLeft, FaCheck } from 'react-icons/fa';
 import { ProjectContext } from '../context/ProjectContext';
+import { teamAPI } from '../services/api';
 import './NewProjects.css';
 
 const NewProjects = () => {
@@ -24,12 +25,28 @@ const NewProjects = () => {
     attachments: []
   });
 
-  const [teamMembers, setTeamMembers] = useState([
-    { id: 1, name: 'John Doe', role: 'Developer' },
-    { id: 2, name: 'Jane Smith', role: 'Designer' },
-    { id: 3, name: 'Mike Johnson', role: 'Project Manager' },
-    { id: 4, name: 'Sarah Williams', role: 'QA Engineer' },
-  ]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Fetch team members from API
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      try {
+        const response = await teamAPI.getAll();
+        if (response.data && response.data.data && response.data.data.members) {
+          setTeamMembers(response.data.data.members);
+        }
+      } catch (err) {
+        console.error('Error fetching team members:', err);
+        setError('Failed to load team members');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,7 +67,7 @@ const NewProjects = () => {
   const toggleTeamMember = (memberId) => {
     setFormData(prev => {
       const updatedMembers = [...prev.teamMembers];
-      const index = updatedMembers.indexOf(memberId);
+      const index = updatedMembers.findIndex(id => id === memberId);
       
       if (index === -1) {
         updatedMembers.push(memberId);
@@ -237,27 +254,36 @@ const NewProjects = () => {
 
         <div className="form-section">
           <h2>Team Members</h2>
-          <div className="team-selection">
-            {teamMembers.map(member => (
-              <div key={member.id} className="team-member-checkbox">
-                <input
-                  type="checkbox"
-                  id={`member-${member.id}`}
-                  checked={formData.teamMembers.includes(member.id)}
-                  onChange={() => toggleTeamMember(member.id)}
-                />
-                <label htmlFor={`member-${member.id}`}>
+          {loading ? (
+            <div className="loading">Loading team members...</div>
+          ) : error ? (
+            <div className="error">{error}</div>
+          ) : teamMembers.length === 0 ? (
+            <div className="no-members">No team members found. Please add team members first.</div>
+          ) : (
+            <div className="team-members-grid">
+              {teamMembers.map(member => (
+                <div 
+                  key={member.id} 
+                  className={`team-member-card ${formData.teamMembers.includes(member.id) ? 'selected' : ''}`}
+                  onClick={() => toggleTeamMember(member.id)}
+                >
                   <div className="member-avatar">
-                    {member.name.charAt(0).toUpperCase()}
+                    {member.name ? member.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
                   </div>
-                  <div className="member-info">
-                    <span className="member-name">{member.name}</span>
-                    <span className="member-role">{member.role}</span>
+                  <div className="member-details">
+                    <h4>{member.name || 'Unnamed User'}</h4>
+                    <p>{member.role || 'Team Member'}</p>
                   </div>
-                </label>
-              </div>
-            ))}
-          </div>
+                  {formData.teamMembers.includes(member.id) && (
+                    <div className="member-selected">
+                      <FaCheck />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="form-section">
