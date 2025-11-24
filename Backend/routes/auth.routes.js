@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const {
-  register,
   login,
   getMe,
   logout,
@@ -10,7 +9,7 @@ const {
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
-router.post('/register', register);
+// Registration is now handled by team controller with admin protection
 router.post('/login', login);
 router.get('/me', protect, getMe);
 router.post('/logout', protect, logout);

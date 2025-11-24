@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, FiEdit2, FiTrash2, FiChevronDown } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff } from 'react-icons/fi';
 import './Team.css';
 import { userAPI, teamAPI } from '../services/api';
 
@@ -10,15 +10,14 @@ const Team = () => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [departments, setDepartments] = useState([
-    { id: 1, name: 'Development', count: 0 },
-    { id: 2, name: 'Design', count: 0 },
-    { id: 3, name: 'Marketing', count: 0 },
-    { id: 4, name: 'Sales', count: 0 },
-    { id: 5, name: 'Support', count: 0 },
+    { id: 1, name: 'UI/UX', count: 0 },
+    { id: 2, name: 'Development', count: 0 },
+    { id: 3, name: 'Tester', count: 0 },
   ]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     role: '',
     department: '',
     phone: '',
@@ -27,6 +26,7 @@ const Team = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchTeamMembers();
@@ -74,6 +74,7 @@ const Team = () => {
     setFormData({
       name: member.name,
       email: member.email,
+      password: '', // Don't pre-fill password for security reasons
       role: member.role,
       department: member.department,
       phone: member.phone || '',
@@ -196,6 +197,7 @@ const Team = () => {
     setFormData({
       name: '',
       email: '',
+      password: '',
       role: '',
       department: '',
       phone: '',
@@ -211,7 +213,7 @@ const Team = () => {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.email || !formData.role || !formData.department) {
+      if (!formData.name || !formData.email || !formData.password || !formData.role || !formData.department) {
         throw new Error('All fields are required');
       }
 
@@ -225,6 +227,7 @@ const Team = () => {
       const newMember = {
         name: formData.name,
         email: formData.email,
+        password: formData.password,
         role: formData.role,
         department: formData.department,
         phone: formData.phone || '',
@@ -508,6 +511,29 @@ const Team = () => {
                   placeholder="Enter email address" 
                   required 
                 />
+              </div>
+              <div className="form-group password-field">
+                <label>Password</label>
+                <div className="password-input-container">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Enter password"
+                    required={!formData.id} // Not required when editing
+                    autoComplete="new-password"
+                    className="password-input"
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
               </div>
               <div className="form-group">
                 <label>Phone</label>

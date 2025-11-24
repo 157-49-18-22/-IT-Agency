@@ -1,5 +1,4 @@
 const { DataTypes } = require('sequelize');
-const bcrypt = require('bcryptjs');
 const { sequelize } = require('../../config/database.sql');
 
 const User = sequelize.define('User', {
@@ -83,26 +82,15 @@ const User = sequelize.define('User', {
 }, {
   tableName: 'users',
   timestamps: true,
-  hooks: {
-    // Password hashing temporarily disabled for development
-    beforeCreate: async (user) => {
-      // Password will be stored as plain text
-      // No hashing applied
-    },
-    beforeUpdate: async (user) => {
-      // Password will be stored as plain text
-      // No hashing applied
-    }
-  }
+  // No password hashing hooks
 });
 
-// Instance method to compare password (plain text comparison for development)
-User.prototype.comparePassword = async function(candidatePassword) {
-  // Temporary: Compare plain text passwords
+// Simple password comparison (plain text)
+User.prototype.comparePassword = function(candidatePassword) {
   return candidatePassword === this.password;
 };
 
-// Don't return password by default
+// Don't return sensitive information in JSON responses
 User.prototype.toJSON = function() {
   const values = Object.assign({}, this.get());
   delete values.password;

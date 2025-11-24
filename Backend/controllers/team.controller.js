@@ -1,6 +1,7 @@
 const { User } = require('../models/sql');
 const { Op, Sequelize } = require('sequelize');
 const sequelize = require('../config/database');
+const bcrypt = require('bcrypt');
 
 /**
  * Get all team members with department counts
@@ -45,79 +46,95 @@ exports.getTeamMembers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching team members',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
 /**
- * Add a new team member
+ * Add a new team member (Admin only)
+ * This is the only way to create new user accounts
  */
 exports.addTeamMember = async (req, res) => {
   try {
-    const { name, email, role, department, phone } = req.body;
+    const { name, email, password, role, department, phone } = req.body;
 
-    // Define valid roles
-    const validRoles = ['Admin', 'Project Manager', 'Developer', 'Designer', 'Tester', 'Client'];
-    
-    // Validate role
-    if (!validRoles.includes(role)) {
+    // Validate required fields
+    if (!name || !email || !password || !role || !department) {
       return res.status(400).json({
         success: false,
-        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
-        validRoles: validRoles
+        message: 'Name, email, password, role, and department are required',
+        field: !name ? 'name' : !email ? 'email' : !password ? 'password' : !role ? 'role' : 'department'
       });
     }
 
-    // Check if user with email already exists
-    const existingUser = await User.findOne({ where: { email } });
+    // Check for existing user with case-insensitive email (MySQL compatible)
+    const existingUser = await User.findOne({
+      where: {
+        email: {
+          [Op.like]: `%${email.toLowerCase()}%`
+        }
+      }
+    });
+
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: 'A user with this email already exists'
+        message: 'A user with this email already exists',
+        field: 'email'
       });
     }
 
-    // Generate a default password (you might want to implement a proper password generation logic)
-    const defaultPassword = 'welcome123'; // In a real app, generate a secure random password and send it via email
-    
-    // Create new team member
-    const newMember = await User.create({
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user
+    const user = await User.create({
       name,
-      email,
-      password: defaultPassword, // Add the default password
-      role,
-      department,
-      phone,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: role || 'Developer',
+      department: department || 'Development',
+      phone: phone || null,
       status: 'active',
       joinDate: new Date(),
+      // Set default values
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       preferences: {
         theme: 'light',
         pushNotifications: true,
         emailNotifications: true
-      },
-      skills: [],
-      socialLinks: {}
+      }
     });
 
-    // Remove sensitive data from response
-    const memberData = newMember.get({ plain: true });
-    delete memberData.password;
-    delete memberData.resetPasswordToken;
-    delete memberData.resetPasswordExpires;
-
+    // Return success response (without password)
+    const { password: _, ...userData } = user.toJSON();
+    
     res.status(201).json({
       success: true,
-      message: 'Team member added successfully',
-      data: memberData
+      data: userData,
+      message: 'Team member added successfully. They can now log in with their email and password.'
     });
   } catch (error) {
     console.error('Error adding team member:', error);
+
+    // Handle Sequelize validation errors
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors.map(err => ({
+          field: err.path,
+          message: err.message
+        }))
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Error adding team member',
-      error: error.errors ? error.errors.map(e => e.message) : error.message
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -128,54 +145,90 @@ exports.addTeamMember = async (req, res) => {
 exports.updateTeamMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, department, phone, status } = req.body;
+    const { name, email, password, role, department, phone, status } = req.body;
 
-    const member = await User.findByPk(id);
-    if (!member) {
+    // Find the user
+    const user = await User.findByPk(id);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'Team member not found'
+        message: 'User not found'
       });
     }
 
-    // Check if email is being updated and if it's already taken
-    if (email && email !== member.email) {
-      const existingUser = await User.findOne({ where: { email } });
+    // If email is being changed, check if it's already in use
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const existingUser = await User.findOne({
+        where: {
+          email: {
+            [Op.iLike]: email
+          },
+          id: { [Op.ne]: id } // Exclude current user
+        }
+      });
+
       if (existingUser) {
-        return res.status(400).json({
+        return res.status(409).json({
           success: false,
-          message: 'Email already in use by another user'
+          message: 'A user with this email already exists',
+          field: 'email'
         });
       }
     }
 
-    // Update member
-    await member.update({
-      name: name || member.name,
-      email: email || member.email,
-      role: role || member.role,
-      department: department !== undefined ? department : member.department,
-      phone: phone !== undefined ? phone : member.phone,
-      status: status || member.status
-    });
+    // Prepare update data
+    const updateData = {
+      name: name || user.name,
+      email: email || user.email,
+      role: role || user.role,
+      department: department || user.department,
+      phone: phone !== undefined ? phone : user.phone,
+      status: status || user.status
+    };
 
-    // Remove sensitive data from response
-    const memberData = member.get({ plain: true });
-    delete memberData.password;
-    delete memberData.resetPasswordToken;
-    delete memberData.resetPasswordExpires;
+    // Only update password if a new one is provided
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    // Get user data before update for audit log
+    const previousData = { ...user.get({ plain: true }) };
+
+    // Update user
+    await user.update(updateData);
+
+    // Get updated user data
+    const updatedUser = await User.findByPk(id);
+    const updatedData = updatedUser.get({ plain: true });
+
+    // Don't send password in response
+    const { password: _, ...userData } = updatedData;
 
     res.json({
       success: true,
-      message: 'Team member updated successfully',
-      data: memberData
+      data: userData,
+      message: 'Team member updated successfully'
     });
   } catch (error) {
     console.error('Error updating team member:', error);
+
+    // Handle Sequelize validation errors
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors.map(err => ({
+          field: err.path,
+          message: err.message
+        }))
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Error updating team member',
-      error: error.errors ? error.errors.map(e => e.message) : error.message
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
