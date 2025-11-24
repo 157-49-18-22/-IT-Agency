@@ -87,7 +87,7 @@ const ProtectedRoute = () => {
   const Layout = isDeveloper ? DeveloperLayout : MainLayout;
   
   return (
-    <div className="app-container">
+    <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflow: 'hidden' }}>
       <Layout />
       <main className="main-content">
         <Outlet />

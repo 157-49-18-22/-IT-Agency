@@ -10,28 +10,30 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body {
   font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
   background-color: #f5f7fa;
+  overflow-x: hidden;
 }
 
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* Main app layout */
 .app {
   display: flex;
+  width: 100%;
   min-height: 100vh;
   background-color: #f5f7fa;
 }
@@ -41,33 +43,38 @@ body {
   display: flex;
   width: 100%;
   min-height: 100vh;
+  position: relative;
+  margin-left: 280px; /* Match sidebar width */
+  width: calc(100% - 280px); /* Calculate remaining width */
 }
 
 /* Main content area */
 .main-content {
-  flex: 1;
-  margin-left: 280px; /* Same as sidebar width */
+  position: fixed;
+  left: 280px;
+  right: 0;
+  top: 0;
+  bottom: 0;
   padding: 30px;
   overflow-y: auto;
-  min-height: 100vh;
-  transition: margin-left 0.3s ease;
-  position: relative; /* Create a stacking context */
-  z-index: 1; /* Ensure content stays behind modal */
+  background-color: #f5f7fa;
+  z-index: 1;
+  box-sizing: border-box;
 }
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .main-content {
-    margin-left: 240px;
+    left: 240px;
     padding: 20px;
   }
 }
 
 @media (max-width: 992px) {
   .main-content {
-    margin-left: 0;
+    left: 0;
+    top: 60px; /* Height of mobile header */
     padding: 15px;
-    margin-top: 60px; /* Height of mobile header if you add one */
   }
 }
 
