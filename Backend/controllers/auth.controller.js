@@ -50,21 +50,33 @@ exports.login = async (req, res) => {
       });
     }
 
+    console.log('Login attempt for email:', email);
+    
     // Check for user (Sequelize doesn't hide password by default, we handle it in model)
     const user = await User.findOne({ 
       where: { email },
-      attributes: { include: ['password'] }
+      attributes: { include: ['password'] },
+      raw: true // Get plain object instead of model instance
     });
 
+    console.log('User found:', user ? 'Yes' : 'No');
+    
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials: User not found'
       });
     }
 
+    console.log('User password from DB:', user.password);
+    console.log('Provided password:', password);
+    
+    // Create a temporary user object with the comparePassword method
+    const userInstance = await User.findByPk(user.id);
+    
     // Check if password matches
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await userInstance.comparePassword(password);
+    console.log('Password match:', isMatch);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -81,11 +93,16 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Update last login
-    user.lastLogin = Date.now();
-    await user.save();
+    // Update last login using update method since 'user' is a plain object
+    await User.update(
+      { lastLogin: new Date() },
+      { where: { id: user.id } }
+    );
 
-    sendTokenResponse(user, 200, res);
+    // Get the updated user data
+    const updatedUser = await User.findByPk(user.id);
+
+    sendTokenResponse(updatedUser, 200, res);
   } catch (error) {
     res.status(500).json({
       success: false,

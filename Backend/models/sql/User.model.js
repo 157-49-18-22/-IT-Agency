@@ -88,15 +88,25 @@ const User = sequelize.define('User', {
 // Password comparison that handles both plain text and hashed passwords
 User.prototype.comparePassword = async function(candidatePassword) {
   try {
-    // For development/testing - allow direct comparison if password is in plain text
+    console.log('Comparing passwords:');
+    console.log('Candidate password:', candidatePassword);
+    console.log('Stored password:', this.password);
+    
+    // Direct comparison for plain text
     if (candidatePassword === this.password) {
+      console.log('Password matches (plain text)');
       return true;
     }
     
-    // If we want to enable bcrypt hashing later, uncomment this:
-    // const bcrypt = require('bcrypt');
-    // return await bcrypt.compare(candidatePassword, this.password); 
+    // If we have bcrypt hashed password (for future compatibility)
+    if (this.password && this.password.startsWith('$2a$') || this.password.startsWith('$2b$')) {
+      const bcrypt = require('bcrypt');
+      const isMatch = await bcrypt.compare(candidatePassword, this.password);
+      console.log('Bcrypt comparison result:', isMatch);
+      return isMatch;
+    }
     
+    console.log('Password does not match');
     return false;
   } catch (error) {
     console.error('Error comparing passwords:', error);

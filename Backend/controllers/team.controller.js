@@ -1,7 +1,7 @@
 const { User } = require('../models/sql');
 const { Op, Sequelize } = require('sequelize');
 const sequelize = require('../config/database');
-const bcrypt = require('bcrypt');
+// Using plain text passwords
 
 /**
  * Get all team members with department counts
@@ -85,15 +85,11 @@ exports.addTeamMember = async (req, res) => {
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
+    // Create user with plain text password
     const user = await User.create({
       name,
       email: email.toLowerCase(),
-      password: hashedPassword,
+      password: password,  // Store password in plain text
       role: role || 'Developer',
       department: department || 'Development',
       phone: phone || null,
@@ -188,8 +184,7 @@ exports.updateTeamMember = async (req, res) => {
 
     // Only update password if a new one is provided
     if (password) {
-      const salt = await bcrypt.genSalt(10);
-      updateData.password = await bcrypt.hash(password, salt);
+      updateData.password = password;  // Store password in plain text
     }
 
     // Get user data before update for audit log

@@ -70,30 +70,19 @@ module.exports = (sequelize) => {
     timestamps: true,
     tableName: 'users',
     hooks: {
-      beforeCreate: async (user) => {
-        if (user.password) {
-          const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(user.password, salt);
-        }
-        
+      beforeCreate: (user) => {
         // Generate avatar if not provided
         if (!user.avatar) {
-          user.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
-        }
-      },
-      beforeUpdate: async (user) => {
-        if (user.changed('password') && user.password) {
-          const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(user.password, salt);
+          user.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}&background=random`;
         }
       }
     }
   });
 
-  // Instance method to check password
+  // Instance method to check password (plain text comparison)
   User.prototype.validPassword = async function(password) {
     if (!this.password) return false;
-    return await bcrypt.compare(password, this.password);
+    return password === this.password;
   };
 
   // Class methods

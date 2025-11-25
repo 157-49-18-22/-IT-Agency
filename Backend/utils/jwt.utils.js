@@ -29,17 +29,38 @@ exports.verifyRefreshToken = (token) => {
 
 // Send token response
 exports.sendTokenResponse = (user, statusCode, res) => {
-  // Generate tokens (use user.id for SQL, not user._id)
-  const token = this.generateToken(user.id);
-  const refreshToken = this.generateRefreshToken(user.id);
+  try {
+    // Generate tokens (use user.id for SQL, not user._id)
+    const token = this.generateToken(user.id);
+    const refreshToken = this.generateRefreshToken(user.id);
 
-  // Get user data without password (toJSON handles this in model)
-  const userData = user.toJSON();
+    // Handle both Sequelize model instances and plain objects
+    let userData;
+    if (typeof user.toJSON === 'function') {
+      // If it's a Sequelize model instance
+      userData = user.toJSON();
+    } else {
+      // If it's a plain object, create a copy without the password
+      const { password, ...userWithoutPassword } = user;
+      userData = userWithoutPassword;
+    }
 
-  res.status(statusCode).json({
-    success: true,
-    token,
-    refreshToken,
-    user: userData
-  });
+    // Remove password if it exists
+    if (userData.password) {
+      delete userData.password;
+    }
+
+    res.status(statusCode).json({
+      success: true,
+      token,
+      refreshToken,
+      user: userData
+    });
+  } catch (error) {
+    console.error('Error in sendTokenResponse:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating authentication tokens'
+    });
+  }
 };
