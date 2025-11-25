@@ -87,12 +87,30 @@ const NewProjects = () => {
     setIsSubmitting(true);
     
     try {
-      // Add project to context
+      // Get full member details including their departments
+      const selectedMembers = formData.teamMembers.map(id => {
+        const member = teamMembers.find(m => m.id === id);
+        if (!member) return null;
+        
+        // Ensure department is set, default to 'Development' if not specified
+        const department = member.department || 'Development';
+        
+        return {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          role: member.role,
+          department: department,
+          status: member.status || 'active'
+        };
+      }).filter(Boolean); // Remove any undefined members
+      
+      // Create the new project with team members and their departments
       const newProject = {
         ...formData,
-        teamMembers: formData.teamMembers.map(id => 
-          teamMembers.find(member => member.id === id)
-        ).filter(Boolean) // Remove any undefined members
+        teamMembers: selectedMembers,
+        // Extract unique departments from team members
+        departments: [...new Set(selectedMembers.map(member => member.department))]
       };
       
       addProject(newProject);

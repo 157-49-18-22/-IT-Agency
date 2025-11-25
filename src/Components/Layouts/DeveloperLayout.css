@@ -1,79 +1,272 @@
-.developer-layout {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f5f7fa;
+/* Reset default margin and padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.developer-sidebar {
-  width: 220px;
-  background: #2c3e50;
-  color: #ecf0f1;
-  padding: 1.5rem 0;
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root, .app-container {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Main App Container */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f5f7fa;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+  color: #e8eaf6;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  position: fixed;
-  height: 100%;
-  z-index: 100;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
+/* Logo Section */
 .sidebar-logo {
-  padding: 0 1.5rem 1.5rem;
+  padding: 20px 25px;
+  text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-logo h2 {
-  color: #fff;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 
-.sidebar-nav {
-  flex: 1;
+/* User Profile Section */
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-profile:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.user-avatar img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.user-info {
   display: flex;
   flex-direction: column;
-  padding: 0 1rem;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.user-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #9fa8da;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* Navigation Section */
+.sidebar-nav {
+  flex: 1;
   overflow-y: auto;
+  padding: 15px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Scrollbar Styling */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 
 .sidebar-nav ul {
   list-style: none;
-  padding: 0;
+  padding: 0 10px;
   margin: 0;
 }
 
-.sidebar-nav li {
-  margin-bottom: 0.5rem;
+.sidebar-nav > ul > li {
+  margin: 4px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.nav-link {
+/* Section Headers */
+.section-header {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  color: #bdc3c7;
-  text-decoration: none;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  padding: 12px 15px;
+  color: #e8eaf6;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 8px;
 }
 
-.nav-link:hover,
-.nav-link.active {
-  background-color: #34495e;
+.section-header:hover {
+  background-color: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-.nav-icon {
-  margin-right: 0.75rem;
+.section-header .nav-icon {
+  margin-right: 12px;
   font-size: 1.1rem;
+  color: #9fa8da;
+  min-width: 24px;
+  text-align: center;
+}
+
+.section-header svg:last-child {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #7986cb;
+  transition: transform 0.2s ease;
+}
+
+.nav-section.expanded > .section-header svg:last-child {
+  transform: rotate(180deg);
+}
+
+/* Submenu Styling */
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 8px 8px;
+  margin-top: -4px;
+}
+
+.nav-section.expanded .submenu {
+  max-height: 500px; /* Adjust based on content */
+}
+
+.submenu li {
+  margin: 0;
+  padding: 0 10px;
+}
+
+.submenu a {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px 10px 40px;
+  color: #c5cae9;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+.submenu a:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Main Navigation Links */
+.sidebar-nav > ul > li > a {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  color: #e8eaf6;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.sidebar-nav > ul > li > a:hover,
+.sidebar-nav > ul > li.active > a {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.sidebar-nav > ul > li > a .nav-icon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  color: #9fa8da;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Submenu Icons */
+.submenu-icon {
+  margin-right: 10px;
+  font-size: 0.9rem;
+  color: #7986cb;
   width: 20px;
   text-align: center;
 }
 
+/* Logout Section */
 .logout-section {
   margin-top: auto;
-  padding: 1rem 0;
+  padding: 15px 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -81,39 +274,203 @@
   display: flex;
   align-items: center;
   width: 100%;
-  background: none;
+  padding: 10px 15px;
+  background: transparent;
   border: none;
-  color: #bdc3c7;
-  padding: 0.75rem 1rem;
+  color: #e8eaf6;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  text-align: left;
-  font-size: 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .logout-button:hover {
-  background-color: #e74c3c;
-  color: white;
+  background-color: #e53935;
+  color: #fff;
 }
 
-.developer-main {
+.logout-button .nav-icon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  color: #ef9a9a;
+}
+
+/* Main Content Area */
+.main-content {
   flex: 1;
-  margin-left: 220px; /* Same as sidebar width */
-  padding: 2rem;
+ 
+  padding: 0;
   background-color: #f5f7fa;
-  min-height: 100vh;
+  height: 100vh;
+  width: calc(100% - 280px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Responsive design */
+/* Ensure content takes full width */
+.main-content > * {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Main Content Wrapper */
+.main-content > div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  overflow: auto;
+}
+
+/* Calendar Container */
+.calendar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for flex children to respect height */
+}
+
+/* FullCalendar Overrides */
+.fc {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fc-view-harness {
+  flex: 1;
+  min-height: 0; /* Important for flex children */
+}
+
+.fc-view-harness, 
+.fc-view-harness > .fc-view {
+  position: relative !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Remove any extra margins from calendar container */
+.fc .fc-toolbar {
+  margin-bottom: 1.5em !important;
+}
+
+/* Make calendar events more compact */
+.fc-event {
+  margin: 1px 2px !important;
+  padding: 0 4px !important;
+  font-size: 0.85em !important;
+}
+
+/* Adjust calendar header */
+.fc-header-toolbar {
+  margin-bottom: 1em !important;
+}
+
+/* Make sure the calendar scrolls properly on small screens */
+.fc-view-container {
+  overflow-x: auto;
+}
+
+/* Make the calendar take full width of its container */
+.fc-view {
+  width: 100% !important;
+}
+
+/* Ensure content takes full width when sidebar is collapsed */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 1100;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .main-content > div {
+    padding: 1rem;
+  }
+  
+  .sidebar:not(.open) + .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Active State for Menu Items */
+.sidebar-nav > ul > li.active > a {
+  background-color: #3949ab;
+  color: #fff;
+}
+
+.sidebar-nav > ul > li.active .nav-icon {
+  color: #fff;
+}
+
+/* Submenu Active State */
+.submenu li.active a {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.submenu li.active .submenu-icon {
+  color: #fff;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+/* Animation for submenu items */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.submenu li {
+  animation: fadeIn 0.2s ease-out forwards;
+  opacity: 0;
+}
+
+.submenu li:nth-child(1) { animation-delay: 0.05s; }
+.submenu li:nth-child(2) { animation-delay: 0.1s; }
+.submenu li:nth-child(3) { animation-delay: 0.15s; }
+.submenu li:nth-child(4) { animation-delay: 0.2s; }
+.submenu li:nth-child(5) { animation-delay: 0.25s; }
+/* Responsive design for smaller screens */
 @media (max-width: 768px) {
-  .developer-sidebar {
+  .sidebar {
     width: 70px;
     padding: 1rem 0;
   }
   
   .sidebar-logo h2,
-  .nav-link span,
+  .section-header span,
   .logout-button span {
     display: none;
   }
@@ -123,8 +480,23 @@
     font-size: 1.25rem;
   }
   
-  .developer-main {
+  .main-content {
     margin-left: 70px;
     padding: 1rem;
+  }
+  
+  .user-profile {
+    flex-direction: column;
+    padding: 15px 5px;
+    text-align: center;
+  }
+  
+  .user-avatar {
+    margin-right: 0;
+    margin-bottom: 5px;
+  }
+  
+  .user-info {
+    display: none;
   }
 }

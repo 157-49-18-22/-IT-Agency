@@ -52,6 +52,7 @@ import Deliverables from './Components/Deliverables';
 import Activity from './Components/Activity';
 import Messages from './Components/Messages';
 import Notifications from './Components/Notifications';
+import DepartmentProjects from './Components/DepartmentProjects';
 
 // Import NEW Components
 import Backlog from './Components/Development/Backlog';
@@ -180,15 +181,23 @@ const AppRoutes = () => {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/activity" element={<Activity />} />
             
-            {/* Reports Routes */}
-            <Route path="/reports">
+            <Route path="tracking" element={<Tracking />} />
+            <Route path="departments">
+              <Route index element={<Navigate to="my-tasks" replace />} />
+              <Route path="my-tasks" element={<DepartmentProjects department="my-tasks" />} />
+              <Route path="development" element={<DepartmentProjects department="Development" />} />
+              <Route path="ui-ux" element={<DepartmentProjects department="UI/UX" />} />
+              <Route path="testing" element={<DepartmentProjects department="Testing" />} />
+            </Route>
+            <Route path="reports">
               <Route index element={<Navigate to="project-progress" replace />} />
               <Route path="project-progress" element={<ProjectProgress />} />
               <Route path="team-performance" element={<TeamPerformance />} />
               <Route path="financial" element={<Finacial />} />
               <Route path="custom" element={<Custom />} />
             </Route>
-
+            <Route path="approvals" element={<Approvals />} />
+            
             {/* Stage Management */}
             <Route path="/stage-transition/:projectId?" element={<StageTransition />} />
 

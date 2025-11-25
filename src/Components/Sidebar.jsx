@@ -36,6 +36,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [expandedSections, setExpandedSections] = useState({
     projects: false,
+    departments: true,
     uiUx: false,
     development: false,
     testing: false,
@@ -135,6 +136,31 @@ const Sidebar = () => {
                   </li>
                   <li className={isActive('/projects/new')}>
                     <Link to="/projects/new">+ New Project</Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Departments Section */}
+            <li className={`nav-section ${expandedSections.departments ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('departments')}>
+                <FaUsers className="nav-icon" />
+                <span>Departments</span>
+                {expandedSections.departments ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.departments && (
+                <ul className="submenu">
+                  <li className={isActive('/departments/my-tasks')}>
+                    <Link to="/departments/my-tasks">My Tasks</Link>
+                  </li>
+                  <li className={isActive('/departments/development')}>
+                    <Link to="/departments/development">Development</Link>
+                  </li>
+                  <li className={isActive('/departments/ui-ux')}>
+                    <Link to="/departments/ui-ux">UI/UX Design</Link>
+                  </li>
+                  <li className={isActive('/departments/testing')}>
+                    <Link to="/departments/testing">Testing</Link>
                   </li>
                 </ul>
               )}
