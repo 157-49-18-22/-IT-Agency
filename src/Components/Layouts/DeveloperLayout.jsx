@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
@@ -11,18 +11,49 @@ import {
   FaCodeBranch,
   FaServer,
   FaRocket,
-  FaClipboardList
+  FaClipboardList,
+  FaProjectDiagram,
+  FaCheckCircle,
+  FaClock,
+  FaUsers,
+  FaFileCode,
+  FaCheckSquare,
+  FaUpload,
+  FaComments,
+  FaTools,
+  FaBook,
+  FaExclamationTriangle,
+  FaDatabase,
+  FaPlug,
+  FaVial,
+  FaSearch
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
 
 const DeveloperLayout = () => {
   const { logout, currentUser } = useAuth();
+  const { getProjectsByUser } = useContext(ProjectContext);
+  const [myProjects, setMyProjects] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState({
-    development: true
+    tasks: true,
+    development: true,
+    deliverables: true,
+    collaboration: true,
+    myProjects: true
   });
+
+  // Load projects and tasks for the current user
+  useEffect(() => {
+    if (currentUser?.id) {
+      const projects = getProjectsByUser(currentUser.id);
+      setMyProjects(projects);
+      // Additional initialization can be done here
+    }
+  }, [currentUser, getProjectsByUser]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -73,7 +104,71 @@ const DeveloperLayout = () => {
               </Link>
             </li>
 
-            {/* Development Section */}
+            {/* My Projects Section */}
+            <li className={`nav-section ${expandedSections.myProjects ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('myProjects')}>
+                <FaProjectDiagram className="nav-icon" />
+                <span>My Projects</span>
+                {expandedSections.myProjects ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.myProjects && (
+                <ul className="submenu">
+                  {myProjects.length > 0 ? (
+                    myProjects.map(project => (
+                      <li key={project.id} className={isActive(`/projects/${project.id}`)}>
+                        <Link to={`/projects/${project.id}`}>
+                          <span className="project-name">{project.projectName || 'Unnamed Project'}</span>
+                          {project.status === 'in-progress' && (
+                            <span className="project-status in-progress">In Progress</span>
+                          )}
+                        </Link>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="no-projects">No projects assigned</li>
+                  )}
+                </ul>
+              )}
+            </li>
+
+            {/* Task Management Section */}
+            <li className={`nav-section ${expandedSections.tasks ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('tasks')}>
+                <FaTasks className="nav-icon" />
+                <span>Task Management</span>
+                {expandedSections.tasks ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.tasks && (
+                <ul className="submenu">
+                  <li className={isActive('/tasks/assigned')}>
+                    <Link to="/tasks/assigned">
+                      <FaCheckCircle className="submenu-icon" />
+                      <span>Assigned Tasks</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/tasks/in-progress')}>
+                    <Link to="/tasks/in-progress">
+                      <FaClock className="submenu-icon" />
+                      <span>In Progress</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/tasks/completed')}>
+                    <Link to="/tasks/completed">
+                      <FaCheckSquare className="submenu-icon" />
+                      <span>Completed</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/tasks/blockers')}>
+                    <Link to="/tasks/blockers">
+                      <FaExclamationTriangle className="submenu-icon" />
+                      <span>Blockers</span>
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Development Work Section */}
             <li className={`nav-section ${expandedSections.development ? 'expanded' : ''}`}>
               <div className="section-header" onClick={() => toggleSection('development')}>
                 <FaCode className="nav-icon" />
@@ -82,34 +177,102 @@ const DeveloperLayout = () => {
               </div>
               {expandedSections.development && (
                 <ul className="submenu">
-                  <li className={isActive('/development/backlog')}>
-                    <Link to="/development/backlog">
-                      <FaTasks className="submenu-icon" />
-                      <span>Backlog</span>
-                    </Link>
-                  </li>
-                  <li className={isActive('/development/sprints')}>
-                    <Link to="/development/sprints">
-                      <FaRocket className="submenu-icon" />
-                      <span>Sprints</span>
-                    </Link>
-                  </li>
-                  <li className={isActive('/development/tasks')}>
-                    <Link to="/development/tasks">
-                      <FaClipboardList className="submenu-icon" />
-                      <span>Tasks</span>
-                    </Link>
-                  </li>
                   <li className={isActive('/development/code')}>
                     <Link to="/development/code">
-                      <FaCodeBranch className="submenu-icon" />
-                      <span>Code</span>
+                      <FaFileCode className="submenu-icon" />
+                      <span>Code Editor</span>
                     </Link>
                   </li>
-                  <li className={isActive('/development/deployment')}>
-                    <Link to="/development/deployment">
-                      <FaServer className="submenu-icon" />
-                      <span>Deployment</span>
+                  <li className={isActive('/development/apis')}>
+                    <Link to="/development/apis">
+                      <FaCodeBranch className="submenu-icon" />
+                      <span>API Endpoints</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/development/database')}>
+                    <Link to="/development/database">
+                      <FaDatabase className="submenu-icon" />
+                      <span>Database</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/development/integrations')}>
+                    <Link to="/development/integrations">
+                      <FaPlug className="submenu-icon" />
+                      <span>Integrations</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/development/testing')}>
+                    <Link to="/development/testing">
+                      <FaVial className="submenu-icon" />
+                      <span>Testing</span>
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Deliverables Section */}
+            <li className={`nav-section ${expandedSections.deliverables ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('deliverables')}>
+                <FaUpload className="nav-icon" />
+                <span>Deliverables</span>
+                {expandedSections.deliverables ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.deliverables && (
+                <ul className="submenu">
+                  <li className={isActive('/deliverables/checklist')}>
+                    <Link to="/deliverables/checklist">
+                      <FaCheckSquare className="submenu-icon" />
+                      <span>Submission Checklist</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/deliverables/review')}>
+                    <Link to="/deliverables/review">
+                      <FaSearch className="submenu-icon" />
+                      <span>Code Review</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/deliverables/feedback')}>
+                    <Link to="/deliverables/feedback">
+                      <FaComments className="submenu-icon" />
+                      <span>Review Feedback</span>
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Collaboration Section */}
+            <li className={`nav-section ${expandedSections.collaboration ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('collaboration')}>
+                <FaUsers className="nav-icon" />
+                <span>Collaboration</span>
+                {expandedSections.collaboration ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.collaboration && (
+                <ul className="submenu">
+                  <li className={isActive('/collaboration/standup')}>
+                    <Link to="/collaboration/standup">
+                      <FaCalendarAlt className="submenu-icon" />
+                      <span>Daily Standup</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/collaboration/code-reviews')}>
+                    <Link to="/collaboration/code-reviews">
+                      <FaCodeBranch className="submenu-icon" />
+                      <span>Code Reviews</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/collaboration/discussions')}>
+                    <Link to="/collaboration/discussions">
+                      <FaComments className="submenu-icon" />
+                      <span>Discussions</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/collaboration/documentation')}>
+                    <Link to="/collaboration/documentation">
+                      <FaBook className="submenu-icon" />
+                      <span>Documentation</span>
                     </Link>
                   </li>
                 </ul>

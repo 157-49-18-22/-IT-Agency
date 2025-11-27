@@ -19,12 +19,24 @@ export const ProjectProvider = ({ children }) => {
   const addProject = (newProject) => {
     // Extract departments from team members
     const departments = [];
+    let hasDesigner = false;
+    
     const teamMembersWithDept = newProject.teamMembers.map(member => {
+      // Check if any team member is a designer
+      if (member.role && member.role.toLowerCase().includes('designer')) {
+        hasDesigner = true;
+      }
+      
       if (member.department && !departments.includes(member.department)) {
         departments.push(member.department);
       }
       return member;
     });
+
+    // If there's a designer, ensure UI/UX department is included
+    if (hasDesigner && !departments.includes('UI/UX')) {
+      departments.push('UI/UX');
+    }
 
     const projectWithId = {
       ...newProject,
@@ -33,7 +45,9 @@ export const ProjectProvider = ({ children }) => {
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
       status: newProject.status || 'planning',
-      createdBy: user?.id || 'system'
+      createdBy: user?.id || 'system',
+      // Add a flag to indicate if this is a UI/UX project
+      isUIUXProject: hasDesigner
     };
     
     setProjects(prevProjects => [...prevProjects, projectWithId]);

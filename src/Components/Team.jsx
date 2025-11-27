@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff } from 'react-icons/fi';
+import { 
+  FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, 
+  FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff, 
+  FiCheckSquare, FiClock, FiCalendar, FiType, FiBookmark 
+} from 'react-icons/fi';
 import './Team.css';
 import { userAPI, teamAPI } from '../services/api';
+import { createTask } from '../services/taskService';
 
 const Team = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,7 +17,7 @@ const Team = () => {
   const [departments, setDepartments] = useState([
     { id: 1, name: 'UI/UX', count: 0 },
     { id: 2, name: 'Development', count: 0 },
-    { id: 3, name: 'Tester', count: 0 },
+    { id: 3, name: 'Tester', count: 0 }
   ]);
   const [formData, setFormData] = useState({
     name: '',
@@ -27,6 +32,33 @@ const Team = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    priority: 'medium',
+    status: 'pending',
+    assignedTo: ''
+  });
+
+  const updateDepartmentCounts = (membersList) => {
+    const counts = { ...departments.reduce((acc, dept) => ({ ...acc, [dept.name]: 0 }), {}) };
+    
+    membersList.forEach(member => {
+      if (member.department && counts.hasOwnProperty(member.department)) {
+        counts[member.department]++;
+      }
+    });
+
+    setDepartments(prevDepartments => 
+      prevDepartments.map(dept => ({
+        ...dept,
+        count: counts[dept.name] || 0
+      }))
+    );
+  };
 
   useEffect(() => {
     fetchTeamMembers();
@@ -90,109 +122,6 @@ const Team = () => {
     setShowAddMemberModal(true);
   };
 
-  if (loading) {
-    return <div className="loading">Loading team...</div>;
-  }
-
-  // OLD Mock data
-  const oldMockMembers = [
-      {
-        id: 1,
-        name: 'John Doe',
-        role: 'Frontend Developer',
-        department: 'Development',
-        email: 'john.doe@example.com',
-        phone: '+1 (555) 123-4567',
-        avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-        status: 'active',
-        joinDate: '2023-01-15',
-      },
-      {
-        id: 2,
-        name: 'Jane Smith',
-        role: 'UI/UX Designer',
-        department: 'Design',
-        email: 'jane.smith@example.com',
-        phone: '+1 (555) 234-5678',
-        avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-        status: 'active',
-        joinDate: '2022-11-10',
-      },
-      {
-        id: 3,
-        name: 'Robert Johnson',
-        role: 'Backend Developer',
-        department: 'Development',
-        email: 'robert.j@example.com',
-        phone: '+1 (555) 345-6789',
-        avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-        status: 'active',
-        joinDate: '2023-03-22',
-      },
-      {
-        id: 4,
-        name: 'Emily Davis',
-        role: 'Marketing Manager',
-        department: 'Marketing',
-        email: 'emily.d@example.com',
-        phone: '+1 (555) 456-7890',
-        avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-        status: 'active',
-        joinDate: '2022-09-05',
-      },
-      {
-        id: 5,
-        name: 'Michael Wilson',
-        role: 'Sales Executive',
-        department: 'Sales',
-        email: 'michael.w@example.com',
-        phone: '+1 (555) 567-8901',
-        avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-        status: 'inactive',
-        joinDate: '2023-05-18',
-      }
-    ];
-
-  const handleSearch = (e) => {
-    const term = e.target.value.toLowerCase();
-    setSearchTerm(term);
-    
-    const filtered = members.filter(member => 
-      member.name.toLowerCase().includes(term) ||
-      member.role.toLowerCase().includes(term) ||
-      member.department.toLowerCase().includes(term)
-    );
-    
-    setFilteredMembers(filtered);
-  };
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    if (tab === 'all') {
-      setFilteredMembers(members);
-    } else {
-      const filtered = members.filter(member => member.status === tab);
-      setFilteredMembers(filtered);
-    }
-  };
-
-  const handleDepartmentFilter = (dept) => {
-    if (dept === 'all') {
-      setFilteredMembers(members);
-    } else {
-      const filtered = members.filter(member => member.department === dept);
-      setFilteredMembers(filtered);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const resetForm = () => {
     setFormData({
       name: '',
@@ -204,6 +133,72 @@ const Team = () => {
       status: 'active'
     });
     setError('');
+  };
+
+  const resetTaskForm = () => {
+    setTaskForm({
+      title: '',
+      description: '',
+      dueDate: '',
+      priority: 'medium',
+      status: 'pending',
+      assignedTo: ''
+    });
+  };
+
+  const handleTaskInputChange = (e) => {
+    const { name, value } = e.target;
+    setTaskForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const openTaskModal = (member) => {
+    setSelectedMember(member);
+    setTaskForm(prev => ({
+      ...prev,
+      assignedTo: member.id,
+      assignedToName: member.name
+    }));
+    setShowTaskModal(true);
+  };
+
+  const handleTaskSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!taskForm.title || !taskForm.dueDate) {
+      setError('Title and Due Date are required');
+      return;
+    }
+
+    try {
+      const taskData = {
+        title: taskForm.title,
+        description: taskForm.description,
+        dueDate: taskForm.dueDate,
+        priority: taskForm.priority,
+        status: taskForm.status,
+        assignedTo: taskForm.assignedTo,
+        assignedToName: taskForm.assignedToName,
+        createdBy: 'system',
+        createdByName: 'System',
+        createdAt: new Date().toISOString()
+      };
+
+      await createTask(taskData);
+      
+      // Close modal and reset form
+      setShowTaskModal(false);
+      resetTaskForm();
+      
+      // Show success message
+      alert('Task assigned successfully!');
+      
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      setError(error.message || 'Failed to assign task');
+    }
   };
 
   const handleAddMember = async (e) => {
@@ -332,18 +327,48 @@ const Team = () => {
     }
   };
 
-  const updateDepartmentCounts = (memberList) => {
-    const counts = {};
-    memberList.forEach(member => {
-      counts[member.department] = (counts[member.department] || 0) + 1;
-    });
+  if (loading) {
+    return <div className="loading">Loading team...</div>;
+  }
 
-    setDepartments(prev => 
-      prev.map(dept => ({
-        ...dept,
-        count: counts[dept.name] || 0
-      }))
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    
+    const filtered = members.filter(member => 
+      member.name.toLowerCase().includes(term) ||
+      member.role.toLowerCase().includes(term) ||
+      member.department.toLowerCase().includes(term)
     );
+    
+    setFilteredMembers(filtered);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'all') {
+      setFilteredMembers(members);
+    } else {
+      const filtered = members.filter(member => member.status === tab);
+      setFilteredMembers(filtered);
+    }
+  };
+
+  const handleDepartmentFilter = (dept) => {
+    if (dept === 'all') {
+      setFilteredMembers(members);
+    } else {
+      const filtered = members.filter(member => member.department === dept);
+      setFilteredMembers(filtered);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -438,16 +463,23 @@ const Team = () => {
                 </div>
                 <div className="member-actions">
                   <button 
-                    className="icon-btn" 
-                    title="Edit"
+                    className="action-btn assign-btn"
+                    onClick={() => openTaskModal(member)}
+                    title="Assign Task"
+                  >
+                    <FiCheckSquare />
+                  </button>
+                  <button 
+                    className="action-btn edit-btn"
                     onClick={() => handleEditMember(member)}
+                    title="Edit Member"
                   >
                     <FiEdit2 />
                   </button>
                   <button 
-                    className="icon-btn" 
-                    title="Delete"
+                    className="action-btn delete-btn"
                     onClick={() => handleDeleteMember(member.id)}
+                    title="Delete Member"
                   >
                     <FiTrash2 />
                   </button>
@@ -478,127 +510,283 @@ const Team = () => {
 
       {showAddMemberModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal">
             <div className="modal-header">
               <h3>{formData.id ? 'Edit Team Member' : 'Add New Team Member'}</h3>
-              <button 
-                className="close-btn"
-                onClick={() => setShowAddMemberModal(false)}
-              >
-                &times;
-              </button>
+              <button className="close-btn" onClick={() => setShowAddMemberModal(false)}>×</button>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={formData.id ? handleUpdateMember : handleAddMember}>
               {error && <div className="error-message">{error}</div>}
+              
               <div className="form-group">
-                <label>Full Name</label>
-                <input 
-                  type="text" 
+                <label>Full Name *</label>
+                <input
+                  type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter full name" 
-                  required 
+                  placeholder="Enter full name"
+                  required
                 />
               </div>
+              
               <div className="form-group">
-                <label>Email</label>
-                <input 
-                  type="email" 
+                <label>Email Address *</label>
+                <input
+                  type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="Enter email address" 
-                  required 
+                  placeholder="Enter email address"
+                  required
                 />
               </div>
-              <div className="form-group password-field">
-                <label>Password</label>
-                <div className="password-input-container">
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    name="password"
-                    value={formData.password}
+              
+              {!formData.id && (
+                <div className="form-group">
+                  <label>Password *</label>
+                  <div className="password-input">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Enter password"
+                      required={!formData.id}
+                      minLength="6"
+                    />
+                    <button 
+                      type="button" 
+                      className="toggle-password"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
                     onChange={handleInputChange}
-                    placeholder="Enter password"
-                    required={!formData.id} // Not required when editing
-                    autoComplete="new-password"
-                    className="password-input"
-                  />
-                  <button 
-                    type="button" 
-                    className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex="-1"
+                    required
+                    className="form-control"
                   >
-                    {showPassword ? <FiEyeOff /> : <FiEye />}
-                  </button>
+                    <option value="">Select Role</option>
+                    <option value="Designer">UI/UX Designer</option>
+                    <option value="Frontend">Frontend Developer</option>
+                    <option value="Backend">Backend Developer</option>
+                    <option value="Fullstack">Full Stack Developer</option>
+                    <option value="Tester">QA Tester</option>
+                    <option value="Manager">Project Manager</option>
+                    <option value="Lead">Team Lead</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>Department *</label>
+                  <select
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Department</option>
+                    <option value="UI/UX">UI/UX</option>
+                    <option value="Development">Development</option>
+                    <option value="Testing">Testing</option>
+                    <option value="Project Management">Project Management</option>
+                  </select>
                 </div>
               </div>
+              
               <div className="form-group">
-                <label>Phone</label>
-                <input 
-                  type="tel" 
+                <label>Phone Number</label>
+                <input
+                  type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="Enter phone number"
                 />
               </div>
-              <div className="form-group">
-                <label>Role</label>
-                <select 
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Role</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="Developer">Developer</option>
-                  <option value="Designer">Designer</option>
-                  <option value="Tester">Tester</option>
-                  <option value="Client">Client</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Department</label>
-                <select 
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Department</option>
-                  {departments.map(dept => (
-                    <option key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              
+              {formData.id && (
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              )}
+              
               <div className="form-actions">
                 <button 
                   type="button" 
-                  className="btn-cancel"
+                  className="cancel-btn"
                   onClick={() => {
                     setShowAddMemberModal(false);
                     resetForm();
                   }}
-                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="btn-primary"
+                  className="submit-btn"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Saving...' : (formData.id ? 'Update Member' : 'Add Member')}
+                  {isSubmitting ? 'Saving...' : 'Save Member'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Task Assignment Modal */}
+      {showTaskModal && selectedMember && (
+        <div className="modal-overlay">
+          <div className="modal task-modal">
+            <div className="modal-header">
+              <div>
+                <h3>Assign New Task</h3>
+                <p className="modal-subtitle">Assigning to {selectedMember.name}</p>
+              </div>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowTaskModal(false);
+                  resetTaskForm();
+                }}
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <form onSubmit={handleTaskSubmit}>
+                {error && (
+                  <div className="error-message">
+                    <FiAlertCircle className="error-icon" />
+                    {error}
+                  </div>
+                )}
+                
+                <div className="form-group">
+                  <label htmlFor="taskTitle">Task Title *</label>
+                  <div className="input-with-icon">
+                    <FiType className="input-icon" />
+                    <input
+                      id="taskTitle"
+                      type="text"
+                      name="title"
+                      value={taskForm.title}
+                      onChange={handleTaskInputChange}
+                      placeholder="e.g., Design login page mockup"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="taskDescription">Description</label>
+                  <div className="input-with-icon">
+                    <FiBookmark className="input-icon" />
+                    <textarea
+                      id="taskDescription"
+                      name="description"
+                      value={taskForm.description}
+                      onChange={handleTaskInputChange}
+                      placeholder="Add details about the task..."
+                      rows="4"
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="dueDate">Due Date *</label>
+                    <div className="input-with-icon">
+                      <FiCalendar className="input-icon" />
+                      <input
+                        id="dueDate"
+                        type="date"
+                        name="dueDate"
+                        value={taskForm.dueDate}
+                        onChange={handleTaskInputChange}
+                        min={new Date().toISOString().split('T')[0]}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="taskPriority">Priority</label>
+                    <div className="input-with-icon">
+                      <FiFlag className="input-icon" />
+                      <select
+                        id="taskPriority"
+                        name="priority"
+                        value={taskForm.priority}
+                        onChange={handleTaskInputChange}
+                        className={`priority-${taskForm.priority}`}
+                      >
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="form-actions">
+                  <div className="form-actions-left">
+                    <button 
+                      type="button" 
+                      className="btn btn-text"
+                      onClick={() => {
+                        setShowTaskModal(false);
+                        resetTaskForm();
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="form-actions-right">
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner"></span>
+                          Assigning...
+                        </>
+                      ) : (
+                        <>
+                          <FiCheckSquare className="btn-icon" />
+                          Assign Task
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

@@ -283,26 +283,40 @@
 .member-actions {
   display: flex;
   gap: 8px;
+  margin-left: auto;
+  align-self: center;
 }
 
-.icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #6b7280;
+.member-actions .action-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.2s;
+  width: 32px;
+  height: 32px;
 }
 
-.icon-btn:hover {
-  background: #f9fafb;
+.member-actions .action-btn:hover {
+  background: #f3f4f6;
   color: #4f46e5;
-  border-color: #d1d5db;
+}
+
+.member-actions .assign-btn:hover {
+  color: #10b981; /* Green for assign action */
+}
+
+.member-actions .edit-btn:hover {
+  color: #3b82f6; /* Blue for edit action */
+}
+
+.member-actions .delete-btn:hover {
+  color: #ef4444; /* Red for delete action */
 }
 
 /* Password field styles */
@@ -399,17 +413,29 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  margin: 20px auto;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   animation: modalFadeIn 0.3s ease-out;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes modalFadeIn {
@@ -423,12 +449,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #f9fafb;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #1f2937;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .close-btn {
@@ -448,51 +481,106 @@
 /* Form Styles */
 form {
   padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Custom scrollbar for Webkit browsers */
+form::-webkit-scrollbar {
+  width: 6px;
+}
+
+form::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+form::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+form::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .form-group {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-size: 14px;
   font-weight: 500;
   color: #374151;
+  font-size: 14px;
 }
 
-.form-group input,
-.form-group select {
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group .input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-group .input-icon {
+  position: absolute;
+  left: 12px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.form-group input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 14px;
-  color: #1f2937;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s;
+  background-color: #fff;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: #4f46e5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
-.btn-cancel {
-  padding: 10px 16px;
-  border: 1px solid #e5e7eb;
-  background: white;
+/* Priority specific styles */
+.priority-high {
+  color: #ef4444;
   color: #4b5563;
   border-radius: 6px;
   font-size: 14px;
@@ -511,7 +599,7 @@ form {
   background: #4f46e5;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

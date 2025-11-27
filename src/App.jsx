@@ -7,6 +7,8 @@ import './App.css';
 // Import Layouts
 import MainLayout from './Components/Sidebar';
 import DeveloperLayout from './Components/Layouts/DeveloperLayout';
+import UILayout from './Components/Layouts/UILayout';
+import Testing from './Components/Layouts/Testing';
 
 // Import your components
 import Login from './Components/Login';
@@ -63,7 +65,7 @@ import ClientApprovals from './Components/ClientPortal/ClientApprovals';
 
 // Protected route with role-based layouts
 const ProtectedRoute = () => {
-  const { currentUser, isLoading } = useAuth();
+  const { currentUser, isLoading, isDeveloper, isDesigner, isTester } = useAuth();
   
   console.log('ProtectedRoute - currentUser:', currentUser);
   console.log('ProtectedRoute - isLoading:', isLoading);
@@ -80,12 +82,20 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
   
-  // Check if user is a developer (case-insensitive comparison)
-  const isDeveloper = currentUser && String(currentUser.role || '').toLowerCase() === 'developer';
   console.log('ProtectedRoute - isDeveloper:', isDeveloper);
+  console.log('ProtectedRoute - isDesigner:', isDesigner);
+  console.log('ProtectedRoute - isTester:', isTester);
   
   // Use the appropriate layout based on user role
-  const Layout = isDeveloper ? DeveloperLayout : MainLayout;
+  let Layout = MainLayout; // Default to main layout
+  
+  if (isDeveloper) {
+    Layout = DeveloperLayout;
+  } else if (isDesigner) {
+    Layout = UILayout;
+  } else if (isTester) {
+    Layout = Testing;
+  }
   
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflow: 'hidden' }}>
@@ -99,12 +109,16 @@ const ProtectedRoute = () => {
 
 // Main App Routes
 const AppRoutes = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isTester } = useAuth();
   // Case-insensitive role comparison
-  const isDeveloper = currentUser && String(currentUser.role || '').toLowerCase() === 'developer';
+  const userRole = currentUser ? String(currentUser.role || '').toLowerCase() : '';
+  const isDeveloper = userRole === 'developer';
+  const isUIUX = userRole === 'ui/ux' || userRole === 'ui-ux' || userRole === 'ui ux' || userRole === 'designer';
   
   console.log('AppRoutes - currentUser:', currentUser);
+  console.log('AppRoutes - userRole:', userRole);
   console.log('AppRoutes - isDeveloper:', isDeveloper);
+  console.log('AppRoutes - isUIUX:', isUIUX);
   
   return (
     <Routes>
@@ -131,8 +145,35 @@ const AppRoutes = () => {
           </Route>
         )}
         
+        {/* Tester specific routes */}
+        {isTester && (
+          <Route path="/testing">
+            <Route index element={<Navigate to="bug" replace />} />
+            <Route path="bug" element={<Bug />} />
+            <Route path="cases" element={<Cases />} />
+            <Route path="performance" element={<Performance />} />
+            <Route path="uat" element={<Uat />} />
+          </Route>
+        )}
+        
+        {/* UI/UX specific routes */}
+        {isUIUX && (
+          <>
+            <Route path="/design">
+              <Route index element={<Navigate to="wireframes" replace />} />
+              <Route path="wireframes" element={<Wireframes />} />
+              <Route path="mockups" element={<Mockups />} />
+              <Route path="prototypes" element={<Prototypes />} />
+              <Route path="components" element={<div>UI Components</div>} />
+              <Route path="styleguide" element={<div>Style Guide</div>} />
+            </Route>
+            <Route path="/tasks" element={<DevelopmentTask />} />
+            <Route path="/team" element={<Team />} />
+          </>
+        )}
+        
         {/* Admin only routes */}
-        {!isDeveloper && currentUser && (
+        {!isDeveloper && !isUIUX && !isTester && currentUser && (
           <>
             <Route path="/projects">
               <Route index element={<AllProjects />} />
@@ -144,7 +185,7 @@ const AppRoutes = () => {
             <Route path="/team" element={<Team />} />
             
             {/* UI/UX Design Routes */}
-            <Route path="/uiux" element={<Design />}>
+            <Route path="/design" element={<Design />}>
               <Route index element={<Navigate to="wireframes" replace />} />
               <Route path="wireframes" element={<Wireframes />} />
               <Route path="mockups" element={<Mockups />} />

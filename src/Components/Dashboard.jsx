@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { ProjectContext } from '../context/ProjectContext';
+import { useAuth } from '../context/AuthContext';
 import './Dashboard.css';
 
 // Utility function to generate a consistent color from a string
@@ -28,23 +29,36 @@ const stringToColor = (str) => {
 };
 
 const Dashboard = () => {
-  const { projects, getActiveProjects, getCompletedProjects } = useContext(ProjectContext);
+  const { projects, getActiveProjects, getCompletedProjects, getProjectsByUser } = useContext(ProjectContext);
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
-  const activeProjects = getActiveProjects();
-  const completedProjects = getCompletedProjects();
-  const totalProjects = projects.length;
-  const totalClients = [...new Set(projects.map(p => p.clientName))].length;
+  // Get projects for the current user if they're a developer
+  const userProjects = currentUser?.role === 'developer' 
+    ? getProjectsByUser(currentUser.id) 
+    : projects;
+    
+  const activeProjects = currentUser?.role === 'developer'
+    ? userProjects.filter(project => project.status === 'in-progress')
+    : getActiveProjects();
+    
+  const completedProjects = currentUser?.role === 'developer'
+    ? userProjects.filter(project => project.status === 'completed')
+    : getCompletedProjects();
+    
+  const totalProjects = userProjects.length;
+  const totalClients = [...new Set(userProjects.map(p => p.clientName))].length;
   
   // Get recent activities (last 5 projects created)
-  const recentActivities = [...projects]
+  const recentActivities = [...userProjects]
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     .slice(0, 5);
   
   // Get unique team members from all projects
+  // Get team members from user's projects
   const allTeamMembers = [
     ...new Map(
-      projects
+      userProjects
         .flatMap(project =>
           project.teamMembers?.map(member => ({
             id: member?.id || Math.random().toString(36).substr(2, 9),
@@ -101,7 +115,7 @@ const Dashboard = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  if (projects.length === 0) {
+  if (userProjects.length === 0) {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>

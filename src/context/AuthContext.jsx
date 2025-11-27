@@ -82,11 +82,14 @@ export const AuthProvider = ({ children }) => {
   // Check if user is authenticated
   const isAuthenticated = !!currentUser;
 
-  // Check if user has admin role (case-insensitive)
-  const isAdmin = String(currentUser?.role || '').toLowerCase() === 'admin';
-
-  // Check if user has developer role (case-insensitive)
-  const isDeveloper = String(currentUser?.role || '').toLowerCase() === 'developer';
+  // Normalize the role for consistent comparison
+  const userRole = currentUser ? String(currentUser.role || '').toLowerCase() : '';
+  
+  // Check user roles (case-insensitive)
+  const isAdmin = userRole === 'admin';
+  const isDeveloper = userRole === 'developer';
+  const isDesigner = ['designer', 'ui/ux', 'ui-ux', 'ui ux'].includes(userRole);
+  const isTester = userRole === 'tester';
 
   const value = {
     currentUser,
@@ -94,6 +97,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isAdmin,
     isDeveloper,
+    isDesigner,
+    isTester,
     login,
     logout,
     setCurrentUser
