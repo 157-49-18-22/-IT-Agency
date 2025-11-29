@@ -232,7 +232,7 @@ html, body, #root, .app-container {
   display: flex;
   align-items: center;
   padding: 12px 15px;
-  color: #e8eaf6;
+  color: black;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -243,16 +243,17 @@ html, body, #root, .app-container {
 .sidebar-nav > ul > li > a:hover,
 .sidebar-nav > ul > li.active > a {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: grey;
 }
 
 .sidebar-nav > ul > li > a .nav-icon {
   margin-right: 12px;
   font-size: 1.1rem;
-  color: #9fa8da;
+  color: rgb(109, 99, 99);
   min-width: 24px;
   text-align: center;
 }
+
 
 /* Submenu Icons */
 .submenu-icon {

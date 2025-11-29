@@ -1,6 +1,40 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
+  Box, 
+  Button, 
+  Typography, 
+  Paper, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  Divider, 
+  TextField, 
+  IconButton, 
+  Badge,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+  LinearProgress,
+  Tabs,
+  Tab,
+  AppBar,
+  Toolbar
+} from '@mui/material';
+import { 
   FaHome, 
   FaPalette,
   FaCalendarAlt, 
@@ -193,7 +227,7 @@ const mockDeliverables = [
   { id: 3, name: 'Prototype', status: 'In Progress', type: 'prototype', files: 2, lastUpdated: '2025-11-24' },
 ];
 
-const UILayout = () => {
+const UILayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
   const { getProjectsByUser, getProjectsByDepartment } = useContext(ProjectContext);
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -431,6 +465,30 @@ const UILayout = () => {
     }
   ]);
 
+  const handleCompletePhase = () => {
+    // TODO: Save any final UI/UX phase data
+    
+    // Mark phase as completed
+    setPhaseCompleted(true);
+    
+    // Notify parent component
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  const checkPhaseCompletion = useCallback(() => {
+    const allCompleted = mockDeliverables.every(d => d.status === 'Completed');
+    setPhaseCompleted(allCompleted);
+  }, []);
+
+  useEffect(() => {
+    checkPhaseCompletion();
+  }, [mockDeliverables, checkPhaseCompletion]);
+
+  const [activeTab, setActiveTab] = useState('wireframes');
+  const [phaseCompleted, setPhaseCompleted] = useState(false);
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -519,6 +577,20 @@ const UILayout = () => {
           </button>
         </div>
       </div>
+      
+      {/* Phase Completion Button */}
+      <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          disabled={!phaseCompleted}
+          onClick={handleCompletePhase}
+          startIcon={<FaCheckCircle />}
+        >
+          {phaseCompleted ? 'Complete UI/UX Phase' : 'Complete All Deliverables First'}
+        </Button>
+      </Box>
       
       {/* Main Content */}
       <main className="main-content">

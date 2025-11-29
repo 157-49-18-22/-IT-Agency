@@ -25,6 +25,7 @@ const clientRoutes = require('./routes/client.routes');
 const reportRoutes = require('./routes/report.routes');
 const calendarRoutes = require('./routes/calendar.routes');
 const timeTrackingRoutes = require('./routes/timeTracking.routes');
+const workflowStateRoutes = require('./routes/sql/workflowState.routes');
 // NEW Routes
 const uploadRoutes = require('./routes/upload.routes');
 const wireframeRoutes = require('./routes/wireframe.routes');
@@ -117,6 +118,7 @@ app.get('/health', async (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/workflow', workflowStateRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);

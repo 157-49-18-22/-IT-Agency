@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
@@ -31,11 +31,14 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
+import { Box, Button } from '@mui/material';
 
-const DeveloperLayout = () => {
+const DeveloperLayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
   const { getProjectsByUser } = useContext(ProjectContext);
   const [myProjects, setMyProjects] = useState([]);
+  const [activeTab, setActiveTab] = useState('sprints');
+  const [phaseCompleted, setPhaseCompleted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState({
@@ -54,6 +57,30 @@ const DeveloperLayout = () => {
       // Additional initialization can be done here
     }
   }, [currentUser, getProjectsByUser]);
+
+  // Handle phase completion
+  const handleCompletePhase = () => {
+    // TODO: Save any final development phase data
+    
+    // Mark phase as completed
+    setPhaseCompleted(true);
+    
+    // Notify parent component
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  // Check if all sprints are completed
+  const checkPhaseCompletion = useCallback(() => {
+    // TODO: Replace with actual check for completed sprints
+    const allSprintsCompleted = true; // mock value
+    setPhaseCompleted(allSprintsCompleted);
+  }, []);
+
+  useEffect(() => {
+    checkPhaseCompletion();
+  }, [checkPhaseCompletion]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({

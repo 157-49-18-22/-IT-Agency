@@ -9,6 +9,7 @@ import MainLayout from './Components/Sidebar';
 import DeveloperLayout from './Components/Layouts/DeveloperLayout';
 import UILayout from './Components/Layouts/UILayout';
 import Testing from './Components/Layouts/Testing';
+import WorkflowManager from './Components/Workflow/WorkflowManager';
 
 // Import your components
 import Login from './Components/Login';
@@ -183,6 +184,10 @@ const AppRoutes = () => {
             </Route>
             
             <Route path="/team" element={<Team />} />
+            
+            {/* Project Workflow Routes */}
+            <Route path="/project/:projectId/workflow" element={<Navigate to="ui-ux" replace />} />
+            <Route path="/project/:projectId/workflow/:phase" element={<WorkflowManager />} />
             
             {/* UI/UX Design Routes */}
             <Route path="/design" element={<Design />}>

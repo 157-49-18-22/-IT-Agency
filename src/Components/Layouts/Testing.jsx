@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Testing.css';
 import { 
   FaHome, FaClipboardCheck, FaBug, 
@@ -7,12 +8,15 @@ import {
   FaCheckCircle, FaExclamationTriangle, FaClock
 } from 'react-icons/fa';
 
-const Testing = () => {
+const Testing = ({ projectId, onComplete }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('test-cases');
+  const [phaseCompleted, setPhaseCompleted] = useState(false);
   const [testCases, setTestCases] = useState([]);
   const [bugs, setBugs] = useState([]);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [deliverables, setDeliverables] = useState({
     testCasesExecuted: false,
     resultsDocumented: false,
@@ -23,6 +27,29 @@ const Testing = () => {
     crossBrowserTested: false,
     finalReportPrepared: false
   });
+
+  // Handle phase completion
+  const handleCompletePhase = () => {
+    // TODO: Save any final testing phase data
+    
+    // Mark phase as completed
+    setPhaseCompleted(true);
+    
+    // Notify parent component
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  // Check if all tests are passed
+  const checkPhaseCompletion = useCallback(() => {
+    const allTestsPassed = Object.values(deliverables).every(d => d);
+    setPhaseCompleted(allTestsPassed);
+  }, [deliverables]);
+
+  useEffect(() => {
+    checkPhaseCompletion();
+  }, [checkPhaseCompletion, deliverables]);
 
   // Mock data for test cases
   useEffect(() => {
@@ -458,7 +485,13 @@ const Testing = () => {
               <p>QA Tester</p>
             </div>
           </div>
-          <button className="btn btn-link sign-out">
+          <button 
+            className="btn btn-link sign-out"
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+          >
             <FaSignOutAlt className="mr-2" /> Sign Out
           </button>
         </div>
