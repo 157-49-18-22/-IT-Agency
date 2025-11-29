@@ -120,7 +120,150 @@ import {
   FaUserSecret,
   FaEye,
   FaPhone,
-  FaPlusCircle
+  FaPlusCircle,
+  FaFilter,
+  FaSort,
+  FaClock as FaClockSolid,
+  FaRegClock,
+  FaRegCheckCircle,
+  FaRegTimesCircle,
+  FaRegThumbsUp,
+  FaRegThumbsDown,
+  FaRegCommentDots,
+  FaHistory,
+  FaRegCalendarAlt,
+  FaRegClock as FaRegClockAlt,
+  FaRegFileAlt,
+  FaRegFileArchive,
+  FaRegFilePdf,
+  FaRegFileWord,
+  FaRegFileImage,
+  FaRegFileVideo,
+  FaRegFileAudio,
+  FaRegFileCode,
+  FaRegFile,
+  FaRegStar,
+  FaStar,
+  FaRegBell,
+  FaBellSlash,
+  FaRegCalendarPlus,
+  FaRegCalendarCheck,
+  FaRegCalendarMinus,
+  FaRegCalendarTimes,
+  FaRegCalendarAlt as FaRegCalendar,
+  FaRegChartBar,
+  FaRegCheckSquare,
+  FaRegCircle,
+  FaRegClock as FaRegClockIcon,
+  FaRegClone,
+  FaRegComment,
+  FaRegCommentAlt,
+  FaRegComments,
+  FaRegCopy,
+  FaRegDotCircle,
+  FaRegEdit,
+  FaRegEnvelope,
+  FaRegEnvelopeOpen,
+  FaRegEye,
+  FaRegEyeSlash,
+  FaRegFileAlt as FaRegFileAlt2,
+  FaRegFileArchive as FaRegFileArchive2,
+  FaRegFileAudio as FaRegFileAudio2,
+  FaRegFileCode as FaRegFileCode2,
+  FaRegFileExcel,
+  FaRegFileImage as FaRegFileImage2,
+  FaRegFilePdf as FaRegFilePdf2,
+  FaRegFilePowerpoint,
+  FaRegFileVideo as FaRegFileVideo2,
+  FaRegFileWord as FaRegFileWord2,
+  FaRegFlag,
+  FaRegFolder,
+  FaRegFolderOpen,
+  FaRegFrown,
+  FaRegFrownOpen,
+  FaRegGrin,
+  FaRegGrinBeam,
+  FaRegGrinHearts,
+  FaRegGrinStars,
+  FaRegHandPaper,
+  FaRegHandPeace,
+  FaRegHandPointDown,
+  FaRegHandPointLeft,
+  FaRegHandPointRight,
+  FaRegHandPointUp,
+  FaRegHandPointer,
+  FaRegHandRock,
+  FaRegHandScissors,
+  FaRegHandshake,
+  FaRegHeart,
+  FaRegHospital,
+  FaRegHourglass,
+  FaRegIdBadge,
+  FaRegIdCard,
+  FaRegImage,
+  FaRegImages,
+  FaRegKeyboard,
+  FaRegLaugh,
+  FaRegLaughBeam,
+  FaRegLaughSquint,
+  FaRegLaughWink,
+  FaRegLemon,
+  FaRegLifeRing,
+  FaRegLightbulb,
+  FaRegListAlt,
+  FaRegMap,
+  FaRegMeh,
+  FaRegMehBlank,
+  FaRegMehRollingEyes,
+  FaRegMinusSquare,
+  FaRegMoneyBillAlt,
+  FaRegMoon,
+  FaRegNewspaper,
+  FaRegObjectGroup,
+  FaRegObjectUngroup,
+  FaRegPaperPlane,
+  FaRegPauseCircle,
+  FaRegPlayCircle,
+  FaRegPlusSquare,
+  FaRegQuestionCircle,
+  FaRegRegistered,
+  FaRegSadCry,
+  FaRegSadTear,
+  FaRegSave,
+  FaRegShareSquare,
+  FaRegSmile,
+  FaRegSmileBeam,
+  FaRegSmileWink,
+  FaRegSnowflake,
+  FaRegSquare,
+  FaRegStar as FaRegStarIcon,
+  FaRegStarHalf,
+  FaRegStickyNote,
+  FaRegStopCircle,
+  FaRegSun,
+  FaRegThumbsDown as FaRegThumbsDown2,
+  FaRegThumbsUp as FaRegThumbsUp2,
+  FaRegTrashAlt,
+  FaRegUser,
+  FaRegUserCircle,
+  FaRegWindowMaximize,
+  FaRegWindowMinimize,
+  FaRegWindowRestore,
+  FaRegClock as FaRegClock2,
+  FaRegCalendarAlt as FaRegCalendarAlt2,
+  FaRegFileAlt as FaRegFileAlt3,
+  FaRegFileArchive as FaRegFileArchive3,
+  FaRegFileAudio as FaRegFileAudio3,
+  FaRegFileCode as FaRegFileCode3,
+  FaRegFileExcel as FaRegFileExcel2,
+  FaRegFileImage as FaRegFileImage3,
+  FaRegFilePdf as FaRegFilePdf3,
+  FaRegFilePowerpoint as FaRegFilePowerpoint2,
+  FaRegFileVideo as FaRegFileVideo3,
+  FaRegFileWord as FaRegFileWord3,
+  FaRegStar as FaRegStar2,
+  FaRegThumbsUp as FaRegThumbsUp3,
+  FaRegThumbsDown as FaRegThumbsDown3
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
@@ -489,6 +632,260 @@ const UILayout = ({ projectId, onComplete }) => {
   const [activeTab, setActiveTab] = useState('wireframes');
   const [phaseCompleted, setPhaseCompleted] = useState(false);
 
+  const [timeLogs, setTimeLogs] = useState([
+    { id: 1, taskId: 1, date: '2025-11-29', hours: 2.5, description: 'Worked on login page design' },
+    { id: 2, taskId: 1, date: '2025-11-28', hours: 3, description: 'Initial design concepts' },
+  ]);
+
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isTracking, setIsTracking] = useState(false);
+  const [timerDescription, setTimerDescription] = useState('');
+
+  const [filters, setFilters] = useState({
+    status: 'all',
+    priority: 'all',
+    dueDate: 'all',
+    assignedTo: 'all',
+  });
+
+  const [sortConfig, setSortConfig] = useState({
+    key: 'dueDate',
+    direction: 'asc',
+  });
+
+  const [clientFeedback, setClientFeedback] = useState([
+    {
+      id: 1,
+      taskId: 1,
+      clientName: 'Acme Corp',
+      comment: 'The login page looks great! Just a few minor adjustments needed on the mobile view.',
+      status: 'pending',
+      attachments: [],
+      timestamp: '2025-11-29T14:30:00',
+      responses: [
+        {
+          id: 1,
+          userId: currentUser?.id || 1,
+          userName: currentUser?.name || 'You',
+          comment: 'Thanks for the feedback! We\'ll make those adjustments.',
+          timestamp: '2025-11-29T15:15:00',
+          attachments: []
+        }
+      ]
+    }
+  ]);
+
+  const [versionHistory, setVersionHistory] = useState([
+    {
+      id: 1,
+      taskId: 1,
+      version: '1.0.0',
+      date: '2025-11-28',
+      changes: 'Initial design concept',
+      author: currentUser?.name || 'John Doe',
+      files: [
+        { id: 1, name: 'login_v1.sketch', size: '2.4 MB', type: 'sketch' },
+        { id: 2, name: 'style_guide_v1.pdf', size: '1.2 MB', type: 'pdf' }
+      ]
+    },
+    {
+      id: 2,
+      taskId: 1,
+      version: '1.1.0',
+      date: '2025-11-29',
+      changes: 'Updated color scheme and typography',
+      author: currentUser?.name || 'John Doe',
+      files: [
+        { id: 3, name: 'login_v2.sketch', size: '2.6 MB', type: 'sketch' },
+        { id: 4, name: 'style_guide_v2.pdf', size: '1.3 MB', type: 'pdf' }
+      ]
+    }
+  ]);
+
+  const startTimer = (taskId) => {
+    if (activeTimer && activeTimer.taskId !== taskId) {
+      // If another timer is running, stop it first
+      stopTimer();
+    }
+    
+    setActiveTimer({
+      taskId,
+      startTime: new Date(),
+      description: ''
+    });
+    setIsTracking(true);
+    setElapsedTime(0);
+  };
+
+  const stopTimer = () => {
+    if (!activeTimer) return;
+    
+    const endTime = new Date();
+    const timeSpent = (endTime - activeTimer.startTime) / (1000 * 60 * 60); // Convert to hours
+    
+    // Save the time log
+    const newTimeLog = {
+      id: Date.now(),
+      taskId: activeTimer.taskId,
+      date: new Date().toISOString().split('T')[0],
+      hours: parseFloat(timeSpent.toFixed(2)),
+      description: timerDescription || `Worked on task ${activeTimer.taskId}`
+    };
+    
+    setTimeLogs([...timeLogs, newTimeLog]);
+    setActiveTimer(null);
+    setIsTracking(false);
+    setTimerDescription('');
+    
+    // Update task's time spent
+    const task = mockTasks.find(t => t.id === activeTimer.taskId);
+    if (task) {
+      const currentHours = parseFloat(task.timeSpent) || 0;
+      const newHours = currentHours + timeSpent;
+      
+      setMockTasks(prev => prev.map(t => 
+        t.id === activeTimer.taskId 
+          ? { ...t, timeSpent: newHours.toFixed(2) + 'h' } 
+          : t
+      ));
+    }
+  };
+
+  const getFilteredAndSortedTasks = () => {
+    let filtered = [...mockTasks];
+    
+    // Apply filters
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(task => task.status === filters.status);
+    }
+    
+    if (filters.priority !== 'all') {
+      filtered = filtered.filter(task => task.priority === filters.priority);
+    }
+    
+    if (filters.dueDate !== 'all') {
+      const today = new Date().toISOString().split('T')[0];
+      
+      switch(filters.dueDate) {
+        case 'today':
+          filtered = filtered.filter(task => task.dueDate === today);
+          break;
+        case 'this_week':
+          const nextWeek = new Date();
+          nextWeek.setDate(nextWeek.getDate() + 7);
+          filtered = filtered.filter(task => {
+            const taskDate = new Date(task.dueDate);
+            return taskDate >= new Date(today) && taskDate <= nextWeek;
+          });
+          break;
+        case 'overdue':
+          filtered = filtered.filter(task => new Date(task.dueDate) < new Date(today));
+          break;
+        default:
+          break;
+      }
+    }
+    
+    if (filters.assignedTo !== 'all') {
+      filtered = filtered.filter(task => 
+        filters.assignedTo === 'me' 
+          ? task.assignedTo === 'Me' || task.assignedTo === (currentUser?.name || 'You')
+          : true
+      );
+    }
+    
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    return sorted;
+  };
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const addClientFeedback = (taskId, comment, attachments = []) => {
+    const newFeedback = {
+      id: Date.now(),
+      taskId,
+      clientName: currentUser?.name || 'Client',
+      comment,
+      status: 'pending',
+      attachments,
+      timestamp: new Date().toISOString(),
+      responses: []
+    };
+    
+    setClientFeedback([newFeedback, ...clientFeedback]);
+  };
+
+  const respondToFeedback = (feedbackId, comment, attachments = []) => {
+    const response = {
+      id: Date.now(),
+      userId: currentUser?.id || 1,
+      userName: currentUser?.name || 'You',
+      comment,
+      timestamp: new Date().toISOString(),
+      attachments
+    };
+    
+    setClientFeedback(prev => 
+      prev.map(fb => 
+        fb.id === feedbackId 
+          ? { ...fb, responses: [...fb.responses, response] } 
+          : fb
+      )
+    );
+  };
+
+  const updateFeedbackStatus = (feedbackId, status) => {
+    setClientFeedback(prev => 
+      prev.map(fb => 
+        fb.id === feedbackId 
+          ? { ...fb, status } 
+          : fb
+      )
+    );
+  };
+
+  const addNewVersion = (taskId, version, changes, files = []) => {
+    const newVersion = {
+      id: Date.now(),
+      taskId,
+      version,
+      date: new Date().toISOString().split('T')[0],
+      changes,
+      author: currentUser?.name || 'John Doe',
+      files: files.map((file, index) => ({
+        id: Date.now() + index,
+        name: file.name,
+        size: file.size,
+        type: file.type || 'file'
+      }))
+    };
+    
+    setVersionHistory([newVersion, ...versionHistory]);
+  };
+
+  const filteredTasks = getFilteredAndSortedTasks();
+  
+  const totalHoursLogged = timeLogs.reduce((total, log) => total + log.hours, 0);
+  
+  const currentTask = activeTimer ? mockTasks.find(t => t.id === activeTimer.taskId) : null;
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -592,12 +989,61 @@ const UILayout = ({ projectId, onComplete }) => {
         </Button>
       </Box>
       
+      {/* Time Tracking Bar */}
+      {isTracking && activeTimer && (
+        <div className="time-tracking-bar">
+          <div className="time-tracking-content">
+            <div className="time-tracking-info">
+              <FaClockSolid className="pulse" />
+              <span className="task-name">
+                Tracking time for: <strong>{currentTask?.title || 'Task'}</strong>
+              </span>
+              <span className="elapsed-time">
+                {Math.floor(elapsedTime / 3600).toString().padStart(2, '0')}:
+                {Math.floor((elapsedTime % 3600) / 60).toString().padStart(2, '0')}:
+                {(elapsedTime % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+            <div className="time-tracking-actions">
+              <TextField
+                size="small"
+                placeholder="What are you working on?"
+                value={timerDescription}
+                onChange={(e) => setTimerDescription(e.target.value)}
+                className="timer-description"
+              />
+              <Button 
+                variant="contained" 
+                color="secondary" 
+                onClick={stopTimer}
+                startIcon={<FaRegStopCircle />}
+              >
+                Stop
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Main Content */}
       <main className="main-content">
         <div className="top-bar">
           <div className="page-title">
             <h1>UI/UX Dashboard</h1>
-            <p>{currentDate}</p>
+            <div className="dashboard-stats">
+              <div className="stat-item">
+                <FaRegClock />
+                <span>{totalHoursLogged.toFixed(1)} hours logged</span>
+              </div>
+              <div className="stat-item">
+                <FaRegCheckCircle />
+                <span>{mockTasks.filter(t => t.status === 'Completed').length} of {mockTasks.length} tasks completed</span>
+              </div>
+              <div className="stat-item">
+                <FaRegCalendarAlt />
+                <span>{currentDate}</span>
+              </div>
+            </div>
           </div>
           <div className="search-bar">
             <FaSearch className="search-icon" />
@@ -686,36 +1132,141 @@ const UILayout = ({ projectId, onComplete }) => {
               <Link to="/tasks" className="view-all">View All</Link>
             </div>
             
-            <div className="tasks-grid">
-              {mockTasks.map(task => (
-                <div key={task.id} className="task-card" onClick={() => setActiveTask(task)}>
-                  <div className="task-header">
-                    <h3>{task.title}</h3>
-                    <span className={`task-priority ${task.priority}`}>{task.priority}</span>
-                  </div>
-                  <div className="task-meta">
-                    <span className="task-status">{task.status}</span>
-                    <span className="task-due">Due: {task.dueDate}</span>
-                  </div>
-                  <div className="task-assignee">
-                    <span className="assignee">Assigned to: {task.assignedTo}</span>
-                    <button 
-                      className={`status-toggle ${task.status.toLowerCase().replace(' ', '-')}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleTaskStatus(task.id, task.status);
-                      }}
-                    >
-                      {task.status === 'Completed' ? <FaCheck /> : <FaArrowRight />}
-                    </button>
-                  </div>
+            <div className="tasks-list">
+              <div className="tasks-header">
+                <div className="header-cell" onClick={() => requestSort('title')}>
+                  Task Name {sortConfig.key === 'title' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </div>
-              ))}
-              
-              <div className="task-card add-task" onClick={() => navigate('/tasks/new')}>
-                <FaPlus className="add-icon" />
-                <span>Add New Task</span>
+                <div className="header-cell" onClick={() => requestSort('status')}>
+                  Status {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </div>
+                <div className="header-cell" onClick={() => requestSort('priority')}>
+                  Priority {sortConfig.key === 'priority' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </div>
+                <div className="header-cell" onClick={() => requestSort('dueDate')}>
+                  Due Date {sortConfig.key === 'dueDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </div>
+                <div className="header-cell">Time Spent</div>
+                <div className="header-cell">Progress</div>
+                <div className="header-cell">Actions</div>
               </div>
+              
+              {filteredTasks.length === 0 ? (
+                <div className="no-tasks">
+                  <FaRegClipboard size={48} />
+                  <p>No tasks match your filters</p>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => setFilters({
+                      status: 'all',
+                      priority: 'all',
+                      dueDate: 'all',
+                      assignedTo: 'all'
+                    })}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              ) : (
+                filteredTasks.map(task => (
+                  <div key={task.id} className="task-card" onClick={() => setActiveTask(task)}>
+                    <div className="task-header">
+                      <h3>{task.title}</h3>
+                      <span className={`task-priority ${task.priority}`}>{task.priority}</span>
+                    </div>
+                    <div className="task-meta">
+                      <span className="task-status">{task.status}</span>
+                      <span className="task-due">Due: {task.dueDate}</span>
+                    </div>
+                    <div className="task-assignee">
+                      <span className="assignee">Assigned to: {task.assignedTo}</span>
+                      <button 
+                        className={`status-toggle ${task.status.toLowerCase().replace(' ', '-')}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTaskStatus(task.id, task.status);
+                        }}
+                      >
+                        {task.status === 'Completed' ? <FaCheck /> : <FaArrowRight />}
+                      </button>
+                    </div>
+                    <div className="task-time-spent">
+                      <FaRegClock className="icon" />
+                      {task.timeSpent}
+                      {isTracking && activeTimer?.taskId === task.id && (
+                        <span className="tracking-indicator">
+                          <span className="pulse"></span> Tracking
+                        </span>
+                      )}
+                    </div>
+                    <div className="task-progress">
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={task.progress} 
+                        className={`progress-${task.priority}`}
+                      />
+                      <span className="progress-text">{task.progress}%</span>
+                    </div>
+                    <div className="task-actions">
+                      {!isTracking || activeTimer?.taskId !== task.id ? (
+                        <IconButton 
+                          size="small" 
+                          title="Start time tracking"
+                          onClick={() => startTimer(task.id)}
+                          className="action-icon"
+                        >
+                          <FaRegClock />
+                        </IconButton>
+                      ) : (
+                        <IconButton 
+                          size="small" 
+                          color="secondary"
+                          title="Stop time tracking"
+                          onClick={stopTimer}
+                          className="action-icon"
+                        >
+                          <FaRegStopCircle />
+                        </IconButton>
+                      )}
+                      <IconButton 
+                        size="small" 
+                        title="Add comment"
+                        onClick={() => {
+                          setActiveTask(task);
+                          // Open comment dialog
+                        }}
+                        className="action-icon"
+                      >
+                        <FaRegComment />
+                        {task.comments && task.comments.length > 0 && (
+                          <span className="badge">{task.comments.length}</span>
+                        )}
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        title="View details"
+                        onClick={() => {
+                          setActiveTask(task);
+                          // Open task details dialog
+                        }}
+                        className="action-icon"
+                      >
+                        <FaRegEye />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        title="View history"
+                        onClick={() => {
+                          // Open version history dialog
+                        }}
+                        className="action-icon"
+                      >
+                        <FaHistory />
+                      </IconButton>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
           
@@ -757,12 +1308,10 @@ const UILayout = ({ projectId, onComplete }) => {
                     <div className="file-list">
                       {uploadedFiles.map((file, index) => (
                         <div key={file.id} className="file-item">
+                          {getFileIcon(file.name)}
                           <div className="file-info">
-                            {getFileIcon(file.name)}
-                            <div className="file-details">
-                              <span className="file-name">{file.name}</span>
-                              <span className="file-size">{formatFileSize(file.size)}</span>
-                            </div>
+                            <span className="file-name">{file.name}</span>
+                            <span className="file-size">{formatFileSize(file.size)}</span>
                           </div>
                           <div className="file-actions">
                             {file.status === 'uploading' ? (

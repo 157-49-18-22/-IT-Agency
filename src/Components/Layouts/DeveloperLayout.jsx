@@ -26,8 +26,45 @@ import {
   FaDatabase,
   FaPlug,
   FaVial,
-  FaSearch
+  FaSearch,
+  FaStopwatch,
+  FaChartLine,
+  FaFileAlt,
+  FaUserCheck,
+  FaHistory,
+  FaRegClock,
+  FaPlay,
+  FaPause,
+  FaStop,
+  FaFileDownload,
+  FaFileImport,
+  FaFileExport,
+  FaClipboardCheck,
+  FaFileSignature,
+  FaFileWord,
+  FaFileExcel,
+  FaFilePdf,
+  FaFileImage,
+  FaFileArchive,
+  FaFileAudio,
+  FaFileVideo,
+  FaCodeBranch as FaCodeMerge,
+  FaFileCode as FaFileCodeIcon,
+  FaFileAlt as FaFileAltIcon,
+  FaFileWord as FaFileWordIcon,
+  FaFileExcel as FaFileExcelIcon,
+  FaFilePdf as FaFilePdfIcon,
+  FaFileImage as FaFileImageIcon,
+  FaFileArchive as FaFileArchiveIcon,
+  FaFileAudio as FaFileAudioIcon,
+  FaFileVideo as FaFileVideoIcon,
+  FaFileDownload as FaFileDownloadIcon,
+  FaFileUpload as FaFileUploadIcon,
+  FaFileImport as FaFileImportIcon,
+  FaFileExport as FaFileExportIcon
 } from 'react-icons/fa';
+import { Line } from 'react-chartjs-2';
+import 'chart.js/auto';
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
@@ -39,6 +76,22 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   const [myProjects, setMyProjects] = useState([]);
   const [activeTab, setActiveTab] = useState('sprints');
   const [phaseCompleted, setPhaseCompleted] = useState(false);
+  const [timeLogs, setTimeLogs] = useState([]);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [timerInterval, setTimerInterval] = useState(null);
+  
+  // Progress tracking data
+  const [progressData, setProgressData] = useState({
+    tasksCompleted: 12,
+    totalTasks: 20,
+    codeCoverage: 78,
+    bugsFixed: 8,
+    totalBugs: 10,
+    progressHistory: [30, 45, 60, 78],
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState({
@@ -46,37 +99,135 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     development: true,
     deliverables: true,
     collaboration: true,
-    myProjects: true
+    myProjects: true,
+    timeTracking: true
   });
+
+  // Task checklist state
+  const [taskChecklist, setTaskChecklist] = useState([
+    { id: 1, text: 'Code written and commented', completed: true },
+    { id: 2, text: 'Unit tests created', completed: true },
+    { id: 3, text: 'Code reviewed by peer', completed: false },
+    { id: 4, text: 'Feature tested locally', completed: false },
+    { id: 5, text: 'Documentation updated', completed: false },
+    { id: 6, text: 'Pull request created', completed: false },
+    { id: 7, text: 'No critical bugs present', completed: false }
+  ]);
+
+  // Toggle checklist item
+  const toggleChecklistItem = (id) => {
+    setTaskChecklist(taskChecklist.map(item => 
+      item.id === id ? { ...item, completed: !item.completed } : item
+    ));
+  };
+
+  // Time tracking functions
+  const startTimer = () => {
+    if (!isTimerRunning) {
+      const startTime = Date.now() - elapsedTime;
+      const interval = setInterval(() => {
+        setElapsedTime(Date.now() - startTime);
+      }, 1000);
+      setTimerInterval(interval);
+      setIsTimerRunning(true);
+    }
+  };
+
+  const pauseTimer = () => {
+    clearInterval(timerInterval);
+    setIsTimerRunning(false);
+  };
+
+  const stopTimer = () => {
+    clearInterval(timerInterval);
+    setIsTimerRunning(false);
+    // Save the time log
+    const newLog = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      duration: elapsedTime,
+      task: 'Development work',
+      description: 'Working on feature implementation'
+    };
+    setTimeLogs([...timeLogs, newLog]);
+    setElapsedTime(0);
+  };
+
+  const formatTime = (ms) => {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   // Load projects and tasks for the current user
   useEffect(() => {
     if (currentUser?.id) {
       const projects = getProjectsByUser(currentUser.id);
       setMyProjects(projects);
-      // Additional initialization can be done here
+      // Load time logs from localStorage or API
+      const savedTimeLogs = localStorage.getItem(`timeLogs_${currentUser.id}`);
+      if (savedTimeLogs) {
+        setTimeLogs(JSON.parse(savedTimeLogs));
+      }
     }
+    
+    // Cleanup interval on unmount
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
   }, [currentUser, getProjectsByUser]);
+  
+  // Save time logs when they change
+  useEffect(() => {
+    if (currentUser?.id && timeLogs.length > 0) {
+      localStorage.setItem(`timeLogs_${currentUser.id}`, JSON.stringify(timeLogs));
+    }
+  }, [timeLogs, currentUser]);
 
   // Handle phase completion
   const handleCompletePhase = () => {
-    // TODO: Save any final development phase data
+    // Check if all checklist items are completed
+    const allChecklistItemsCompleted = taskChecklist.every(item => item.completed);
+    
+    if (!allChecklistItemsCompleted) {
+      alert('Please complete all checklist items before marking the phase as complete.');
+      return;
+    }
+    
+    // Save final development phase data
+    const completionData = {
+      completedAt: new Date().toISOString(),
+      totalTasks: progressData.totalTasks,
+      tasksCompleted: progressData.tasksCompleted,
+      codeCoverage: progressData.codeCoverage,
+      bugsFixed: progressData.bugsFixed,
+      totalBugs: progressData.totalBugs,
+      timeSpent: timeLogs.reduce((total, log) => total + log.duration, 0)
+    };
+    
+    console.log('Phase completion data:', completionData);
     
     // Mark phase as completed
     setPhaseCompleted(true);
     
     // Notify parent component
     if (onComplete) {
-      onComplete();
+      onComplete(completionData);
     }
   };
 
   // Check if all sprints are completed
   const checkPhaseCompletion = useCallback(() => {
-    // TODO: Replace with actual check for completed sprints
-    const allSprintsCompleted = true; // mock value
+    // Check if all tasks are completed and all checklist items are checked
+    const tasksComplete = progressData.tasksCompleted >= progressData.totalTasks;
+    const allChecklistItemsCompleted = taskChecklist.every(item => item.completed);
+    const allSprintsCompleted = tasksComplete && allChecklistItemsCompleted;
+    
     setPhaseCompleted(allSprintsCompleted);
-  }, []);
+    return allSprintsCompleted;
+  }, [progressData, taskChecklist]);
 
   useEffect(() => {
     checkPhaseCompletion();
@@ -248,15 +399,32 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               {expandedSections.deliverables && (
                 <ul className="submenu">
                   <li className={isActive('/deliverables/checklist')}>
-                    <Link to="/deliverables/checklist">
+                    <Link to="/deliverables/checklist" className="checklist-link">
                       <FaCheckSquare className="submenu-icon" />
-                      <span>Submission Checklist</span>
+                      <div className="menu-item-content">
+                        <span>Submission Checklist</span>
+                        <span className="checklist-progress">
+                          {taskChecklist.filter(item => item.completed).length}/{taskChecklist.length}
+                        </span>
+                      </div>
                     </Link>
                   </li>
-                  <li className={isActive('/deliverables/review')}>
-                    <Link to="/deliverables/review">
-                      <FaSearch className="submenu-icon" />
+                  <li className={isActive('/deliverables/code-review')}>
+                    <Link to="/deliverables/code-review">
+                      <FaCodeMerge className="submenu-icon" />
                       <span>Code Review</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/deliverables/peer-review')}>
+                    <Link to="/deliverables/peer-review">
+                      <FaUserCheck className="submenu-icon" />
+                      <span>Peer Review</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/deliverables/history')}>
+                    <Link to="/deliverables/history">
+                      <FaHistory className="submenu-icon" />
+                      <span>Version History</span>
                     </Link>
                   </li>
                   <li className={isActive('/deliverables/feedback')}>
@@ -266,6 +434,40 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                     </Link>
                   </li>
                 </ul>
+              )}
+            </li>
+
+            {/* Time Tracking Section */}
+            <li className={`nav-section ${expandedSections.timeTracking ? 'expanded' : ''}`}>
+              <div className="section-header" onClick={() => toggleSection('timeTracking')}>
+                <FaStopwatch className="nav-icon" />
+                <span>Time Tracking</span>
+                {expandedSections.timeTracking ? <FaChevronDown /> : <FaChevronRight />}
+              </div>
+              {expandedSections.timeTracking && (
+                <div className="time-tracking-widget">
+                  <div className="timer-display">
+                    {formatTime(elapsedTime)}
+                  </div>
+                  <div className="timer-controls">
+                    {!isTimerRunning ? (
+                      <button onClick={startTimer} className="timer-button start">
+                        <FaPlay />
+                      </button>
+                    ) : (
+                      <button onClick={pauseTimer} className="timer-button pause">
+                        <FaPause />
+                      </button>
+                    )}
+                    <button onClick={stopTimer} className="timer-button stop">
+                      <FaStop />
+                    </button>
+                  </div>
+                  <div className="time-logs-summary">
+                    <span>Today: {timeLogs.length} logs</span>
+                    <Link to="/time-logs" className="view-all">View All</Link>
+                  </div>
+                </div>
               )}
             </li>
 
@@ -324,6 +526,77 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
       </div>
       
       <main className="main-content">
+        {/* Progress Overview Card */}
+        <div className="progress-overview">
+          <div className="progress-card">
+            <h3>Project Progress</h3>
+            <div className="progress-bar-container">
+              <div 
+                className="progress-bar" 
+                style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}
+              ></div>
+            </div>
+            <div className="progress-stats">
+              <span>{progressData.tasksCompleted}/{progressData.totalTasks} tasks</span>
+              <span>{Math.round((progressData.tasksCompleted / progressData.totalTasks) * 100)}% complete</span>
+            </div>
+            
+            <div className="progress-chart">
+              <Line
+                data={{
+                  labels: progressData.labels,
+                  datasets: [
+                    {
+                      label: 'Progress',
+                      data: progressData.progressHistory,
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                      tension: 0.4,
+                      fill: true
+                    }
+                  ]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      max: 100,
+                      ticks: {
+                        callback: function(value) {
+                          return value + '%';
+                        }
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+            
+            <div className="progress-metrics">
+              <div className="metric">
+                <span className="metric-label">Code Coverage</span>
+                <span className="metric-value">{progressData.codeCoverage}%</span>
+              </div>
+              <div className="metric">
+                <span className="metric-label">Bugs Fixed</span>
+                <span className="metric-value">{progressData.bugsFixed}/{progressData.totalBugs}</span>
+              </div>
+              <div className="metric">
+                <span className="metric-label">Time Logged</span>
+                <span className="metric-value">
+                  {Math.round(timeLogs.reduce((total, log) => total + log.duration, 0) / 3600000)}h
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <Outlet />
       </main>
     </div>
