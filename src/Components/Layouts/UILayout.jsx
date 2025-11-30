@@ -231,22 +231,6 @@ import {
   FaRegSadTear,
   FaRegSave,
   FaRegShareSquare,
-  FaRegSmile,
-  FaRegSmileBeam,
-  FaRegSmileWink,
-  FaRegSnowflake,
-  FaRegSquare,
-  FaRegStar as FaRegStarIcon,
-  FaRegStarHalf,
-  FaRegStickyNote,
-  FaRegStopCircle,
-  FaRegSun,
-  FaRegThumbsDown as FaRegThumbsDown2,
-  FaRegThumbsUp as FaRegThumbsUp2,
-  FaRegTrashAlt,
-  FaRegUser,
-  FaRegUserCircle,
-  FaRegWindowMaximize,
   FaRegWindowMinimize,
   FaRegWindowRestore,
   FaRegClock as FaRegClock2,
@@ -255,357 +239,253 @@ import {
   FaRegFileArchive as FaRegFileArchive3,
   FaRegFileAudio as FaRegFileAudio3,
   FaRegFileCode as FaRegFileCode3,
-  FaRegFileExcel as FaRegFileExcel2,
-  FaRegFileImage as FaRegFileImage3,
-  FaRegFilePdf as FaRegFilePdf3,
-  FaRegFilePowerpoint as FaRegFilePowerpoint2,
-  FaRegFileVideo as FaRegFileVideo3,
-  FaRegFileWord as FaRegFileWord3,
-  FaRegStar as FaRegStar2,
-  FaRegThumbsUp as FaRegThumbsUp3,
-  FaRegThumbsDown as FaRegThumbsDown3
+  FaRegClipboard,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
+import uiuxService from '../../services/uiuxService';
 import './UILayout.css';
 
-// Mock data for tasks and deliverables
-const mockTasks = [
-  { 
-    id: 1, 
-    title: 'Design Login Page', 
-    status: 'In Progress', 
-    dueDate: '2025-12-01', 
-    priority: 'high', 
-    assignedTo: 'Me',
-    description: 'Create a modern and user-friendly login page with social media integration',
-    checklist: [
-      { id: 1, text: 'Research documentation uploaded', completed: true },
-      { id: 2, text: 'Wireframes created and reviewed', completed: true },
-      { id: 3, text: 'High-fidelity mockups delivered', completed: false },
-      { id: 4, text: 'Interactive prototype shared', completed: false },
-      { id: 5, text: 'Design specifications documented', completed: false },
-      { id: 6, text: 'Asset library organized', completed: false }
-    ],
-    comments: [
-      { id: 1, user: 'John D.', text: 'Please review the color scheme', time: '2 hours ago' },
-      { id: 2, user: 'You', text: 'Working on the final mockups', time: '1 hour ago' }
-    ],
-    attachments: [
-      { id: 1, name: 'login_wireframe.pdf', type: 'pdf', size: '2.4 MB', url: '#' },
-      { id: 2, name: 'style_guide.pdf', type: 'pdf', size: '1.8 MB', url: '#' }
-    ],
-    timeSpent: '4h 30m',
-    progress: 45
-  },
-  { 
-    id: 2, 
-    title: 'Create User Dashboard', 
-    status: 'Not Started', 
-    dueDate: '2025-12-05', 
-    priority: 'medium', 
-    assignedTo: 'Me',
-    description: 'Design an intuitive dashboard with key metrics and quick actions',
-    checklist: [
-      { id: 1, text: 'Research documentation uploaded', completed: false },
-      { id: 2, text: 'Wireframes created and reviewed', completed: false },
-      { id: 3, text: 'High-fidelity mockups delivered', completed: false },
-      { id: 4, text: 'Interactive prototype shared', completed: false },
-      { id: 5, text: 'Design specifications documented', completed: false },
-      { id: 6, text: 'Asset library organized', completed: false }
-    ],
-    comments: [],
-    attachments: [],
-    timeSpent: '0h 0m',
-    progress: 0
-  },
-  { 
-    id: 3, 
-    title: 'Mobile Responsive Design', 
-    status: 'Review', 
-    dueDate: '2025-11-30', 
-    priority: 'high', 
-    assignedTo: 'John D.',
-    description: 'Ensure all designs are responsive across mobile devices',
-    checklist: [
-      { id: 1, text: 'Research documentation uploaded', completed: true },
-      { id: 2, text: 'Wireframes created and reviewed', completed: true },
-      { id: 3, text: 'High-fidelity mockups delivered', completed: true },
-      { id: 4, text: 'Interactive prototype shared', completed: true },
-      { id: 5, text: 'Design specifications documented', completed: true },
-      { id: 6, text: 'Asset library organized', completed: true }
-    ],
-    comments: [
-      { id: 1, user: 'John D.', text: 'Please review the mobile navigation', time: '1 day ago' },
-      { id: 2, user: 'Sarah M.', text: 'Looks good! Just a few minor adjustments needed', time: '5 hours ago' }
-    ],
-    attachments: [
-      { id: 1, name: 'mobile_mockups.zip', type: 'zip', size: '5.2 MB', url: '#' },
-      { id: 2, name: 'responsive_guide.pdf', type: 'pdf', size: '3.1 MB', url: '#' }
-    ],
-    timeSpent: '12h 15m',
-    progress: 90
-  },
-];
-
-const mockDeliverables = [
-  { 
-    id: 1, 
-    name: 'Wireframes', 
-    status: 'Completed', 
-    type: 'wireframe', 
-    files: 3, 
-    lastUpdated: '2025-11-26',
-    submittedBy: 'You',
-    submittedOn: '2025-11-25',
-    reviewStatus: 'Approved',
-    filesList: [
-      { id: 1, name: 'login_wireframe.pdf', type: 'pdf', size: '2.4 MB', url: '#' },
-      { id: 2, name: 'dashboard_wireframe.pdf', type: 'pdf', size: '3.1 MB', url: '#' },
-      { id: 3, name: 'profile_wireframe.pdf', type: 'pdf', size: '2.8 MB', url: '#' }
-    ],
-    feedback: 'Great work! The wireframes look clean and intuitive. Just a few minor adjustments needed.'
-  },
-  { id: 2, name: 'Mockups', status: 'In Review', type: 'mockup', files: 5, lastUpdated: '2025-11-25' },
-  { id: 3, name: 'Prototype', status: 'In Progress', type: 'prototype', files: 2, lastUpdated: '2025-11-24' },
+// Status options for tasks
+const statusOptions = [
+  { value: 'To Do', label: 'To Do' },
+  { value: 'In Progress', label: 'In Progress' },
+  { value: 'In Review', label: 'In Review' },
+  { value: 'Completed', label: 'Completed' },
 ];
 
 const UILayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
   const { getProjectsByUser, getProjectsByDepartment } = useContext(ProjectContext);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Initialize comments state with sample data
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      user: 'John Doe',
-      text: 'Completed the login page design',
-      time: '2 hours ago',
-      project: 'JSNJA',
-      type: 'update',
-      timestamp: '2 hours ago'
-    },
-    {
-      id: 2,
-      user: 'Jane Smith',
-      text: 'Left a comment on the dashboard layout',
-      time: '5 hours ago',
-      project: 'Network',
-      type: 'comment',
-      timestamp: '5 hours ago'
-    },
-    {
-      id: 3,
-      user: 'Mike Johnson',
-      text: 'Updated the color scheme',
-      time: '1 day ago',
-      project: 'E-commerce',
-      type: 'update',
-      timestamp: '1 day ago'
-    }
-  ]);
-  
+  // State for projects, tasks and comments
+  const [uiuxProjects, setUiuxProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [comments, setComments] = useState([]);
   const [comment, setComment] = useState('');
-  
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
-    
-    const newComment = {
-      id: Date.now(),
-      user: currentUser?.name || 'Current User',
-      text: comment,
-      time: 'Just now',
-      project: 'Current Project',
-      type: 'comment',
-      timestamp: 'Just now'
-    };
-    
-    setComments([newComment, ...comments]);
-    setComment('');
-  };
-
-  const [myProjects, setMyProjects] = useState([
-    { id: 1, name: 'JSNJA', type: 'Web App', progress: 75 },
-    { id: 2, name: 'Network', type: 'Mobile App', progress: 45 },
-  ]);
-  const [uiuxProjects, setUiuxProjects] = useState([
-    { id: 1, name: 'E-commerce Redesign', type: 'Web Design', progress: 90 },
-    { id: 2, name: 'Mobile Banking App', type: 'Mobile App', progress: 65 },
-  ]);
-  
-  const [teamMembers] = useState([
-    { id: 1, name: 'John Doe', role: 'UI/UX Designer', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-    { id: 2, name: 'Jane Smith', role: 'Frontend Developer', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-    { id: 3, name: 'Mike Johnson', role: 'Backend Developer', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' },
-    { id: 4, name: 'Sarah Williams', role: 'Project Manager', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
-  ]);
-  
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const isActive = useCallback((path) => {
-    return location.pathname === path ? 'active' : '';
-  }, [location.pathname]);
-  
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  
-  // Get current date
-  const currentDate = new Date().toLocaleDateString('en-US', {
+  const [currentDate] = useState(new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  });
+  }));
+  
+  // Fetch tasks from the backend
+  const fetchTasks = useCallback(async () => {
+    if (!projectId) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await uiuxService.getProjectTasks(projectId);
+      setTasks(response.data);
+      
+      // Check if all deliverables are completed
+      const allCompleted = response.data.every(task => task.status === 'Completed');
+      setPhaseCompleted(allCompleted);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      setError('Failed to load tasks. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [projectId]);
 
-  // Load projects and tasks for the current user
+  // Fetch projects and tasks on component mount
   useEffect(() => {
-    if (currentUser?.id) {
-      const projects = getProjectsByUser(currentUser.id);
-      const uiuxProjects = getProjectsByDepartment('UI/UX');
-      setMyProjects(projects);
-      setUiuxProjects(uiuxProjects);
-    }
-  }, [currentUser, getProjectsByUser, getProjectsByDepartment]);
+    const fetchProjects = async () => {
+      try {
+        const response = await uiuxService.getProjects();
+        setUiuxProjects(response.data || []);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setUiuxProjects([]);
+      }
+    };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+    fetchProjects();
+    fetchTasks();
+  }, [fetchTasks]);
 
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files).map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      status: 'pending'
-    }));
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getFileIcon = (fileName) => {
-    const ext = fileName.split('.').pop().toLowerCase();
-    switch(ext) {
-      case 'pdf':
-        return <FaFilePdf className="file-icon pdf" />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return <FaImage className="file-icon image" />;
-      case 'zip':
-      case 'rar':
-        return <FaFileArchive className="file-icon archive" />;
-      case 'doc':
-      case 'docx':
-        return <FaFileWord className="file-icon word" />;
-      default:
-        return <FaFileAlt className="file-icon" />;
+  // Toggle task status
+  const toggleTaskStatus = async (taskId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'Completed' ? 'In Progress' : 'Completed';
+      await uiuxService.updateTaskStatus(taskId, { status: newStatus });
+      
+      // Update local state
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === taskId 
+            ? { ...task, status: newStatus } 
+            : task
+        )
+      );
+      
+      // Check if all tasks are completed
+      const allCompleted = tasks.every(task => 
+        task.id === taskId ? newStatus === 'Completed' : task.status === 'Completed'
+      );
+      setPhaseCompleted(allCompleted);
+    } catch (err) {
+      console.error('Error updating task status:', err);
+      setError('Failed to update task status. Please try again.');
     }
   };
+  
+  // Handle file upload
+  const handleFileUpload = async (e, taskId) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
+    try {
+      const uploadPromises = files.map(file => 
+        uiuxService.uploadAttachment(taskId, file)
+      );
+      
+      const results = await Promise.all(uploadPromises);
+      
+      // Update local state with new attachments
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === taskId
+            ? {
+                ...task,
+                attachments: [
+                  ...(task.attachments || []),
+                  ...results.map(res => res.data)
+                ]
+              }
+            : task
+        )
+      );
+      
+      // Update uploaded files state for UI feedback
+      setUploadedFiles(prev => [
+        ...prev,
+        ...files.map(file => ({
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          status: 'completed'
+        }))
+      ]);
+      
+    } catch (err) {
+      console.error('Error uploading files:', err);
+      setError('Failed to upload files. Please try again.');
+    }
+  };
+  
+  // Handle comment form submission
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+    if (activeTask && comment.trim()) {
+      handleAddComment(activeTask.id, comment);
+    }
+  };
 
+  // Handle adding a comment
+  const handleAddComment = async (taskId, content) => {
+    if (!content.trim()) return;
+    
+    try {
+      const response = await uiuxService.addComment(taskId, { content });
+      
+      // Update local state with new comment
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === taskId
+            ? {
+                ...task,
+                comments: [
+                  ...(task.comments || []),
+                  {
+                    ...response.data,
+                    user: currentUser?.name || 'Current User',
+                    time: 'Just now',
+                    timestamp: new Date().toISOString()
+                  }
+                ]
+              }
+            : task
+        )
+      );
+      
+      setComment('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      setError('Failed to add comment. Please try again.');
+    }
+  };
+  
+  // Handle completing a checklist item
+  const toggleChecklistItem = async (taskId, itemId, completed) => {
+    try {
+      // Find the task
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      // Update the checklist item
+      const updatedChecklist = task.checklist.map(item => 
+        item.id === itemId ? { ...item, completed: !completed } : item
+      );
+      
+      // Update the task in the backend
+      await uiuxService.updateTask(taskId, {
+        ...task,
+        checklist: updatedChecklist
+      });
+      
+      // Update local state
+      setTasks(prev => 
+        prev.map(t => 
+          t.id === taskId 
+            ? { ...t, checklist: updatedChecklist } 
+            : t
+        )
+      );
+    } catch (err) {
+      console.error('Error updating checklist:', err);
+      setError('Failed to update checklist. Please try again.');
+    }
+  };
+
+  // State for UI
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
+  
+  // Helper function to check if a route is active
+  const isActive = (path) => {
+    return location.pathname === path ? 'active' : '';
+  };
+  
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // The AuthProvider will handle the redirection
+    } catch (error) {
+      console.error('Error during logout:', error);
+      setError('Failed to log out. Please try again.');
+    }
+  };
+
+  // State for tasks and UI
   const [activeTask, setActiveTask] = useState(null);
   const [activeDeliverable, setActiveDeliverable] = useState(null);
-
-  const toggleTaskStatus = (taskId, currentStatus) => {
-    setMockTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: currentStatus === 'Completed' ? 'In Progress' : 'Completed'
-          } 
-        : task
-    ));
-  };
-
-  const [mockTasks, setMockTasks] = useState([
-    { 
-      id: 1, 
-      title: 'Design Login Page', 
-      status: 'In Progress', 
-      dueDate: '2025-12-01', 
-      priority: 'high', 
-      assignedTo: 'Me',
-      description: 'Create a modern and user-friendly login page with social media integration',
-      checklist: [
-        { id: 1, text: 'Research documentation uploaded', completed: true },
-        { id: 2, text: 'Wireframes created and reviewed', completed: true },
-        { id: 3, text: 'High-fidelity mockups delivered', completed: false },
-        { id: 4, text: 'Interactive prototype shared', completed: false },
-        { id: 5, text: 'Design specifications documented', completed: false },
-        { id: 6, text: 'Asset library organized', completed: false }
-      ],
-      comments: [
-        { id: 1, user: 'John D.', text: 'Please review the color scheme', time: '2 hours ago' },
-        { id: 2, user: 'You', text: 'Working on the final mockups', time: '1 hour ago' }
-      ],
-      attachments: [
-        { id: 1, name: 'login_wireframe.pdf', type: 'pdf', size: '2.4 MB', url: '#' },
-        { id: 2, name: 'style_guide.pdf', type: 'pdf', size: '1.8 MB', url: '#' }
-      ],
-      timeSpent: '4h 30m',
-      progress: 45
-    },
-    { 
-      id: 2, 
-      title: 'Create User Dashboard', 
-      status: 'Not Started', 
-      dueDate: '2025-12-05', 
-      priority: 'medium', 
-      assignedTo: 'Me',
-      description: 'Design an intuitive dashboard with key metrics and quick actions',
-      checklist: [
-        { id: 1, text: 'Research documentation uploaded', completed: false },
-        { id: 2, text: 'Wireframes created and reviewed', completed: false },
-        { id: 3, text: 'High-fidelity mockups delivered', completed: false },
-        { id: 4, text: 'Interactive prototype shared', completed: false },
-        { id: 5, text: 'Design specifications documented', completed: false },
-        { id: 6, text: 'Asset library organized', completed: false }
-      ],
-      comments: [],
-      attachments: [],
-      timeSpent: '0h 0m',
-      progress: 0
-    },
-    { 
-      id: 3, 
-      title: 'Mobile Responsive Design', 
-      status: 'Review', 
-      dueDate: '2025-11-30', 
-      priority: 'high', 
-      assignedTo: 'John D.',
-      description: 'Ensure all designs are responsive across mobile devices',
-      checklist: [
-        { id: 1, text: 'Research documentation uploaded', completed: true },
-        { id: 2, text: 'Wireframes created and reviewed', completed: true },
-        { id: 3, text: 'High-fidelity mockups delivered', completed: true },
-        { id: 4, text: 'Interactive prototype shared', completed: true },
-        { id: 5, text: 'Design specifications documented', completed: true },
-        { id: 6, text: 'Asset library organized', completed: true }
-      ],
-      comments: [
-        { id: 1, user: 'John D.', text: 'Please review the mobile navigation', time: '1 day ago' },
-        { id: 2, user: 'Sarah M.', text: 'Looks good! Just a few minor adjustments needed', time: '5 hours ago' }
-      ],
-      attachments: [
-        { id: 1, name: 'mobile_mockups.zip', type: 'zip', size: '5.2 MB', url: '#' },
-        { id: 2, name: 'responsive_guide.pdf', type: 'pdf', size: '3.1 MB', url: '#' }
-      ],
-      timeSpent: '12h 15m',
-      progress: 90
-    }
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [activeTab, setActiveTab] = useState('tasks');
+  const [phaseCompleted, setPhaseCompleted] = useState(false);
+  const [deliverables, setDeliverables] = useState([]);
+  const [mockDeliverables, setMockDeliverables] = useState([
+    { id: 1, name: 'Wireframes', status: 'In Progress', dueDate: '2025-12-15' },
+    { id: 2, name: 'Mockups', status: 'Not Started', dueDate: '2025-12-22' },
+    { id: 3, name: 'Prototype', status: 'Not Started', dueDate: '2025-12-29' },
   ]);
 
   const handleCompletePhase = () => {
@@ -628,9 +508,6 @@ const UILayout = ({ projectId, onComplete }) => {
   useEffect(() => {
     checkPhaseCompletion();
   }, [mockDeliverables, checkPhaseCompletion]);
-
-  const [activeTab, setActiveTab] = useState('wireframes');
-  const [phaseCompleted, setPhaseCompleted] = useState(false);
 
   const [timeLogs, setTimeLogs] = useState([
     { id: 1, taskId: 1, date: '2025-11-29', hours: 2.5, description: 'Worked on login page design' },
@@ -739,12 +616,12 @@ const UILayout = ({ projectId, onComplete }) => {
     setTimerDescription('');
     
     // Update task's time spent
-    const task = mockTasks.find(t => t.id === activeTimer.taskId);
+    const task = tasks.find(t => t.id === activeTimer.taskId);
     if (task) {
       const currentHours = parseFloat(task.timeSpent) || 0;
       const newHours = currentHours + timeSpent;
       
-      setMockTasks(prev => prev.map(t => 
+      setTasks(prev => prev.map(t => 
         t.id === activeTimer.taskId 
           ? { ...t, timeSpent: newHours.toFixed(2) + 'h' } 
           : t
@@ -753,7 +630,7 @@ const UILayout = ({ projectId, onComplete }) => {
   };
 
   const getFilteredAndSortedTasks = () => {
-    let filtered = [...mockTasks];
+    let filtered = [...tasks];
     
     // Apply filters
     if (filters.status !== 'all') {
@@ -884,7 +761,7 @@ const UILayout = ({ projectId, onComplete }) => {
   
   const totalHoursLogged = timeLogs.reduce((total, log) => total + log.hours, 0);
   
-  const currentTask = activeTimer ? mockTasks.find(t => t.id === activeTimer.taskId) : null;
+  const currentTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null;
 
   return (
     <div className="app-container">
@@ -1037,7 +914,7 @@ const UILayout = ({ projectId, onComplete }) => {
               </div>
               <div className="stat-item">
                 <FaRegCheckCircle />
-                <span>{mockTasks.filter(t => t.status === 'Completed').length} of {mockTasks.length} tasks completed</span>
+                <span>{tasks.filter(t => t.status === 'Completed').length} of {tasks.length} tasks completed</span>
               </div>
               <div className="stat-item">
                 <FaRegCalendarAlt />
@@ -1078,7 +955,7 @@ const UILayout = ({ projectId, onComplete }) => {
               </div>
               <div className="card-content">
                 <h3>My Tasks</h3>
-                <div className="card-value">{mockTasks.filter(t => t.assignedTo === 'Me').length}</div>
+                <div className="card-value">{tasks.filter(t => t.assignedTo === 'Me' || t.assignedTo === (currentUser?.name || 'You')).length}</div>
               </div>
             </div>
             
@@ -1089,7 +966,12 @@ const UILayout = ({ projectId, onComplete }) => {
               <div className="card-content">
                 <h3>Due Soon</h3>
                 <div className="card-value">
-                  {mockTasks.filter(t => new Date(t.dueDate) - new Date() < 7 * 24 * 60 * 60 * 1000).length}
+                  {tasks.filter(t => {
+                    const dueDate = new Date(t.dueDate);
+                    const now = new Date();
+                    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    return dueDate > now && dueDate <= oneWeekFromNow;
+                  }).length}
                 </div>
               </div>
             </div>

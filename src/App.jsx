@@ -42,6 +42,7 @@ import Uat from './Components/Testing/Uat';
 import Team from './Components/Team';
 // Import standalone Tasks page
 import Task from './Components/Development/Task';
+import TaskManagement from './Components/UIUX/TaskManagement';
 // Import Calendar Component
 import Calendar from './Components/Calendar';
 import Tracking from './Components/Tracking';
@@ -132,6 +133,13 @@ const AppRoutes = () => {
         {/* Common routes for all authenticated users */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calendar" element={<Calendar />} />
+        <Route path="/projects">
+          <Route index element={<AllProjects />} />
+          <Route path="new" element={!isDeveloper && !isUIUX && !isTester ? <NewProjects /> : <Navigate to="/projects" replace />} />
+          <Route path="active" element={<Active />} />
+          <Route path="completed" element={<Completed />} />
+        </Route>
+        <Route path="/task-management" element={<DevelopmentTask />} />
         
         {/* Developer specific routes */}
         {isDeveloper && (
@@ -168,7 +176,8 @@ const AppRoutes = () => {
               <Route path="components" element={<div>UI Components</div>} />
               <Route path="styleguide" element={<div>Style Guide</div>} />
             </Route>
-            <Route path="/tasks" element={<DevelopmentTask />} />
+            <Route path="/tasks" element={<TaskManagement />} />
+            <Route path="/tasks/:projectId" element={<TaskManagement />} />
             <Route path="/team" element={<Team />} />
           </>
         )}
@@ -176,13 +185,6 @@ const AppRoutes = () => {
         {/* Admin only routes */}
         {!isDeveloper && !isUIUX && !isTester && currentUser && (
           <>
-            <Route path="/projects">
-              <Route index element={<AllProjects />} />
-              <Route path="new" element={<NewProjects />} />
-              <Route path="active" element={<Active />} />
-              <Route path="completed" element={<Completed />} />
-            </Route>
-            
             <Route path="/team" element={<Team />} />
             
             {/* Project Workflow Routes */}

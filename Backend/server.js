@@ -39,6 +39,7 @@ const uatRoutes = require('./routes/uat.routes');
 const stageTransitionRoutes = require('./routes/stageTransition.routes');
 const deploymentRoutes = require('./routes/deployment.routes');
 const testCaseRoutes = require('./routes/testCase.routes');
+const uiuxRoutes = require('./routes/uiux.routes');
 
 // Middleware
 app.use(helmet()); // Security headers@stage
@@ -145,6 +146,7 @@ app.use('/api/uat', uatRoutes);
 app.use('/api/stage-transitions', stageTransitionRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/test-cases', testCaseRoutes);
+app.use('/api/uiux', uiuxRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
