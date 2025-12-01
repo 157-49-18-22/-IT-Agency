@@ -1,16 +1,16 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { 
-  Box, 
-  Button, 
-  Typography, 
-  Paper, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  Divider, 
-  TextField, 
-  IconButton, 
+import {
+  Box,
+  Button,
+  Typography,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  TextField,
+  IconButton,
   Badge,
   Avatar,
   Menu,
@@ -34,12 +34,12 @@ import {
   AppBar,
   Toolbar
 } from '@mui/material';
-import { 
-  FaHome, 
+import {
+  FaHome,
   FaPalette,
-  FaCalendarAlt, 
-  FaSignOutAlt, 
-  FaChevronDown, 
+  FaCalendarAlt,
+  FaSignOutAlt,
+  FaChevronDown,
   FaChevronRight,
   FaTasks,
   FaImage,
@@ -260,7 +260,7 @@ const UILayout = ({ projectId, onComplete }) => {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // State for projects, tasks and comments
   const [uiuxProjects, setUiuxProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -272,17 +272,17 @@ const UILayout = ({ projectId, onComplete }) => {
     month: 'long',
     day: 'numeric'
   }));
-  
+
   // Fetch tasks from the backend
   const fetchTasks = useCallback(async () => {
     if (!projectId) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
       const response = await uiuxService.getProjectTasks(projectId);
       setTasks(response.data);
-      
+
       // Check if all deliverables are completed
       const allCompleted = response.data.every(task => task.status === 'Completed');
       setPhaseCompleted(allCompleted);
@@ -315,18 +315,18 @@ const UILayout = ({ projectId, onComplete }) => {
     try {
       const newStatus = currentStatus === 'Completed' ? 'In Progress' : 'Completed';
       await uiuxService.updateTaskStatus(taskId, { status: newStatus });
-      
+
       // Update local state
-      setTasks(prev => 
-        prev.map(task => 
-          task.id === taskId 
-            ? { ...task, status: newStatus } 
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === taskId
+            ? { ...task, status: newStatus }
             : task
         )
       );
-      
+
       // Check if all tasks are completed
-      const allCompleted = tasks.every(task => 
+      const allCompleted = tasks.every(task =>
         task.id === taskId ? newStatus === 'Completed' : task.status === 'Completed'
       );
       setPhaseCompleted(allCompleted);
@@ -335,34 +335,34 @@ const UILayout = ({ projectId, onComplete }) => {
       setError('Failed to update task status. Please try again.');
     }
   };
-  
+
   // Handle file upload
   const handleFileUpload = async (e, taskId) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    
+
     try {
-      const uploadPromises = files.map(file => 
+      const uploadPromises = files.map(file =>
         uiuxService.uploadAttachment(taskId, file)
       );
-      
+
       const results = await Promise.all(uploadPromises);
-      
+
       // Update local state with new attachments
-      setTasks(prev => 
-        prev.map(task => 
+      setTasks(prev =>
+        prev.map(task =>
           task.id === taskId
             ? {
-                ...task,
-                attachments: [
-                  ...(task.attachments || []),
-                  ...results.map(res => res.data)
-                ]
-              }
+              ...task,
+              attachments: [
+                ...(task.attachments || []),
+                ...results.map(res => res.data)
+              ]
+            }
             : task
         )
       );
-      
+
       // Update uploaded files state for UI feedback
       setUploadedFiles(prev => [
         ...prev,
@@ -374,13 +374,13 @@ const UILayout = ({ projectId, onComplete }) => {
           status: 'completed'
         }))
       ]);
-      
+
     } catch (err) {
       console.error('Error uploading files:', err);
       setError('Failed to upload files. Please try again.');
     }
   };
-  
+
   // Handle comment form submission
   const handleCommentSubmit = (e) => {
     e.preventDefault();
@@ -392,60 +392,60 @@ const UILayout = ({ projectId, onComplete }) => {
   // Handle adding a comment
   const handleAddComment = async (taskId, content) => {
     if (!content.trim()) return;
-    
+
     try {
       const response = await uiuxService.addComment(taskId, { content });
-      
+
       // Update local state with new comment
-      setTasks(prev => 
-        prev.map(task => 
+      setTasks(prev =>
+        prev.map(task =>
           task.id === taskId
             ? {
-                ...task,
-                comments: [
-                  ...(task.comments || []),
-                  {
-                    ...response.data,
-                    user: currentUser?.name || 'Current User',
-                    time: 'Just now',
-                    timestamp: new Date().toISOString()
-                  }
-                ]
-              }
+              ...task,
+              comments: [
+                ...(task.comments || []),
+                {
+                  ...response.data,
+                  user: currentUser?.name || 'Current User',
+                  time: 'Just now',
+                  timestamp: new Date().toISOString()
+                }
+              ]
+            }
             : task
         )
       );
-      
+
       setComment('');
     } catch (err) {
       console.error('Error adding comment:', err);
       setError('Failed to add comment. Please try again.');
     }
   };
-  
+
   // Handle completing a checklist item
   const toggleChecklistItem = async (taskId, itemId, completed) => {
     try {
       // Find the task
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-      
+
       // Update the checklist item
-      const updatedChecklist = task.checklist.map(item => 
+      const updatedChecklist = task.checklist.map(item =>
         item.id === itemId ? { ...item, completed: !completed } : item
       );
-      
+
       // Update the task in the backend
       await uiuxService.updateTask(taskId, {
         ...task,
         checklist: updatedChecklist
       });
-      
+
       // Update local state
-      setTasks(prev => 
-        prev.map(t => 
-          t.id === taskId 
-            ? { ...t, checklist: updatedChecklist } 
+      setTasks(prev =>
+        prev.map(t =>
+          t.id === taskId
+            ? { ...t, checklist: updatedChecklist }
             : t
         )
       );
@@ -458,12 +458,12 @@ const UILayout = ({ projectId, onComplete }) => {
   // State for UI
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
-  
+
   // Helper function to check if a route is active
   const isActive = (path) => {
     return location.pathname === path ? 'active' : '';
   };
-  
+
   // Handle logout
   const handleLogout = async () => {
     try {
@@ -490,10 +490,10 @@ const UILayout = ({ projectId, onComplete }) => {
 
   const handleCompletePhase = () => {
     // TODO: Save any final UI/UX phase data
-    
+
     // Mark phase as completed
     setPhaseCompleted(true);
-    
+
     // Notify parent component
     if (onComplete) {
       onComplete();
@@ -585,7 +585,7 @@ const UILayout = ({ projectId, onComplete }) => {
       // If another timer is running, stop it first
       stopTimer();
     }
-    
+
     setActiveTimer({
       taskId,
       startTime: new Date(),
@@ -597,10 +597,10 @@ const UILayout = ({ projectId, onComplete }) => {
 
   const stopTimer = () => {
     if (!activeTimer) return;
-    
+
     const endTime = new Date();
     const timeSpent = (endTime - activeTimer.startTime) / (1000 * 60 * 60); // Convert to hours
-    
+
     // Save the time log
     const newTimeLog = {
       id: Date.now(),
@@ -609,21 +609,21 @@ const UILayout = ({ projectId, onComplete }) => {
       hours: parseFloat(timeSpent.toFixed(2)),
       description: timerDescription || `Worked on task ${activeTimer.taskId}`
     };
-    
+
     setTimeLogs([...timeLogs, newTimeLog]);
     setActiveTimer(null);
     setIsTracking(false);
     setTimerDescription('');
-    
+
     // Update task's time spent
     const task = tasks.find(t => t.id === activeTimer.taskId);
     if (task) {
       const currentHours = parseFloat(task.timeSpent) || 0;
       const newHours = currentHours + timeSpent;
-      
-      setTasks(prev => prev.map(t => 
-        t.id === activeTimer.taskId 
-          ? { ...t, timeSpent: newHours.toFixed(2) + 'h' } 
+
+      setTasks(prev => prev.map(t =>
+        t.id === activeTimer.taskId
+          ? { ...t, timeSpent: newHours.toFixed(2) + 'h' }
           : t
       ));
     }
@@ -631,20 +631,20 @@ const UILayout = ({ projectId, onComplete }) => {
 
   const getFilteredAndSortedTasks = () => {
     let filtered = [...tasks];
-    
+
     // Apply filters
     if (filters.status !== 'all') {
       filtered = filtered.filter(task => task.status === filters.status);
     }
-    
+
     if (filters.priority !== 'all') {
       filtered = filtered.filter(task => task.priority === filters.priority);
     }
-    
+
     if (filters.dueDate !== 'all') {
       const today = new Date().toISOString().split('T')[0];
-      
-      switch(filters.dueDate) {
+
+      switch (filters.dueDate) {
         case 'today':
           filtered = filtered.filter(task => task.dueDate === today);
           break;
@@ -663,15 +663,15 @@ const UILayout = ({ projectId, onComplete }) => {
           break;
       }
     }
-    
+
     if (filters.assignedTo !== 'all') {
-      filtered = filtered.filter(task => 
-        filters.assignedTo === 'me' 
+      filtered = filtered.filter(task =>
+        filters.assignedTo === 'me'
           ? task.assignedTo === 'Me' || task.assignedTo === (currentUser?.name || 'You')
           : true
       );
     }
-    
+
     // Apply sorting
     const sorted = [...filtered].sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -682,7 +682,7 @@ const UILayout = ({ projectId, onComplete }) => {
       }
       return 0;
     });
-    
+
     return sorted;
   };
 
@@ -705,7 +705,7 @@ const UILayout = ({ projectId, onComplete }) => {
       timestamp: new Date().toISOString(),
       responses: []
     };
-    
+
     setClientFeedback([newFeedback, ...clientFeedback]);
   };
 
@@ -718,21 +718,21 @@ const UILayout = ({ projectId, onComplete }) => {
       timestamp: new Date().toISOString(),
       attachments
     };
-    
-    setClientFeedback(prev => 
-      prev.map(fb => 
-        fb.id === feedbackId 
-          ? { ...fb, responses: [...fb.responses, response] } 
+
+    setClientFeedback(prev =>
+      prev.map(fb =>
+        fb.id === feedbackId
+          ? { ...fb, responses: [...fb.responses, response] }
           : fb
       )
     );
   };
 
   const updateFeedbackStatus = (feedbackId, status) => {
-    setClientFeedback(prev => 
-      prev.map(fb => 
-        fb.id === feedbackId 
-          ? { ...fb, status } 
+    setClientFeedback(prev =>
+      prev.map(fb =>
+        fb.id === feedbackId
+          ? { ...fb, status }
           : fb
       )
     );
@@ -753,14 +753,14 @@ const UILayout = ({ projectId, onComplete }) => {
         type: file.type || 'file'
       }))
     };
-    
+
     setVersionHistory([newVersion, ...versionHistory]);
   };
 
   const filteredTasks = getFilteredAndSortedTasks();
-  
+
   const totalHoursLogged = timeLogs.reduce((total, log) => total + log.hours, 0);
-  
+
   const currentTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null;
 
   return (
@@ -770,12 +770,12 @@ const UILayout = ({ projectId, onComplete }) => {
         <div className="sidebar-logo">
           <h2>UI/UX Portal</h2>
         </div>
-        
+
         <div className="user-profile">
           <div className="user-avatar">
-            <img 
-              src={currentUser?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'} 
-              alt="User" 
+            <img
+              src={currentUser?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'}
+              alt="User"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2NjYyIgZD0iTTEyLDEyQzE0LjIxLDEyIDE2LDEwLjIxIDE2LDhTMTQuMjEsNCAxMiw0UzgsNS43OSA4LDhTOS43OSwxMiAxMiwxMk0xMiwxNEM3LjU4LDE0IDQsMTUuNzkgNCwxOFYyMEgyMFYxOEMyMCwxNS43OSAxNi40MiwxNCAxMiwxNFoiLz48L3N2Zz4=';
@@ -800,7 +800,7 @@ const UILayout = ({ projectId, onComplete }) => {
             </div>
           </div>
         </div>
-        
+
         <nav className="sidebar-nav">
           <ul>
             <li className={isActive('/dashboard')}>
@@ -843,7 +843,7 @@ const UILayout = ({ projectId, onComplete }) => {
             </li>
           </ul>
         </nav>
-        
+
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
             <FaSignOutAlt />
@@ -851,7 +851,7 @@ const UILayout = ({ projectId, onComplete }) => {
           </button>
         </div>
       </div>
-      
+
       {/* Phase Completion Button */}
       <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
         <Button
@@ -865,7 +865,7 @@ const UILayout = ({ projectId, onComplete }) => {
           {phaseCompleted ? 'Complete UI/UX Phase' : 'Complete All Deliverables First'}
         </Button>
       </Box>
-      
+
       {/* Time Tracking Bar */}
       {isTracking && activeTimer && (
         <div className="time-tracking-bar">
@@ -889,9 +889,9 @@ const UILayout = ({ projectId, onComplete }) => {
                 onChange={(e) => setTimerDescription(e.target.value)}
                 className="timer-description"
               />
-              <Button 
-                variant="contained" 
-                color="secondary" 
+              <Button
+                variant="contained"
+                color="secondary"
                 onClick={stopTimer}
                 startIcon={<FaRegStopCircle />}
               >
@@ -901,7 +901,7 @@ const UILayout = ({ projectId, onComplete }) => {
           </div>
         </div>
       )}
-      
+
       {/* Main Content */}
       <main className="main-content">
         <div className="top-bar">
@@ -936,7 +936,7 @@ const UILayout = ({ projectId, onComplete }) => {
             <span className="divider">/</span>
             <span className="active">Dashboard</span>
           </div>
-          
+
           {/* UI/UX Team Dashboard */}
           <div className="dashboard-cards">
             <div className="card">
@@ -948,7 +948,7 @@ const UILayout = ({ projectId, onComplete }) => {
                 <div className="card-value">{uiuxProjects.length}</div>
               </div>
             </div>
-            
+
             <div className="card">
               <div className="card-icon green">
                 <FaTasks />
@@ -958,7 +958,7 @@ const UILayout = ({ projectId, onComplete }) => {
                 <div className="card-value">{tasks.filter(t => t.assignedTo === 'Me' || t.assignedTo === (currentUser?.name || 'You')).length}</div>
               </div>
             </div>
-            
+
             <div className="card">
               <div className="card-icon orange">
                 <FaClock />
@@ -976,13 +976,13 @@ const UILayout = ({ projectId, onComplete }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="header-actions">
             <div className="search-box">
               <FaSearch className="search-icon" />
               <input type="text" placeholder="Search projects, tasks..." />
             </div>
-            
+
             <div className="quick-access">
               <button className="btn btn-icon" title="Quick Add">
                 <FaPlus />
@@ -992,9 +992,9 @@ const UILayout = ({ projectId, onComplete }) => {
                 <span className="badge">3</span>
               </button>
               <div className="user-menu">
-                <img 
-                  src={currentUser?.avatar || 'https://via.placeholder.com/32'} 
-                  alt="User" 
+                <img
+                  src={currentUser?.avatar || 'https://via.placeholder.com/32'}
+                  alt="User"
                   className="user-avatar"
                 />
                 <span className="user-name">{currentUser?.name?.split(' ')[0] || 'User'}</span>
@@ -1003,17 +1003,17 @@ const UILayout = ({ projectId, onComplete }) => {
             </div>
           </div>
         </div>
-        
+
         <div className="content-wrapper">
           <Outlet />
-          
+
           {/* Task Management Dashboard */}
           <div className="dashboard-section">
             <div className="section-header">
               <h2><FaTasks /> Task Management</h2>
               <Link to="/tasks" className="view-all">View All</Link>
             </div>
-            
+
             <div className="tasks-list">
               <div className="tasks-header">
                 <div className="header-cell" onClick={() => requestSort('title')}>
@@ -1032,13 +1032,13 @@ const UILayout = ({ projectId, onComplete }) => {
                 <div className="header-cell">Progress</div>
                 <div className="header-cell">Actions</div>
               </div>
-              
+
               {filteredTasks.length === 0 ? (
                 <div className="no-tasks">
                   <FaRegClipboard size={48} />
                   <p>No tasks match your filters</p>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     onClick={() => setFilters({
                       status: 'all',
                       priority: 'all',
@@ -1062,7 +1062,7 @@ const UILayout = ({ projectId, onComplete }) => {
                     </div>
                     <div className="task-assignee">
                       <span className="assignee">Assigned to: {task.assignedTo}</span>
-                      <button 
+                      <button
                         className={`status-toggle ${task.status.toLowerCase().replace(' ', '-')}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1082,17 +1082,17 @@ const UILayout = ({ projectId, onComplete }) => {
                       )}
                     </div>
                     <div className="task-progress">
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={task.progress} 
+                      <LinearProgress
+                        variant="determinate"
+                        value={task.progress}
                         className={`progress-${task.priority}`}
                       />
                       <span className="progress-text">{task.progress}%</span>
                     </div>
                     <div className="task-actions">
                       {!isTracking || activeTimer?.taskId !== task.id ? (
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           title="Start time tracking"
                           onClick={() => startTimer(task.id)}
                           className="action-icon"
@@ -1100,8 +1100,8 @@ const UILayout = ({ projectId, onComplete }) => {
                           <FaRegClock />
                         </IconButton>
                       ) : (
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           color="secondary"
                           title="Stop time tracking"
                           onClick={stopTimer}
@@ -1110,8 +1110,8 @@ const UILayout = ({ projectId, onComplete }) => {
                           <FaRegStopCircle />
                         </IconButton>
                       )}
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         title="Add comment"
                         onClick={() => {
                           setActiveTask(task);
@@ -1124,8 +1124,8 @@ const UILayout = ({ projectId, onComplete }) => {
                           <span className="badge">{task.comments.length}</span>
                         )}
                       </IconButton>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         title="View details"
                         onClick={() => {
                           setActiveTask(task);
@@ -1135,8 +1135,8 @@ const UILayout = ({ projectId, onComplete }) => {
                       >
                         <FaRegEye />
                       </IconButton>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         title="View history"
                         onClick={() => {
                           // Open version history dialog
@@ -1151,13 +1151,13 @@ const UILayout = ({ projectId, onComplete }) => {
               )}
             </div>
           </div>
-          
+
           {/* Deliverables Section */}
           <div className="dashboard-section">
             <div className="section-header">
               <h2><FaClipboardCheck /> Deliverables</h2>
               <div className="section-actions">
-                <button 
+                <button
                   className="btn btn-sm btn-primary"
                   onClick={() => setShowFileUpload(!showFileUpload)}
                 >
@@ -1166,24 +1166,24 @@ const UILayout = ({ projectId, onComplete }) => {
                 <Link to="/deliverables" className="view-all">View All</Link>
               </div>
             </div>
-            
+
             {showFileUpload && (
               <div className="file-upload-container">
                 <div className="file-upload-box">
                   <FaCloudUploadAlt className="upload-icon" />
                   <p>Drag & drop files here or <span>browse</span></p>
-                  <input 
-                    type="file" 
-                    id="file-upload" 
-                    multiple 
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
                     onChange={handleFileUpload}
-                    style={{ display: 'none' }} 
+                    style={{ display: 'none' }}
                   />
                   <label htmlFor="file-upload" className="btn btn-outline">
                     Select Files
                   </label>
                 </div>
-                
+
                 {uploadedFiles.length > 0 && (
                   <div className="uploaded-files">
                     <h4>Files to Upload ({uploadedFiles.length})</h4>
@@ -1203,8 +1203,8 @@ const UILayout = ({ projectId, onComplete }) => {
                                 <button className="icon-btn" title="Preview">
                                   <FaEye />
                                 </button>
-                                <button 
-                                  className="icon-btn" 
+                                <button
+                                  className="icon-btn"
                                   title="Remove"
                                   onClick={() => {
                                     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
@@ -1218,15 +1218,15 @@ const UILayout = ({ projectId, onComplete }) => {
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="upload-actions">
-                      <button 
+                      <button
                         className="btn btn-outline"
                         onClick={() => setShowFileUpload(false)}
                       >
                         Cancel
                       </button>
-                      <button 
+                      <button
                         className="btn btn-primary"
                         disabled={uploadedFiles.some(f => f.status === 'uploading')}
                       >
@@ -1237,11 +1237,11 @@ const UILayout = ({ projectId, onComplete }) => {
                 )}
               </div>
             )}
-            
+
             <div className="deliverables-grid">
               {mockDeliverables.map(deliverable => (
-                <div 
-                  key={deliverable.id} 
+                <div
+                  key={deliverable.id}
                   className="deliverable-card"
                   onClick={() => setActiveDeliverable(deliverable)}
                 >
@@ -1272,27 +1272,27 @@ const UILayout = ({ projectId, onComplete }) => {
                   </div>
                 </div>
               ))}
-              
-              <div className="deliverable-card add-deliverable" onClick={() => {}}>
+
+              <div className="deliverable-card add-deliverable" onClick={() => { }}>
                 <FaPlus className="add-icon" />
                 <span>New Deliverable</span>
               </div>
             </div>
           </div>
-          
+
           {/* Collaboration Section */}
           <div className="dashboard-section">
             <div className="section-header">
               <h2><FaComments /> Recent Activity</h2>
               <Link to="/activity" className="view-all">View All</Link>
             </div>
-            
+
             <div className="activity-feed">
               {comments.map(comment => (
                 <div key={comment.id} className="activity-item">
                   <div className="activity-avatar">
-                    <img 
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user)}&background=random`} 
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user)}&background=random`}
                       alt={comment.user}
                     />
                   </div>
@@ -1309,7 +1309,7 @@ const UILayout = ({ projectId, onComplete }) => {
                   </div>
                 </div>
               ))}
-              
+
               <form onSubmit={handleCommentSubmit} className="comment-form">
                 <div className="form-group">
                   <input

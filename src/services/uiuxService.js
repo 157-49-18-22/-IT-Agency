@@ -33,7 +33,7 @@ api.interceptors.response.use(
   (error) => {
     const { response } = error;
     let message = 'An error occurred';
-    
+
     if (response) {
       // Handle different HTTP status codes
       switch (response.status) {
@@ -73,9 +73,9 @@ class WebSocketService {
 
   connect(token) {
     if (this.socket) return;
-    
+
     this.socket = new WebSocket(`ws://localhost:5000?token=${token}`);
-    
+
     this.socket.onopen = () => {
       console.log('WebSocket connected');
     };
@@ -99,7 +99,7 @@ class WebSocketService {
     }
     const callbacks = this.subscribers.get(eventType);
     callbacks.push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const updatedCallbacks = callbacks.filter(cb => cb !== callback);
@@ -156,7 +156,7 @@ class UIXUService {
 
   // Task operations
   async getProjectTasks(projectId, filters = {}) {
-    const response = await api.get(`/projects/${projectId}/tasks`, { 
+    const response = await api.get(`/projects/${projectId}/tasks`, {
       params: filters,
       paramsSerializer: params => {
         return Object.entries(params)
@@ -169,6 +169,11 @@ class UIXUService {
           .join('&');
       }
     });
+    return response.data;
+  }
+
+  async getUserTasks() {
+    const response = await api.get('/tasks/my-tasks');
     return response.data;
   }
 
@@ -190,7 +195,7 @@ class UIXUService {
   async uploadAttachment(taskId, file, onUploadProgress) {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post(
       `/tasks/${taskId}/attachments`,
       formData,
@@ -208,13 +213,13 @@ class UIXUService {
         }
       }
     );
-    
+
     // Notify about the new attachment via WebSocket
     webSocketService.send('ATTACHMENT_ADDED', {
       taskId,
       attachment: response.data
     });
-    
+
     return response.data;
   }
 
@@ -224,18 +229,18 @@ class UIXUService {
     if (!timeData.hours || timeData.hours <= 0) {
       throw new Error('Please enter a valid number of hours');
     }
-    
+
     const response = await api.post(
       `/tasks/${taskId}/time-entries`,
       timeData
     );
-    
+
     // Notify about the time entry via WebSocket
     webSocketService.send('TIME_LOGGED', {
       taskId,
       timeEntry: response.data
     });
-    
+
     return response.data;
   }
 
@@ -246,12 +251,12 @@ class UIXUService {
     if (parentId) {
       formData.append('parentId', parentId);
     }
-    
+
     // Add attachments if any
     attachments.forEach((file, index) => {
       formData.append(`attachments`, file);
     });
-    
+
     const response = await api.post(
       `/tasks/${taskId}/comments`,
       formData,
@@ -261,13 +266,13 @@ class UIXUService {
         }
       }
     );
-    
+
     // Notify about the new comment via WebSocket
     webSocketService.send('COMMENT_ADDED', {
       taskId,
       comment: response.data
     });
-    
+
     return response.data;
   }
 
@@ -275,7 +280,7 @@ class UIXUService {
   async getTaskAnalytics(projectId, forceRefresh = false) {
     const cacheKey = `analytics_${projectId}`;
     const cachedData = localStorage.getItem(cacheKey);
-    
+
     // Return cached data if available and not forcing refresh
     if (cachedData && !forceRefresh) {
       try {
@@ -284,17 +289,17 @@ class UIXUService {
         console.error('Error parsing cached analytics data', e);
       }
     }
-    
+
     // Fetch fresh data from the server
     const response = await api.get(`/projects/${projectId}/analytics/tasks`);
-    
+
     // Cache the response
     try {
       localStorage.setItem(cacheKey, JSON.stringify(response.data));
     } catch (e) {
       console.error('Error caching analytics data', e);
     }
-    
+
     return response.data;
   }
 
@@ -302,7 +307,7 @@ class UIXUService {
   async getTaskAttachments(taskId) {
     const cacheKey = `attachments_${taskId}`;
     const cachedData = sessionStorage.getItem(cacheKey);
-    
+
     // Return cached data if available
     if (cachedData) {
       try {
@@ -315,10 +320,10 @@ class UIXUService {
         console.error('Error parsing cached attachments', e);
       }
     }
-    
+
     // Fetch fresh data from the server
     const response = await api.get(`/tasks/${taskId}/attachments`);
-    
+
     // Cache the response
     try {
       sessionStorage.setItem(cacheKey, JSON.stringify({
@@ -328,27 +333,27 @@ class UIXUService {
     } catch (e) {
       console.error('Error caching attachments', e);
     }
-    
+
     return response.data;
   }
 
   // Delete task attachment with cleanup
   async deleteAttachment(attachmentId) {
     const response = await api.delete(`/attachments/${attachmentId}`);
-    
+
     // Clear attachment cache
     Object.keys(sessionStorage).forEach(key => {
       if (key.startsWith('attachments_')) {
         sessionStorage.removeItem(key);
       }
     });
-    
+
     // Notify about the deletion via WebSocket
     webSocketService.send('ATTACHMENT_DELETED', {
       attachmentId,
       taskId: response.data.taskId
     });
-    
+
     return response.data;
   }
 
@@ -358,7 +363,7 @@ class UIXUService {
     if (!taskData.title || !taskData.title.trim()) {
       throw new Error('Task title is required');
     }
-    
+
     const response = await api.put(
       `/tasks/${taskId}`,
       taskData

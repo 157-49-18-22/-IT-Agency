@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiSearch, FiFilter, FiChevronDown, FiCheckCircle, 
-  FiAlertCircle, FiClock, FiPlus, FiUser, FiTag, 
-  FiCalendar, FiFlag, FiMoreVertical, FiEdit2, 
+import {
+  FiSearch, FiFilter, FiChevronDown, FiCheckCircle,
+  FiAlertCircle, FiClock, FiPlus, FiUser, FiTag,
+  FiCalendar, FiFlag, FiMoreVertical, FiEdit2,
   FiTrash2, FiCheck, FiX, FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
-import { 
-  getTasks, 
-  createTask, 
-  updateTask, 
-  deleteTask, 
-  toggleTaskStatus 
+import {
+  getTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  toggleTaskStatus
 } from '../../services/taskService';
 import './Task.css';
 
@@ -20,14 +20,14 @@ const Task = () => {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+
   // Map between frontend and backend status values
   const statusMap = {
     'to_do': 'To Do',
     'in_progress': 'In Progress',
     'completed': 'Completed'
   };
-  
+
   // Get status display text
   const getStatusDisplay = (status) => {
     return statusMap[status] || status;
@@ -57,9 +57,9 @@ const Task = () => {
           priority: priorityFilter !== 'all' ? priorityFilter : undefined,
           assignee: assigneeFilter !== 'all' ? assigneeFilter : undefined
         };
-        
+
         const tasksData = await getTasks(filters);
-        
+
         // Transform the API response to match our frontend structure
         const transformedTasks = tasksData.map(task => ({
           id: task.id,
@@ -72,7 +72,7 @@ const Task = () => {
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt)
         }));
-        
+
         setTasks(transformedTasks);
         setFilteredTasks(transformedTasks);
       } catch (error) {
@@ -89,37 +89,37 @@ const Task = () => {
   // Apply filters and search
   useEffect(() => {
     let result = [...tasks];
-    
+
     // Apply search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
-        task => 
-          task.title.toLowerCase().includes(term) || 
+        task =>
+          task.title.toLowerCase().includes(term) ||
           task.description.toLowerCase().includes(term) ||
           task.assignee.toLowerCase().includes(term)
       );
     }
-    
+
     // Apply status filter
     if (statusFilter !== 'all') {
       result = result.filter(task => task.status === statusFilter);
     }
-    
+
     // Apply priority filter
     if (priorityFilter !== 'all') {
       result = result.filter(task => task.priority === priorityFilter);
     }
-    
+
     // Apply assignee filter
     if (assigneeFilter !== 'all') {
       result = result.filter(task => task.assignee === assigneeFilter);
     }
-    
+
     // Apply sorting
     result.sort((a, b) => {
       if (sortBy === 'dueDate') {
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? new Date(a.dueDate) - new Date(b.dueDate)
           : new Date(b.dueDate) - new Date(a.dueDate);
       } else if (sortBy === 'priority') {
@@ -139,7 +139,7 @@ const Task = () => {
       }
       return 0;
     });
-    
+
     setFilteredTasks(result);
   }, [searchTerm, statusFilter, priorityFilter, assigneeFilter, sortBy, sortOrder, tasks]);
 
@@ -158,7 +158,7 @@ const Task = () => {
   // Add new task
   const handleAddTask = async () => {
     if (!newTask.title.trim()) return;
-    
+
     try {
       setLoading(true);
       const taskData = {
@@ -169,9 +169,9 @@ const Task = () => {
         status: newTask.status,
         assigneeId: 1 // This should be replaced with actual assignee ID from your user management
       };
-      
+
       const createdTask = await createTask(taskData);
-      
+
       // Transform and add the new task to the local state
       const transformedTask = {
         id: createdTask.id,
@@ -184,7 +184,7 @@ const Task = () => {
         createdAt: new Date(createdTask.createdAt),
         updatedAt: new Date(createdTask.updatedAt)
       };
-      
+
       setTasks(prev => [transformedTask, ...prev]);
       setNewTask({
         title: '',
@@ -208,16 +208,16 @@ const Task = () => {
     try {
       const newStatus = currentStatus === 'completed' ? 'to_do' : 'completed';
       await updateTask(taskId, { status: newStatus });
-      
+
       // Update local state
-      setTasks(prev => 
-        prev.map(task => 
-          task.id === taskId 
-            ? { 
-                ...task, 
-                status: newStatus,
-                updatedAt: new Date()
-              } 
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === taskId
+            ? {
+              ...task,
+              status: newStatus,
+              updatedAt: new Date()
+            }
             : task
         )
       );
@@ -257,7 +257,7 @@ const Task = () => {
   // Save edited task
   const saveEditedTask = async () => {
     if (!newTask.title.trim()) return;
-    
+
     try {
       setLoading(true);
       const taskData = {
@@ -268,23 +268,23 @@ const Task = () => {
         status: newTask.status,
         assigneeId: 1 // This should be replaced with actual assignee ID from your user management
       };
-      
+
       const updatedTask = await updateTask(editingTaskId, taskData);
-      
+
       // Update local state
-      setTasks(prev => 
-        prev.map(task => 
+      setTasks(prev =>
+        prev.map(task =>
           task.id === editingTaskId
-            ? { 
-                ...task, 
-                ...updatedTask,
-                assignee: updatedTask.assignee?.name || 'Unassigned',
-                updatedAt: new Date()
-              }
+            ? {
+              ...task,
+              ...updatedTask,
+              assignee: updatedTask.assignee?.name || 'Unassigned',
+              updatedAt: new Date()
+            }
             : task
         )
       );
-      
+
       setEditingTaskId(null);
       setNewTask({
         title: '',
@@ -361,16 +361,16 @@ const Task = () => {
   // Calculate days remaining
   const getDaysRemaining = (dueDate) => {
     if (!dueDate) return null;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    
+
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Tomorrow';
     if (diffDays > 1 && diffDays <= 7) return `In ${diffDays} days`;
@@ -381,16 +381,16 @@ const Task = () => {
   // Get days remaining class
   const getDaysRemainingClass = (dueDate) => {
     if (!dueDate) return '';
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    
+
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return 'days-remaining overdue';
     if (diffDays === 0) return 'days-remaining today';
     if (diffDays <= 3) return 'days-remaining soon';
@@ -413,7 +413,7 @@ const Task = () => {
           <h2>Tasks</h2>
           <p>Manage your team's tasks and track progress</p>
         </div>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => setIsAddingTask(true)}
         >
@@ -431,10 +431,10 @@ const Task = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="filter-group">
           <FiFilter className="filter-icon" />
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -445,9 +445,9 @@ const Task = () => {
           </select>
           <FiChevronDown className="chevron-icon" />
         </div>
-        
+
         <div className="filter-group">
-          <select 
+          <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -458,9 +458,9 @@ const Task = () => {
           </select>
           <FiChevronDown className="chevron-icon" />
         </div>
-        
+
         <div className="filter-group">
-          <select 
+          <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
           >
@@ -550,13 +550,13 @@ const Task = () => {
             </div>
           </div>
           <div className="form-actions">
-            <button 
+            <button
               className="btn btn-cancel"
               onClick={cancelEditing}
             >
               Cancel
             </button>
-            <button 
+            <button
               className="btn btn-save"
               onClick={editingTaskId ? saveEditedTask : handleAddTask}
               disabled={!newTask.title.trim()}
@@ -574,7 +574,7 @@ const Task = () => {
           </div>
           <h3>No tasks found</h3>
           <p>Try adjusting your search or filters to find what you're looking for.</p>
-          <button 
+          <button
             className="btn btn-primary"
             onClick={() => {
               setSearchTerm('');
@@ -590,7 +590,7 @@ const Task = () => {
         <div className="task-list">
           <div className="task-list-header">
             <div className="task-checkbox"></div>
-            <div 
+            <div
               className={`task-title ${sortBy === 'title' ? 'active' : ''}`}
               onClick={() => toggleSortOrder('title')}
             >
@@ -601,7 +601,7 @@ const Task = () => {
                 </span>
               )}
             </div>
-            <div 
+            <div
               className={`task-assignee ${sortBy === 'assignee' ? 'active' : ''}`}
               onClick={() => toggleSortOrder('assignee')}
             >
@@ -612,7 +612,7 @@ const Task = () => {
                 </span>
               )}
             </div>
-            <div 
+            <div
               className={`task-priority ${sortBy === 'priority' ? 'active' : ''}`}
               onClick={() => toggleSortOrder('priority')}
             >
@@ -623,7 +623,7 @@ const Task = () => {
                 </span>
               )}
             </div>
-            <div 
+            <div
               className={`task-status ${sortBy === 'status' ? 'active' : ''}`}
               onClick={() => toggleSortOrder('status')}
             >
@@ -634,7 +634,7 @@ const Task = () => {
                 </span>
               )}
             </div>
-            <div 
+            <div
               className={`task-due-date ${sortBy === 'dueDate' ? 'active' : ''}`}
               onClick={() => toggleSortOrder('dueDate')}
             >
@@ -647,7 +647,7 @@ const Task = () => {
             </div>
             <div className="task-actions">Actions</div>
           </div>
-          
+
           <div className="task-items">
             {filteredTasks.map(task => (
               <div key={task.id} className={`task-item ${task.status === 'completed' ? 'completed' : ''}`}>
@@ -692,13 +692,13 @@ const Task = () => {
                       <FiMoreVertical />
                     </button>
                     <div className="dropdown-menu">
-                      <button 
+                      <button
                         className="dropdown-item"
                         onClick={() => startEditing(task)}
                       >
                         <FiEdit2 className="dropdown-icon" /> Edit
                       </button>
-                      <button 
+                      <button
                         className="dropdown-item"
                         onClick={() => handleDeleteTask(task.id)}
                       >

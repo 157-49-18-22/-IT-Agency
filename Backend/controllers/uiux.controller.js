@@ -7,9 +7,9 @@ const { sendNotification } = require('../utils/notification.utils');
 exports.getProjectTasks = async (req, res) => {
   try {
     const { projectId } = req.params;
-    
+
     const tasks = await Task.findAll({
-      where: { 
+      where: {
         projectId,
         type: 'uiux'
       },
@@ -41,12 +41,52 @@ exports.getProjectTasks = async (req, res) => {
   }
 };
 
+// Get all UI/UX tasks assigned to the current user
+exports.getUserTasks = async (req, res) => {
+  try {
+    const tasks = await Task.findAll({
+      where: {
+        assignedTo: req.user.id,
+        type: 'uiux'
+      },
+      include: [
+        {
+          model: Project,
+          attributes: ['id', 'name']
+        },
+        {
+          model: User,
+          as: 'assignedToUser',
+          attributes: ['id', 'name', 'email', 'avatar']
+        },
+        {
+          model: File,
+          as: 'attachments'
+        },
+        {
+          model: Comment,
+          include: [{
+            model: User,
+            attributes: ['id', 'name', 'avatar']
+          }]
+        }
+      ],
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    res.status(500).json({ message: 'Error fetching tasks' });
+  }
+};
+
 // Create a new UI/UX task
 exports.createTask = async (req, res) => {
   try {
     const { projectId } = req.params;
     const { title, description, dueDate, priority, assignedTo, checklist } = req.body;
-    
+
     const task = await Task.create({
       title,
       description,
@@ -61,7 +101,7 @@ exports.createTask = async (req, res) => {
 
     // Create checklist items if provided
     if (checklist && checklist.length > 0) {
-      await Promise.all(checklist.map(item => 
+      await Promise.all(checklist.map(item =>
         task.createChecklistItem({
           text: item.text,
           completed: item.completed || false
@@ -92,7 +132,7 @@ exports.updateTaskStatus = async (req, res) => {
   try {
     const { taskId } = req.params;
     const { status } = req.body;
-    
+
     const task = await Task.findByPk(taskId);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
@@ -122,7 +162,7 @@ exports.uploadAttachment = async (req, res) => {
   try {
     const { taskId } = req.params;
     const file = req.file;
-    
+
     if (!file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -155,7 +195,7 @@ exports.logWorkTime = async (req, res) => {
   try {
     const { taskId } = req.params;
     const { hours, minutes, description, date } = req.body;
-    
+
     const timeEntry = await TimeEntry.create({
       taskId,
       userId: req.user.id,
@@ -176,7 +216,7 @@ exports.addComment = async (req, res) => {
   try {
     const { taskId } = req.params;
     const { content, parentId } = req.body;
-    
+
     const comment = await Comment.create({
       content,
       taskId,
@@ -196,7 +236,7 @@ exports.addComment = async (req, res) => {
     const mentionRegex = /@([\w-]+)/g;
     let match;
     const mentionedUsernames = new Set();
-    
+
     while ((match = mentionRegex.exec(content)) !== null) {
       mentionedUsernames.add(match[1]);
     }
@@ -210,7 +250,7 @@ exports.addComment = async (req, res) => {
         }
       });
 
-      await Promise.all(mentionedUsers.map(user => 
+      await Promise.all(mentionedUsers.map(user =>
         sendNotification({
           userId: user.id,
           title: 'You were mentioned in a comment',
@@ -232,24 +272,24 @@ exports.addComment = async (req, res) => {
 exports.getTaskAnalytics = async (req, res) => {
   try {
     const { projectId } = req.params;
-    
+
     const totalTasks = await Task.count({ where: { projectId, type: 'uiux' } });
-    const completedTasks = await Task.count({ 
-      where: { 
-        projectId, 
+    const completedTasks = await Task.count({
+      where: {
+        projectId,
         type: 'uiux',
-        status: 'completed' 
-      } 
+        status: 'completed'
+      }
     });
-    
-    const inProgressTasks = await Task.count({ 
-      where: { 
-        projectId, 
+
+    const inProgressTasks = await Task.count({
+      where: {
+        projectId,
         type: 'uiux',
-        status: 'in_progress' 
-      } 
+        status: 'in_progress'
+      }
     });
-    
+
     const overdueTasks = await Task.count({
       where: {
         projectId,
@@ -258,7 +298,7 @@ exports.getTaskAnalytics = async (req, res) => {
         status: { [Op.not]: 'completed' }
       }
     });
-    
+
     // Time spent by task
     const timeByTask = await TimeEntry.findAll({
       attributes: [

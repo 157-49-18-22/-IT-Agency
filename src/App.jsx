@@ -68,29 +68,29 @@ import ClientApprovals from './Components/ClientPortal/ClientApprovals';
 // Protected route with role-based layouts
 const ProtectedRoute = () => {
   const { currentUser, isLoading, isDeveloper, isDesigner, isTester } = useAuth();
-  
+
   console.log('ProtectedRoute - currentUser:', currentUser);
   console.log('ProtectedRoute - isLoading:', isLoading);
-  
+
   // Show loading state while checking auth
   if (isLoading) {
     console.log('ProtectedRoute - Loading user data...');
     return <div className="loading">Loading...</div>;
   }
-  
+
   // Only redirect to login if we're done loading and there's no user
   if (!isLoading && !currentUser) {
     console.log('ProtectedRoute - No user found, redirecting to login');
     return <Navigate to="/login" replace />;
   }
-  
+
   console.log('ProtectedRoute - isDeveloper:', isDeveloper);
   console.log('ProtectedRoute - isDesigner:', isDesigner);
   console.log('ProtectedRoute - isTester:', isTester);
-  
+
   // Use the appropriate layout based on user role
   let Layout = MainLayout; // Default to main layout
-  
+
   if (isDeveloper) {
     Layout = DeveloperLayout;
   } else if (isDesigner) {
@@ -98,7 +98,7 @@ const ProtectedRoute = () => {
   } else if (isTester) {
     Layout = Testing;
   }
-  
+
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflow: 'hidden' }}>
       <Layout />
@@ -116,18 +116,18 @@ const AppRoutes = () => {
   const userRole = currentUser ? String(currentUser.role || '').toLowerCase() : '';
   const isDeveloper = userRole === 'developer';
   const isUIUX = userRole === 'ui/ux' || userRole === 'ui-ux' || userRole === 'ui ux' || userRole === 'designer';
-  
+
   console.log('AppRoutes - currentUser:', currentUser);
   console.log('AppRoutes - userRole:', userRole);
   console.log('AppRoutes - isDeveloper:', isDeveloper);
   console.log('AppRoutes - isUIUX:', isUIUX);
-  
+
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         {/* Common routes for all authenticated users */}
@@ -140,7 +140,7 @@ const AppRoutes = () => {
           <Route path="completed" element={<Completed />} />
         </Route>
         <Route path="/task-management" element={<DevelopmentTask />} />
-        
+
         {/* Developer specific routes */}
         {isDeveloper && (
           <Route path="/development">
@@ -153,7 +153,7 @@ const AppRoutes = () => {
             <Route path="version" element={<Version />} />
           </Route>
         )}
-        
+
         {/* Tester specific routes */}
         {isTester && (
           <Route path="/testing">
@@ -164,7 +164,7 @@ const AppRoutes = () => {
             <Route path="uat" element={<Uat />} />
           </Route>
         )}
-        
+
         {/* UI/UX specific routes */}
         {isUIUX && (
           <>
@@ -181,16 +181,16 @@ const AppRoutes = () => {
             <Route path="/team" element={<Team />} />
           </>
         )}
-        
+
         {/* Admin only routes */}
         {!isDeveloper && !isUIUX && !isTester && currentUser && (
           <>
             <Route path="/team" element={<Team />} />
-            
+
             {/* Project Workflow Routes */}
             <Route path="/project/:projectId/workflow" element={<Navigate to="ui-ux" replace />} />
             <Route path="/project/:projectId/workflow/:phase" element={<WorkflowManager />} />
-            
+
             {/* UI/UX Design Routes */}
             <Route path="/design" element={<Design />}>
               <Route index element={<Navigate to="wireframes" replace />} />
@@ -198,9 +198,9 @@ const AppRoutes = () => {
               <Route path="mockups" element={<Mockups />} />
               <Route path="prototypes" element={<Prototypes />} />
             </Route>
-            
+
             <Route path="/clients" element={<Client />} />
-            
+
             {/* Development Routes */}
             <Route path="/development">
               <Route index element={<Navigate to="code" replace />} />
@@ -220,7 +220,7 @@ const AppRoutes = () => {
               <Route path="performance" element={<Performance />} />
               <Route path="uat" element={<Uat />} />
             </Route>
-            
+
             <Route path="/tasks" element={<DevelopmentTask />} />
             <Route path="/time-tracking" element={<Tracking />} />
             <Route path="/approvals" element={<Approvals />} />
@@ -228,7 +228,7 @@ const AppRoutes = () => {
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/activity" element={<Activity />} />
-            
+
             <Route path="tracking" element={<Tracking />} />
             <Route path="departments">
               <Route index element={<Navigate to="my-tasks" replace />} />
@@ -245,7 +245,7 @@ const AppRoutes = () => {
               <Route path="custom" element={<Custom />} />
             </Route>
             <Route path="approvals" element={<Approvals />} />
-            
+
             {/* Stage Management */}
             <Route path="/stage-transition/:projectId?" element={<StageTransition />} />
 
@@ -256,7 +256,7 @@ const AppRoutes = () => {
             </Route>
           </>
         )}
-        
+
         {/* Catch all other routes */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>

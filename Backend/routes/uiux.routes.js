@@ -4,6 +4,7 @@ const { protect, authorize } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 const {
   getProjectTasks,
+  getUserTasks,
   createTask,
   updateTaskStatus,
   uploadAttachment,
@@ -14,6 +15,10 @@ const {
 
 // All routes are protected and require authentication
 router.use(protect);
+
+// User tasks route
+router.route('/tasks/my-tasks')
+  .get(authorize('user', 'admin'), getUserTasks);
 
 // Project tasks routes
 router.route('/projects/:projectId/tasks')

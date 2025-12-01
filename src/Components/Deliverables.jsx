@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { 
-  FiUploadCloud, FiGrid, FiList, FiSearch, FiFilter, 
-  FiDownload, FiEye, FiShare2, FiFile, FiFolder, 
+import {
+  FiUploadCloud, FiGrid, FiList, FiSearch, FiFilter,
+  FiDownload, FiEye, FiShare2, FiFile, FiFolder,
   FiX, FiCheck, FiClock, FiAlertCircle, FiUpload
 } from 'react-icons/fi';
 import './Deliverables.css';
@@ -24,7 +24,7 @@ const getFileType = (filename) => {
   const documentTypes = ['pdf', 'doc', 'docx', 'txt', 'rtf'];
   const codeTypes = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'h', 'hpp'];
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
-  
+
   if (archiveTypes.includes(extension)) return 'Archive';
   if (documentTypes.includes(extension)) return 'Document';
   if (codeTypes.includes(extension)) return 'Code';
@@ -49,7 +49,7 @@ export default function Deliverables() {
   const [description, setDescription] = useState('');
   const [view, setView] = useState('grid');
   const fileInputRef = useRef(null);
-  
+
   // Available stages and types for filtering
   const stages = ['All', 'UI/UX', 'Development', 'Testing', 'Deployment', 'Completed'];
   const types = ['All', 'Document', 'Code', 'Image', 'Archive', 'YAML', 'APK', 'Other'];
@@ -83,7 +83,7 @@ export default function Deliverables() {
         setProjects(sampleProjects);
       }
     };
-    
+
     fetchProjects();
   }, []);
 
@@ -96,7 +96,7 @@ export default function Deliverables() {
       setLoading(true);
       const response = await deliverableAPI.getAll();
       console.log('API Response:', response); // Debug log
-      
+
       if (!response.data || !Array.isArray(response.data)) {
         console.error('Unexpected API response format:', response);
         alert('Failed to load deliverables: Invalid response format');
@@ -111,7 +111,7 @@ export default function Deliverables() {
         const fileType = item.type || getFileType(fileName);
         const fileUrl = item.fileUrl || `/uploads/${fileName}`;
         const projectName = item.project ? item.project.name : 'No Project';
-        
+
         return {
           _id: item.id || item._id || Math.random().toString(36).substr(2, 9),
           name: item.name || fileName,
@@ -146,8 +146,8 @@ export default function Deliverables() {
       if (!projectId) {
         // Try to find a matching project based on filename prefix
         const projectNamePrefix = selectedFile.name.split('_')[0].toLowerCase();
-        const matchingProject = projects.find(p => 
-          p.name.toLowerCase().includes(projectNamePrefix) || 
+        const matchingProject = projects.find(p =>
+          p.name.toLowerCase().includes(projectNamePrefix) ||
           p.id.toString() === projectNamePrefix
         );
         if (matchingProject) {
@@ -167,7 +167,7 @@ export default function Deliverables() {
     try {
       setUploading(true);
       setUploadProgress(0);
-      
+
       // First upload the file
       const uploadResponse = await uploadAPI.single(file, (progressEvent) => {
         const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -176,7 +176,7 @@ export default function Deliverables() {
 
       // Debug log the upload response
       console.log('Upload Response:', uploadResponse);
-      
+
       // Then create the deliverable record
       const deliverableData = {
         name: file.name,
@@ -191,19 +191,19 @@ export default function Deliverables() {
         phase: 'Initial', // Required field - defaulting to 'Initial'
         version: '1.0.0' // Adding a default version
       };
-      
+
       // Debug log the data being sent
       console.log('Deliverable Data:', deliverableData);
 
       await deliverableAPI.create(deliverableData);
-      
+
       // Reset form and refresh list
       setFile(null);
       setProjectId('');
       setDescription('');
       setShowUploadModal(false);
       fetchDeliverables();
-      
+
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. Please try again.');
@@ -217,7 +217,7 @@ export default function Deliverables() {
     if (!window.confirm('Are you sure you want to submit this deliverable for approval?')) {
       return;
     }
-    
+
     try {
       await deliverableAPI.update(id, { status: 'Pending Approval' });
       fetchDeliverables();
@@ -235,9 +235,9 @@ export default function Deliverables() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       if (!response.ok) throw new Error('Download failed');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -254,13 +254,13 @@ export default function Deliverables() {
 
   const filteredDeliverables = useMemo(() => {
     return deliverables.filter(item => {
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.project && item.project.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
       const matchesStage = selectedStage === 'All' || item.stage === selectedStage;
       const matchesType = selectedType === 'All' || item.type === selectedType;
-      
+
       return matchesSearch && matchesStage && matchesType;
     });
   }, [deliverables, searchTerm, selectedStage, selectedType]);
@@ -272,9 +272,9 @@ export default function Deliverables() {
       'Approved': { color: 'green', icon: <FiCheck /> },
       'Rejected': { color: 'red', icon: <FiX /> }
     };
-    
+
     const statusInfo = statusMap[status] || { color: 'gray', icon: <FiAlertCircle /> };
-    
+
     return (
       <span className={`pill status ${statusInfo.color}`}>
         {statusInfo.icon} {status}
@@ -287,26 +287,26 @@ export default function Deliverables() {
       <div className="head">
         <div className="title">Deliverables</div>
         <div className="actions">
-          <button 
-            className="upload" 
+          <button
+            className="upload"
             onClick={() => setShowUploadModal(true)}
           >
-            <FiUploadCloud/> Upload Files
+            <FiUploadCloud /> Upload Files
           </button>
           <div className="toggle">
-            <button 
-              className={`icon ${view==='grid'?'active':''}`} 
-              onClick={()=>setView('grid')}
+            <button
+              className={`icon ${view === 'grid' ? 'active' : ''}`}
+              onClick={() => setView('grid')}
               title="Grid View"
             >
-              <FiGrid/>
+              <FiGrid />
             </button>
-            <button 
-              className={`icon ${view==='list'?'active':''}`} 
-              onClick={()=>setView('list')}
+            <button
+              className={`icon ${view === 'list' ? 'active' : ''}`}
+              onClick={() => setView('list')}
               title="List View"
             >
-              <FiList/>
+              <FiList />
             </button>
           </div>
         </div>
@@ -314,17 +314,17 @@ export default function Deliverables() {
 
       <div className="toolbar">
         <div className="search">
-          <FiSearch/>
-          <input 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
-            placeholder="Search files, projects..." 
+          <FiSearch />
+          <input
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Search files, projects..."
           />
         </div>
         <div className="filters">
-          <FiFilter/>
-          <select 
-            value={selectedStage} 
+          <FiFilter />
+          <select
+            value={selectedStage}
             onChange={e => setSelectedStage(e.target.value)}
             className="filter-select"
           >
@@ -334,8 +334,8 @@ export default function Deliverables() {
               </option>
             ))}
           </select>
-          <select 
-            value={selectedType} 
+          <select
+            value={selectedType}
             onChange={e => setSelectedType(e.target.value)}
             className="filter-select"
           >
@@ -355,8 +355,8 @@ export default function Deliverables() {
           <FiFile size={48} className="empty-icon" />
           <h3>No deliverables found</h3>
           <p>Upload your first deliverable to get started</p>
-          <button 
-            className="primary" 
+          <button
+            className="primary"
             onClick={() => setShowUploadModal(true)}
           >
             <FiUploadCloud /> Upload File
@@ -388,27 +388,27 @@ export default function Deliverables() {
                     <span className="pill stage">{item.stage || 'Development'}</span>
                   </div>
                   <div className="card-actions">
-                    <button 
-                      className="ghost" 
+                    <button
+                      className="ghost"
                       onClick={() => window.open(`${process.env.REACT_APP_API_URL}/api/uploads/${item.filename}`, '_blank')}
                       title="Preview"
                     >
-                      <FiEye/> Preview
+                      <FiEye /> Preview
                     </button>
-                    <button 
-                      className="ghost" 
+                    <button
+                      className="ghost"
                       onClick={() => downloadFile(item._id, item.filename)}
                       title="Download"
                     >
-                      <FiDownload/> Download
+                      <FiDownload /> Download
                     </button>
                     {item.status === 'Draft' && (
-                      <button 
-                        className="primary" 
+                      <button
+                        className="primary"
                         onClick={() => submitForApproval(item._id)}
                         title="Submit for Approval"
                       >
-                        <FiShare2/> Submit
+                        <FiShare2 /> Submit
                       </button>
                     )}
                   </div>
@@ -445,27 +445,27 @@ export default function Deliverables() {
                     {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
                   <div className="cell w-10 right actions">
-                    <button 
-                      className="ghost" 
+                    <button
+                      className="ghost"
                       onClick={() => window.open(`${process.env.REACT_APP_API_URL}/api/uploads/${item.filename}`, '_blank')}
                       title="Preview"
                     >
-                      <FiEye/>
+                      <FiEye />
                     </button>
-                    <button 
-                      className="ghost" 
+                    <button
+                      className="ghost"
                       onClick={() => downloadFile(item._id, item.filename)}
                       title="Download"
                     >
-                      <FiDownload/>
+                      <FiDownload />
                     </button>
                     {item.status === 'Draft' && (
-                      <button 
-                        className="primary" 
+                      <button
+                        className="primary"
                         onClick={() => submitForApproval(item._id)}
                         title="Submit for Approval"
                       >
-                        <FiShare2/>
+                        <FiShare2 />
                       </button>
                     )}
                   </div>
@@ -482,8 +482,8 @@ export default function Deliverables() {
           <div className="modal">
             <div className="modal-header">
               <h3>Upload New Deliverable</h3>
-              <button 
-                className="close-button" 
+              <button
+                className="close-button"
                 onClick={() => {
                   setShowUploadModal(false);
                   setFile(null);
@@ -498,7 +498,7 @@ export default function Deliverables() {
               <form onSubmit={handleUpload}>
                 <div className="form-group">
                   <label>File</label>
-                  <div 
+                  <div
                     className={`file-upload ${file ? 'has-file' : ''}`}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -514,11 +514,11 @@ export default function Deliverables() {
                         <span>Click to select a file or drag and drop</span>
                       </div>
                     )}
-                    <input 
+                    <input
                       ref={fileInputRef}
-                      type="file" 
+                      type="file"
                       onChange={handleFileChange}
-                      style={{ display: 'none' }} 
+                      style={{ display: 'none' }}
                     />
                   </div>
                 </div>
@@ -554,8 +554,8 @@ export default function Deliverables() {
 
                 {uploading && (
                   <div className="upload-progress">
-                    <div 
-                      className="progress-bar" 
+                    <div
+                      className="progress-bar"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                     <span>Uploading... {uploadProgress}%</span>
@@ -563,16 +563,16 @@ export default function Deliverables() {
                 )}
 
                 <div className="form-actions">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="secondary"
                     onClick={() => setShowUploadModal(false)}
                     disabled={uploading}
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="primary"
                     disabled={!file || !projectId || uploading}
                   >

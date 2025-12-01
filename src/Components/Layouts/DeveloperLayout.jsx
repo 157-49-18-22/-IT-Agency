@@ -1,11 +1,11 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  FaHome, 
-  FaCode, 
-  FaCalendarAlt, 
-  FaSignOutAlt, 
-  FaChevronDown, 
+import {
+  FaHome,
+  FaCode,
+  FaCalendarAlt,
+  FaSignOutAlt,
+  FaChevronDown,
   FaChevronRight,
   FaTasks,
   FaCodeBranch,
@@ -69,6 +69,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
 import { Box, Button } from '@mui/material';
+import { getFileIcon, formatFileSize, formatRelativeTime, getStatusColor, getPriorityColor } from '../../utils/fileHelpers';
 
 const DeveloperLayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
@@ -80,7 +81,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
-  
+
   // Progress tracking data
   const [progressData, setProgressData] = useState({
     tasksCompleted: 12,
@@ -116,7 +117,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
 
   // Toggle checklist item
   const toggleChecklistItem = (id) => {
-    setTaskChecklist(taskChecklist.map(item => 
+    setTaskChecklist(taskChecklist.map(item =>
       item.id === id ? { ...item, completed: !item.completed } : item
     ));
   };
@@ -157,7 +158,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     const seconds = Math.floor((ms / 1000) % 60);
     const minutes = Math.floor((ms / (1000 * 60)) % 60);
     const hours = Math.floor(ms / (1000 * 60 * 60));
-    
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -172,13 +173,13 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
         setTimeLogs(JSON.parse(savedTimeLogs));
       }
     }
-    
+
     // Cleanup interval on unmount
     return () => {
       if (timerInterval) clearInterval(timerInterval);
     };
   }, [currentUser, getProjectsByUser]);
-  
+
   // Save time logs when they change
   useEffect(() => {
     if (currentUser?.id && timeLogs.length > 0) {
@@ -190,12 +191,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   const handleCompletePhase = () => {
     // Check if all checklist items are completed
     const allChecklistItemsCompleted = taskChecklist.every(item => item.completed);
-    
+
     if (!allChecklistItemsCompleted) {
       alert('Please complete all checklist items before marking the phase as complete.');
       return;
     }
-    
+
     // Save final development phase data
     const completionData = {
       completedAt: new Date().toISOString(),
@@ -206,12 +207,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
       totalBugs: progressData.totalBugs,
       timeSpent: timeLogs.reduce((total, log) => total + log.duration, 0)
     };
-    
+
     console.log('Phase completion data:', completionData);
-    
+
     // Mark phase as completed
     setPhaseCompleted(true);
-    
+
     // Notify parent component
     if (onComplete) {
       onComplete(completionData);
@@ -224,7 +225,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     const tasksComplete = progressData.tasksCompleted >= progressData.totalTasks;
     const allChecklistItemsCompleted = taskChecklist.every(item => item.completed);
     const allSprintsCompleted = tasksComplete && allChecklistItemsCompleted;
-    
+
     setPhaseCompleted(allSprintsCompleted);
     return allSprintsCompleted;
   }, [progressData, taskChecklist]);
@@ -255,12 +256,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
         <div className="sidebar-logo">
           <h2>Dev Portal</h2>
         </div>
-        
+
         <div className="user-profile">
           <div className="user-avatar">
-            <img 
-              src="https://via.placeholder.com/40" 
-              alt="User" 
+            <img
+              src="https://via.placeholder.com/40"
+              alt="User"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2NjYyIgZD0iTTEyLDEyQzE0LjIxLDEyIDE2LDEwLjIxIDE2LDhTMTQuMjEsNCAxMiw0UzgsNS43OSA4LDhTOS43OSwxMiAxMiwxMk0xMiwxNEM3LjU4LDE0IDQsMTUuNzkgNCwxOFYyMEgyMFYxOEMyMCwxNS43OSAxNi40MiwxNCAxMiwxNFoiLz48L3N2Zz4=';
@@ -272,7 +273,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
             <span className="user-role">Developer</span>
           </div>
         </div>
-        
+
         <nav className="sidebar-nav">
           <ul>
             <li className={isActive('/dashboard')}>
@@ -336,6 +337,18 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       <span>Completed</span>
                     </Link>
                   </li>
+                  <li className={isActive('/tasks/design-files')}>
+                    <Link to="/tasks/design-files">
+                      <FaFileAlt className="submenu-icon" />
+                      <span>Design Files & Specs</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/tasks/environment-setup')}>
+                    <Link to="/tasks/environment-setup">
+                      <FaTools className="submenu-icon" />
+                      <span>Environment Setup</span>
+                    </Link>
+                  </li>
                   <li className={isActive('/tasks/blockers')}>
                     <Link to="/tasks/blockers">
                       <FaExclamationTriangle className="submenu-icon" />
@@ -361,6 +374,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       <span>Code Editor</span>
                     </Link>
                   </li>
+                  <li className={isActive('/development/coding-standards')}>
+                    <Link to="/development/coding-standards">
+                      <FaBook className="submenu-icon" />
+                      <span>Coding Standards</span>
+                    </Link>
+                  </li>
                   <li className={isActive('/development/apis')}>
                     <Link to="/development/apis">
                       <FaCodeBranch className="submenu-icon" />
@@ -383,6 +402,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                     <Link to="/development/testing">
                       <FaVial className="submenu-icon" />
                       <span>Testing</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/development/self-testing')}>
+                    <Link to="/development/self-testing">
+                      <FaCheckCircle className="submenu-icon" />
+                      <span>Self-Testing</span>
                     </Link>
                   </li>
                 </ul>
@@ -515,7 +540,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               </Link>
             </li>
           </ul>
-          
+
           <div className="logout-section">
             <button onClick={handleLogout} className="logout-button">
               <FaSignOutAlt className="nav-icon" />
@@ -524,15 +549,15 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
           </div>
         </nav>
       </div>
-      
+
       <main className="main-content">
         {/* Progress Overview Card */}
         <div className="progress-overview">
           <div className="progress-card">
             <h3>Project Progress</h3>
             <div className="progress-bar-container">
-              <div 
-                className="progress-bar" 
+              <div
+                className="progress-bar"
                 style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}
               ></div>
             </div>
@@ -540,7 +565,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               <span>{progressData.tasksCompleted}/{progressData.totalTasks} tasks</span>
               <span>{Math.round((progressData.tasksCompleted / progressData.totalTasks) * 100)}% complete</span>
             </div>
-            
+
             <div className="progress-chart">
               <Line
                 data={{
@@ -568,7 +593,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       beginAtZero: true,
                       max: 100,
                       ticks: {
-                        callback: function(value) {
+                        callback: function (value) {
                           return value + '%';
                         }
                       }
@@ -577,7 +602,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                 }}
               />
             </div>
-            
+
             <div className="progress-metrics">
               <div className="metric">
                 <span className="metric-label">Code Coverage</span>
@@ -596,7 +621,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
             </div>
           </div>
         </div>
-        
+
         <Outlet />
       </main>
     </div>
