@@ -235,6 +235,7 @@ import {
   FaRegWindowRestore,
   FaRegClock as FaRegClock2,
   FaRegCalendarAlt as FaRegCalendarAlt2,
+
   FaRegFileAlt as FaRegFileAlt3,
   FaRegFileArchive as FaRegFileArchive3,
   FaRegFileAudio as FaRegFileAudio3,
