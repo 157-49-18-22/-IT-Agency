@@ -10,6 +10,20 @@ const { connectDB } = require('./config/database');
 
 const app = express();
 
+// Trust proxy (required for Render/Heroku deployment)
+app.set('trust proxy', 1);
+
+// DEBUG: Log all requests
+app.use((req, res, next) => {
+  console.log(`👉 Request: ${req.method} ${req.url}`);
+  next();
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).send('IT Agency PMS Backend is Running! 🚀');
+});
+
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
@@ -46,22 +60,22 @@ app.use(helmet()); // Security headers@stage
 app.use(compression()); // Compress responses
 // Enhanced CORS configuration
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
       process.env.CLIENT_URL || 'http://localhost:5173',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
       'http://localhost:5000'
     ];
-    
+
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `CORS policy does not allow access from ${origin}`;
       return callback(new Error(msg), false);
     }
-    
+
     return callback(null, true);
   },
   credentials: true,
@@ -94,28 +108,19 @@ app.use('/api/', limiter);
 // Static files (for uploads)
 app.use('/uploads', express.static('uploads'));
 
-// SQL Database Connection
-connectDB();
-
 // Health check route
-app.get('/health', async (req, res) => {
-  const { sequelize } = require('./config/database.sql');
-  let dbStatus = 'Disconnected';
-  try {
-    await sequelize.authenticate();
-    dbStatus = 'Connected';
-  } catch (error) {
-    dbStatus = 'Disconnected';
-  }
-  
-  res.json({ 
-    status: 'OK', 
+app.get('/health', (req, res) => {
+  console.log('✅ Health check hit!');
+  res.status(200).json({
+    status: 'OK',
     message: 'IT Agency PMS API is running',
     timestamp: new Date().toISOString(),
-    database: dbStatus,
-    dbType: process.env.DB_DIALECT || 'mysql'
+    environment: process.env.NODE_ENV
   });
 });
+
+// SQL Database Connection
+connectDB();
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -160,9 +165,9 @@ app.get('/api/health', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Route not found' 
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
   });
 });
 
@@ -226,3 +231,5 @@ process.on('SIGTERM', async () => {
 });
 
 module.exports = app;
+
+
