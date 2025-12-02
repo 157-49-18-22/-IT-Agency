@@ -175,6 +175,8 @@ const AppRoutes = () => {
               <Route path="prototypes" element={<Prototypes />} />
               <Route path="components" element={<div>UI Components</div>} />
               <Route path="styleguide" element={<div>Style Guide</div>} />
+              <Route path="design-system" element={<div>Design System - Work in Progress</div>} />
+              <Route path="client-approval" element={<div>Client Approval - Work in Progress</div>} />
             </Route>
             <Route path="/tasks" element={<TaskManagement />} />
             <Route path="/tasks/:projectId" element={<TaskManagement />} />
@@ -197,6 +199,8 @@ const AppRoutes = () => {
               <Route path="wireframes" element={<Wireframes />} />
               <Route path="mockups" element={<Mockups />} />
               <Route path="prototypes" element={<Prototypes />} />
+              <Route path="design-system" element={<div>Design System - Work in Progress</div>} />
+              <Route path="client-approval" element={<div>Client Approval - Work in Progress</div>} />
             </Route>
 
             <Route path="/clients" element={<Client />} />

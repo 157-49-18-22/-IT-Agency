@@ -353,11 +353,11 @@
 /* Active section highlight */
 .nav-section.expanded>.section-header {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: black;
 }
 
 .nav-section.expanded>.section-header .nav-icon {
-  color: #fff;
+  color: black;
 }
 
 /* Badge for notifications */

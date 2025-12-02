@@ -304,7 +304,9 @@ body {
 }
 
 /* Projects Section */
-.projects-section, .team-section, .recent-activities {
+.projects-section,
+.team-section,
+.recent-activities {
   background: white;
   border-radius: var(--border-radius);
   padding: 1.5rem;
@@ -321,7 +323,8 @@ body {
   border-bottom: 1px solid #f1f5f9;
 }
 
-.section-header h2, .section-header h3 {
+.section-header h2,
+.section-header h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--dark);
@@ -367,6 +370,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  color: Black;
 }
 
 .section-header h2 {
@@ -494,19 +498,22 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.2) 25%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0.2) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.2) 25%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.2) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .project-footer {
@@ -578,7 +585,8 @@ body {
 }
 
 /* Team Widget */
-.team-widget, .activity-widget {
+.team-widget,
+.activity-widget {
   background: white;
   border-radius: var(--border-radius);
   padding: 1.5rem;
@@ -762,31 +770,31 @@ body {
     margin-left: 0;
     flex-direction: column;
   }
-  
+
   .main-content {
     margin-left: 0;
     padding: 15px;
   }
-  
+
   .header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .search-bar input {
     width: 180px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .content-row {
     grid-template-columns: 1fr;
   }
@@ -801,7 +809,8 @@ body {
   top: 1.5rem;
 }
 
-.team-section, .recent-activities {
+.team-section,
+.recent-activities {
   background: white;
   border-radius: var(--border-radius);
   padding: 1.5rem;
@@ -878,9 +887,17 @@ body {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .member-info {
@@ -990,7 +1007,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 .activity-content {
@@ -1104,7 +1121,7 @@ body {
   .dashboard-content {
     grid-template-columns: 1fr;
   }
-  
+
   .dashboard-sidebar {
     grid-column: 1 / -1;
     display: grid;
@@ -1112,7 +1129,7 @@ body {
     gap: 1.5rem;
     position: static;
   }
-  
+
   .activity-item {
     padding-right: 1rem;
   }
@@ -1124,16 +1141,16 @@ body {
     align-items: flex-start;
     width: 100%;
   }
-  
+
   .search-bar {
     width: 100%;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .projects-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
@@ -1143,34 +1160,34 @@ body {
   .dashboard-page {
     padding: 1rem;
   }
-  
+
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
     padding: 1.25rem;
   }
-  
+
   .header-left {
     width: 100%;
   }
-  
+
   .header-right {
     width: 100%;
   }
-  
+
   .dashboard-sidebar {
     grid-template-columns: 1fr;
   }
-  
+
   .projects-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .activity-text {
     padding-right: 0;
   }
-  
+
   .view-details {
     position: static;
     opacity: 1;
@@ -1184,27 +1201,27 @@ body {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .project-card {
     padding: 1.25rem;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
-  
+
   .view-all {
     width: 100%;
     justify-content: space-between;
     padding: 0.5rem 0;
   }
-  
+
   .activity-meta {
     flex-wrap: wrap;
   }
-  
+
   .activity-client::after {
     display: none;
   }

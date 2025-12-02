@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  FaHome, 
-  FaChartLine, 
-  FaUsers, 
+import {
+  FaHome,
+  FaChartLine,
+  FaUsers,
   FaFileAlt,
   FaCode,
   FaBug,
@@ -61,7 +61,7 @@ const Sidebar = () => {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
+
       // Optional: Call logout API if you have one
       try {
         await authAPI.logout();
@@ -69,10 +69,10 @@ const Sidebar = () => {
         console.warn('Logout API error:', apiError);
         // Continue with logout even if API call fails
       }
-      
+
       // Redirect to login page
       navigate('/', { replace: true });
-      
+
       // Force a full page reload to ensure all application state is cleared
       window.location.reload();
     } catch (error) {
@@ -88,12 +88,12 @@ const Sidebar = () => {
         <div className="sidebar-logo">
           <h2>IT Agency PMS</h2>
         </div>
-        
+
         <div className="user-profile">
           <div className="user-avatar">
-            <img 
-              src="https://via.placeholder.com/40" 
-              alt="User" 
+            <img
+              src="https://via.placeholder.com/40"
+              alt="User"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2NjYyIgZD0iTTEyLDEyQzE0LjIxLDEyIDE2LDEwLjIxIDE2LDhTMTQuMjEsNCAxMiw0UzgsNS43OSA4LDhTOS43OSwxMiAxMiwxMk0xMiwxNEM3LjU4LDE0IDQsMTUuNzkgNCwxOFYyMEgyMFYxOEMyMCwxNS43OSAxNi40MiwxNCAxMiwxNFoiLz48L3N2Zz4=';
@@ -175,11 +175,11 @@ const Sidebar = () => {
               </div>
               {expandedSections.uiUx && (
                 <ul className="submenu">
-                  <li><Link to="/uiux/wireframes">Wireframes</Link></li>
-                  <li><Link to="/uiux/mockups">Mockups</Link></li>
-                  <li><Link to="/uiux/prototypes">Prototypes</Link></li>
-                  <li><Link to="/uiux/design-system">Design System</Link></li>
-                  <li><Link to="/uiux/client-approval">Client Approval</Link></li>
+                  <li><Link to="/design/wireframes">Wireframes</Link></li>
+                  <li><Link to="/design/mockups">Mockups</Link></li>
+                  <li><Link to="/design/prototypes">Prototypes</Link></li>
+                  <li><Link to="/design/design-system">Design System</Link></li>
+                  <li><Link to="/design/client-approval">Client Approval</Link></li>
                 </ul>
               )}
             </li>
@@ -339,7 +339,7 @@ const Sidebar = () => {
 
           </ul>
         </nav>
-        
+
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
             <FaSignOutAlt className="logout-icon" />
@@ -347,7 +347,7 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="main-content">
         <Outlet />
       </div>
