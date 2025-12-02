@@ -7,11 +7,14 @@
   position: fixed;
   left: 0;
   top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 900;
   transition: all 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Logo Section */
@@ -114,7 +117,7 @@
   margin: 0;
 }
 
-.sidebar-nav > ul > li {
+.sidebar-nav>ul>li {
   margin: 4px 0;
   border-radius: 8px;
   overflow: hidden;
@@ -154,7 +157,7 @@
   transition: transform 0.2s ease;
 }
 
-.nav-section.expanded > .section-header svg:last-child {
+.nav-section.expanded>.section-header svg:last-child {
   transform: rotate(180deg);
 }
 
@@ -169,7 +172,8 @@
 }
 
 .nav-section.expanded .submenu {
-  max-height: 500px; /* Adjust based on content */
+  max-height: 500px;
+  /* Adjust based on content */
 }
 
 .submenu li {
@@ -194,7 +198,7 @@
 }
 
 /* Main Navigation Links */
-.sidebar-nav > ul > li > a {
+.sidebar-nav>ul>li>a {
   display: flex;
   align-items: center;
   padding: 12px 15px;
@@ -207,7 +211,7 @@
   margin: 4px 0;
 }
 
-.sidebar-nav > ul > li > a .nav-icon {
+.sidebar-nav>ul>li>a .nav-icon {
   margin-right: 12px;
   font-size: 1.1rem;
   color: #9fa8da;
@@ -215,26 +219,26 @@
   text-align: center;
 }
 
-.sidebar-nav > ul > li > a:hover {
+.sidebar-nav>ul>li>a:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-.sidebar-nav > ul > li > a:hover .nav-icon {
+.sidebar-nav>ul>li>a:hover .nav-icon {
   color: grey;
 }
 
 /* Active State */
-.sidebar-nav > ul > li.active > a,
-.sidebar-nav > ul > li > a.active {
+.sidebar-nav>ul>li.active>a,
+.sidebar-nav>ul>li>a.active {
   background-color: #3949ab;
   color: #fff;
   font-weight: 500;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.sidebar-nav > ul > li.active > a .nav-icon,
-.sidebar-nav > ul > li > a.active .nav-icon {
+.sidebar-nav>ul>li.active>a .nav-icon,
+.sidebar-nav>ul>li>a.active .nav-icon {
   color: #fff;
 }
 
@@ -284,17 +288,17 @@
   .sidebar {
     width: 240px;
   }
-  
+
   .sidebar-logo h2 {
     font-size: 1.3rem;
   }
-  
-  .sidebar-nav > ul > li > a,
+
+  .sidebar-nav>ul>li>a,
   .section-header {
     padding: 10px 12px;
     font-size: 0.85rem;
   }
-  
+
   .submenu a {
     padding: 8px 15px 8px 35px;
     font-size: 0.8rem;
@@ -303,8 +307,15 @@
 
 /* Animation for submenu items */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .submenu li {
@@ -312,26 +323,40 @@
   opacity: 0;
 }
 
-.submenu li:nth-child(1) { animation-delay: 0.05s; }
-.submenu li:nth-child(2) { animation-delay: 0.1s; }
-.submenu li:nth-child(3) { animation-delay: 0.15s; }
-.submenu li:nth-child(4) { animation-delay: 0.2s; }
-.submenu li:nth-child(5) { animation-delay: 0.25s; }
+.submenu li:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.submenu li:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.submenu li:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.submenu li:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.submenu li:nth-child(5) {
+  animation-delay: 0.25s;
+}
 
 /* Hover effects */
 .section-header:hover .nav-icon,
-.sidebar-nav > ul > li > a:hover .nav-icon {
+.sidebar-nav>ul>li>a:hover .nav-icon {
   transform: scale(1.1);
   transition: transform 0.2s ease;
 }
 
 /* Active section highlight */
-.nav-section.expanded > .section-header {
+.nav-section.expanded>.section-header {
   background-color: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.nav-section.expanded > .section-header .nav-icon {
+.nav-section.expanded>.section-header .nav-icon {
   color: #fff;
 }
 
@@ -352,7 +377,7 @@
   border-radius: 10px;
   margin-left: auto;
 }
-  
+
 
 .nav-icon {
   margin-right: 10px;
@@ -395,37 +420,37 @@
     width: 70px;
     overflow: hidden;
   }
-  
+
   .sidebar-logo h2,
   .user-info,
   .sidebar-nav span,
   .dropdown-arrow {
     display: none;
   }
-  
+
   .user-avatar {
     margin: 0 auto;
   }
-  
+
   .user-profile {
     justify-content: center;
     padding: 15px 0;
   }
-  
+
   .sidebar-nav li a {
     justify-content: center;
     padding: 15px 0;
   }
-  
+
   .nav-icon {
     margin-right: 0;
     font-size: 1.3rem;
   }
-  
+
   .logout-btn span {
     display: none;
   }
-  
+
   .logout-icon {
     margin-right: 0;
     font-size: 1.3rem;
