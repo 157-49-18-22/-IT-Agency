@@ -15,7 +15,7 @@ git push origin main
 2. New + → PostgreSQL
 3. Name: `it-agency-pms-db`
 4. Create करें
-5. **Internal Connection String** copy करेंh to 
+5. **Internal Connection String** copy करें
 
 ### 3️⃣ Web Service बनाएं
 1. New + → Web Service
