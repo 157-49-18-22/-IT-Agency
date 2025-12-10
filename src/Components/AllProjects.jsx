@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FaSearch, 
-  FaFilter, 
-  FaPlus, 
-  FaEllipsisV, 
+import {
+  FaSearch,
+  FaFilter,
+  FaPlus,
+  FaEllipsisV,
   FaRegClock,
   FaCheckCircle,
   FaSpinner,
   FaExclamationTriangle
 } from 'react-icons/fa';
 import './AllProjects.css';
-import { projectAPI } from '../services/api';
+import { projectsAPI } from '../services/api';
 
 const AllProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -28,7 +28,7 @@ const AllProjects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await projectAPI.getAll();
+      const response = await projectsAPI.getProjects();
       setProjects(response.data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -40,7 +40,7 @@ const AllProjects = () => {
   const handleDeleteProject = async (id) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
-        await projectAPI.delete(id);
+        await projectsAPI.deleteProject(id);
         fetchProjects();
       } catch (error) {
         alert('Error deleting project');
@@ -54,31 +54,31 @@ const AllProjects = () => {
 
   // Ensure projects is an array before filtering
   const projectsArray = Array.isArray(projects) ? projects : [];
-  
+
   const filteredProjects = projectsArray.filter(project => {
     if (!project) return false;
-    
+
     const projectName = project.name || '';
     const projectClient = project.client || '';
     const projectStatus = project.status || '';
-    
-    
-    
-    
+
+
+
+
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
-                         projectClient.toLowerCase().includes(searchLower);
-    
+      projectClient.toLowerCase().includes(searchLower);
+
     if (!statusFilter || statusFilter === 'all' || statusFilter === 'All') return matchesSearch;
-    if (statusFilter === 'in-progress' || statusFilter === 'In Progress') 
+    if (statusFilter === 'in-progress' || statusFilter === 'In Progress')
       return projectStatus === 'In Progress' && matchesSearch;
-    if (statusFilter === 'completed' || statusFilter === 'Completed') 
+    if (statusFilter === 'completed' || statusFilter === 'Completed')
       return projectStatus === 'Completed' && matchesSearch;
-    if (statusFilter === 'on-hold' || statusFilter === 'On Hold') 
+    if (statusFilter === 'on-hold' || statusFilter === 'On Hold')
       return projectStatus === 'On Hold' && matchesSearch;
-    if (statusFilter === 'planning' || statusFilter === 'Planning') 
+    if (statusFilter === 'planning' || statusFilter === 'Planning')
       return projectStatus === 'Planning' && matchesSearch;
-      
+
     return matchesSearch;
   });
 
@@ -123,7 +123,7 @@ const AllProjects = () => {
     const end = new Date(endDate);
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return <span className="days-left overdue">Overdue by {Math.abs(diffDays)} days</span>;
     if (diffDays === 0) return <span className="days-left due-today">Due today</span>;
     return <span className="days-left">{diffDays} days left</span>;
@@ -164,8 +164,8 @@ const AllProjects = () => {
         <div className="filters">
           <div className="filter-group">
             <label htmlFor="status-filter">Status:</label>
-            <select 
-              id="status-filter" 
+            <select
+              id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="filter-select"
@@ -180,8 +180,8 @@ const AllProjects = () => {
 
           <div className="filter-group">
             <label htmlFor="sort-by">Sort by:</label>
-            <select 
-              id="sort-by" 
+            <select
+              id="sort-by"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="filter-select"
@@ -210,35 +210,35 @@ const AllProjects = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="project-client">
                 <span className="label">Client:</span>
                 <span className="value">{project.client}</span>
               </div>
-              
+
               <div className="project-phase">
                 <span className="label">Phase:</span>
                 {getPhaseBadge(project.phase)}
               </div>
-              
+
               <div className="project-priority">
                 <span className="label">Priority:</span>
                 {getPriorityBadge(project.priority)}
               </div>
-              
+
               <div className="project-progress">
                 <div className="progress-header">
                   <span>Progress</span>
                   <span>{project.progress}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
+                  <div
+                    className="progress-fill"
                     style={{ width: `${project.progress}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div className="project-dates">
                 <div className="date">
                   <span className="label">Start:</span>
@@ -249,7 +249,7 @@ const AllProjects = () => {
                   <span className="value">{formatDate(project.endDate)}</span>
                 </div>
               </div>
-              
+
               <div className="project-footer">
                 <div className="team-avatars">
                   {project.team.map((member, index) => (
@@ -262,7 +262,7 @@ const AllProjects = () => {
                   {calculateDaysLeft(project.endDate)}
                 </div>
               </div>
-              
+
               <div className="project-actions-hover">
                 <button className="action-btn view">View</button>
                 <button className="action-btn edit">Edit</button>

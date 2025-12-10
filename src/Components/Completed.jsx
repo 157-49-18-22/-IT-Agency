@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiChevronDown, 
-  FiClock, 
-  FiCalendar, 
-  FiCheckCircle, 
+import {
+  FiSearch,
+  FiFilter,
+  FiChevronDown,
+  FiClock,
+  FiCalendar,
+  FiCheckCircle,
   FiAward,
   FiStar,
   FiMoreHorizontal
 } from 'react-icons/fi';
 import './Completed.css';
-import { projectAPI } from '../services/api';
+import { projectsAPI } from '../services/api';
 
 const Completed = () => {
   const [projects, setProjects] = useState([]);
@@ -25,7 +25,7 @@ const Completed = () => {
   const fetchCompletedProjects = async () => {
     try {
       setLoading(true);
-      const response = await projectAPI.getAll({ status: 'Completed' });
+      const response = await projectsAPI.getProjects({ status: 'Completed' });
       setProjects(response.data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -45,21 +45,21 @@ const Completed = () => {
 
   const filteredProjects = projectsArray.filter(project => {
     if (!project) return false;
-    
+
     const projectName = project.name || '';
     const projectClient = project.client || '';
     const projectRating = project.rating || 0;
     const completionDate = project.completionDate ? new Date(project.completionDate) : null;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
+
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
-                         projectClient.toLowerCase().includes(searchLower);
-    
-    const matchesFilter = filter === 'all' || 
-                         (filter === 'high-rating' && projectRating >= 4) ||
-                         (filter === 'recent' && completionDate && completionDate > thirtyDaysAgo);
-    
+      projectClient.toLowerCase().includes(searchLower);
+
+    const matchesFilter = filter === 'all' ||
+      (filter === 'high-rating' && projectRating >= 4) ||
+      (filter === 'recent' && completionDate && completionDate > thirtyDaysAgo);
+
     return matchesSearch && matchesFilter;
   });
 
@@ -84,9 +84,9 @@ const Completed = () => {
     return (
       <div className="rating">
         {[...Array(5)].map((_, i) => (
-          <FiStar 
-            key={i} 
-            className={`star ${i < rating ? 'filled' : ''}`} 
+          <FiStar
+            key={i}
+            className={`star ${i < rating ? 'filled' : ''}`}
           />
         ))}
         <span className="rating-text">{rating}.0</span>
@@ -177,21 +177,21 @@ const Completed = () => {
                   {renderRating(project.rating)}
                 </div>
               </div>
-              
+
               <div className="project-details">
                 <div className="project-feedback">
                   <h4>Client Feedback:</h4>
                   <p className="feedback-text">"{project.feedback}"</p>
                 </div>
-                
+
                 <div className="project-team">
                   <h4>Team:</h4>
                   <div className="team-avatars">
                     {project.team.map(member => (
                       <div key={member.id} className="team-member">
-                        <img 
-                          src={member.avatar} 
-                          alt={member.name} 
+                        <img
+                          src={member.avatar}
+                          alt={member.name}
                           className="team-avatar"
                           title={member.name}
                         />
@@ -201,7 +201,7 @@ const Completed = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="project-actions">
                 <button className="btn-outline">
                   <FiCheckCircle className="btn-icon" />

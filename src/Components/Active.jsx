@@ -1,8 +1,8 @@
-import React, { useMemo,useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiSearch, FiFilter, FiChevronDown, FiClock, FiCalendar, FiUser, FiAlertCircle, FiCheckCircle, FiPauseCircle, FiPlay, FiMoreHorizontal, FiFileText } from 'react-icons/fi';
 import './Active.css';
-import { projectAPI } from '../services/api';
+import { projectsAPI } from '../services/api';
 
 const Active = () => {
   const [projects, setProjects] = useState([]);
@@ -15,7 +15,7 @@ const Active = () => {
   const fetchActiveProjects = async () => {
     try {
       setLoading(true);
-      const response = await projectAPI.getAll({ status: 'In Progress' });
+      const response = await projectsAPI.getProjects({ status: 'In Progress' });
       setProjects(response.data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -35,16 +35,16 @@ const Active = () => {
 
   const filteredProjects = projectsArray.filter(project => {
     if (!project) return false;
-    
+
     const projectName = project.name || '';
     const projectClient = project.client || '';
     const projectPriority = project.priority || '';
-    
+
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = projectName.toLowerCase().includes(searchLower) ||
-                         projectClient.toLowerCase().includes(searchLower);
+      projectClient.toLowerCase().includes(searchLower);
     const matchesFilter = filter === 'all' || projectPriority === filter;
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -163,7 +163,7 @@ const Active = () => {
                 </div>
               </div>
               <p className="client-name">{project.client}</p>
-              
+
               <div className="project-meta">
                 <div className="meta-item">
                   <FiCalendar className="meta-icon" />
@@ -174,32 +174,32 @@ const Active = () => {
                   <span>{project.daysLeft} days left</span>
                 </div>
               </div>
-              
+
               <div className="project-status">
                 {getStatusBadge(project.status)}
                 {getPriorityBadge(project.priority)}
               </div>
-              
+
               <div className="progress-container">
                 <div className="progress-labels">
                   <span>Progress</span>
                   <span>{project.progress}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
+                  <div
+                    className="progress-fill"
                     style={{ width: `${project.progress}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div className="project-footer">
                 <div className="team-avatars">
                   {project.team.map(member => (
-                    <img 
-                      key={member.id} 
-                      src={member.avatar} 
-                      alt={member.name} 
+                    <img
+                      key={member.id}
+                      src={member.avatar}
+                      alt={member.name}
                       title={member.name}
                       className="team-avatar"
                     />
