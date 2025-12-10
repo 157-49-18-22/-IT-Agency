@@ -65,6 +65,12 @@ import StageTransition from './Components/StageManagement/StageTransition';
 import ClientDashboard from './Components/ClientPortal/ClientDashboard';
 import ClientApprovals from './Components/ClientPortal/ClientApprovals';
 
+// Import ENHANCED Components (New Features)
+import EnhancedDashboard from './Components/EnhancedDashboard';
+import NotificationsCenter from './Components/NotificationsCenter';
+import TaskBoard from './Components/Tasks/TaskBoard';
+import DeliverablesManager from './Components/Deliverables/DeliverablesManager';
+
 // Protected route with role-based layouts
 const ProtectedRoute = () => {
   const { currentUser, isLoading, isDeveloper, isDesigner, isTester } = useAuth();
@@ -132,6 +138,8 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         {/* Common routes for all authenticated users */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard-enhanced" element={<EnhancedDashboard />} />
+        <Route path="/notifications" element={<NotificationsCenter />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/projects">
           <Route index element={<AllProjects />} />
@@ -140,6 +148,20 @@ const AppRoutes = () => {
           <Route path="completed" element={<Completed />} />
         </Route>
         <Route path="/task-management" element={<DevelopmentTask />} />
+
+        {/* Task Board */}
+        <Route path="/tasks/board" element={<TaskBoard />} />
+        <Route path="/tasks/board/:projectId" element={<TaskBoard />} />
+
+        {/* Deliverables */}
+        <Route path="/deliverables" element={<DeliverablesManager />} />
+        <Route path="/projects/:projectId/deliverables" element={<DeliverablesManager />} />
+
+        {/* Stage Transition */}
+        <Route path="/projects/:projectId/stage-transition" element={<StageTransition />} />
+
+        {/* Client Portal */}
+        <Route path="/client/dashboard" element={<ClientDashboard />} />
 
         {/* Developer specific routes */}
         {isDeveloper && (

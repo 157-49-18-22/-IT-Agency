@@ -1,207 +1,218 @@
 import React, { useState, useEffect } from 'react';
-import { FiCheckCircle, FiClock, FiAlertCircle, FiDownload, FiMessageCircle, FiFileText } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import { FaProjectDiagram, FaCheckCircle, FaClock, FaChartLine } from 'react-icons/fa';
 import './ClientDashboard.css';
-import { projectAPI, clientAPI } from '../../services/api';
 
-export default function ClientDashboard() {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+const ClientDashboard = () => {
+  const { currentUser } = useAuth();
+  const [projects, setProjects] = useState([]);
+  const [stats, setStats] = useState({
+    activeProjects: 0,
+    pendingApprovals: 0,
+    completedProjects: 0,
+    totalProgress: 0
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await projectAPI.getAll();
-        setDashboardData(response.data);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchClientData();
   }, []);
 
-  useEffect(() => {
-    // Mock data - replace with API call
-    setTimeout(() => {
-      setProject({
+  const fetchClientData = async () => {
+    // TODO: Replace with actual API call
+    // const response = await clientAPI.getDashboard();
+
+    // Mock data for demo
+    const mockProjects = [
+      {
         id: 1,
-        name: 'E-commerce Website Redesign',
-        client: 'FashionHub Inc.',
-        currentStage: 2, // 1=UI/UX, 2=Development, 3=Testing
-        overallProgress: 65,
-        stages: {
-          uiux: { status: 'Completed', progress: 100, startDate: '2024-10-15', endDate: '2024-11-05' },
-          development: { status: 'In Progress', progress: 60, startDate: '2024-11-06', endDate: '2024-12-15' },
-          testing: { status: 'Not Started', progress: 0, startDate: null, endDate: null }
-        },
-        milestones: [
-          { id: 1, name: 'Wireframes Approved', date: '2024-10-20', status: 'Completed' },
-          { id: 2, name: 'Design System Ready', date: '2024-11-05', status: 'Completed' },
-          { id: 3, name: 'Frontend Complete', date: '2024-11-30', status: 'Pending' },
-          { id: 4, name: 'Backend Complete', date: '2024-12-15', status: 'Pending' },
-          { id: 5, name: 'UAT Complete', date: '2024-12-25', status: 'Pending' }
-        ],
-        pendingApprovals: 2,
-        newDeliverables: 3,
-        unreadMessages: 5
-      });
-      setLoading(false);
-    }, 500);
-  }, []);
+        name: 'E-Commerce Website',
+        currentStage: 'development',
+        progress: 65,
+        status: 'in-progress',
+        dueDate: '2024-02-15',
+        pendingApprovals: 2
+      },
+      {
+        id: 2,
+        name: 'Mobile App',
+        currentStage: 'ui_ux',
+        progress: 30,
+        status: 'in-progress',
+        dueDate: '2024-03-01',
+        pendingApprovals: 1
+      },
+      {
+        id: 3,
+        name: 'CRM System',
+        currentStage: 'testing',
+        progress: 85,
+        status: 'in-progress',
+        dueDate: '2024-01-30',
+        pendingApprovals: 0
+      }
+    ];
 
-  if (loading || !project) {
-    return <div className="loading">Loading client data...</div>;
-  }
-
-  // Default values to prevent null reference errors
-  const clientData = {
-    name: project?.client || 'Client',
-    projects: project?.milestones || [],
-    completedProjects: project?.milestones.filter(milestone => milestone.status === 'Completed').length || 0,
-    totalInvestment: 100000, // Replace with actual data
-    upcomingMilestones: project?.milestones.filter(milestone => milestone.status !== 'Completed') || []
+    setProjects(mockProjects);
+    setStats({
+      activeProjects: mockProjects.filter(p => p.status === 'in-progress').length,
+      pendingApprovals: mockProjects.reduce((sum, p) => sum + p.pendingApprovals, 0),
+      completedProjects: 5,
+      totalProgress: Math.round(mockProjects.reduce((sum, p) => sum + p.progress, 0) / mockProjects.length)
+    });
   };
 
-  const getStageStatus = (stageNum) => {
-    if (project.currentStage > stageNum) return 'completed';
-    if (project.currentStage === stageNum) return 'active';
-    return 'pending';
+  const getStageLabel = (stage) => {
+    const stages = {
+      'ui_ux': 'UI/UX Design',
+      'development': 'Development',
+      'testing': 'Testing',
+      'completed': 'Completed'
+    };
+    return stages[stage] || stage;
+  };
+
+  const getStageColor = (stage) => {
+    const colors = {
+      'ui_ux': '#9b59b6',
+      'development': '#3498db',
+      'testing': '#f39c12',
+      'completed': '#2ecc71'
+    };
+    return colors[stage] || '#95a5a6';
   };
 
   return (
     <div className="client-dashboard">
-      <div className="client-header">
-        <div>
-          <h1>Welcome back, {clientData.name}!</h1>
-          <p>{clientData.completedProjects}</p>
-        </div>
-        <div className="header-actions">
-          <button className="btn-outline"><FiMessageCircle /> Contact Team</button>
-          <button className="btn-primary"><FiDownload /> Download Reports</button>
-        </div>
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <h1>Welcome back, {currentUser?.name || 'Client'}!</h1>
+        <p>Track your projects and provide feedback in real-time</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="quick-stats">
-        <div className="stat-card">
-          <div className="stat-icon pending"><FiClock /></div>
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card active">
+          <div className="stat-icon">
+            <FaProjectDiagram />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{project.pendingApprovals}</div>
-            <div className="stat-label">Pending Approvals</div>
+            <h3>Active Projects</h3>
+            <div className="stat-value">{stats.activeProjects}</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon success"><FiFileText /></div>
+
+        <div className="stat-card pending">
+          <div className="stat-icon">
+            <FaClock />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{project.newDeliverables}</div>
-            <div className="stat-label">New Deliverables</div>
+            <h3>Pending Approvals</h3>
+            <div className="stat-value">{stats.pendingApprovals}</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon info"><FiMessageCircle /></div>
+
+        <div className="stat-card completed">
+          <div className="stat-icon">
+            <FaCheckCircle />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{project.unreadMessages}</div>
-            <div className="stat-label">Unread Messages</div>
+            <h3>Completed</h3>
+            <div className="stat-value">{stats.completedProjects}</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon primary"><FiCheckCircle /></div>
+
+        <div className="stat-card progress">
+          <div className="stat-icon">
+            <FaChartLine />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{project.overallProgress}%</div>
-            <div className="stat-label">Overall Progress</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project Progress */}
-      <div className="progress-section">
-        <h2>Project Progress</h2>
-        <div className="overall-progress">
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${project.overallProgress}%` }}></div>
-          </div>
-          <span className="progress-text">{project.overallProgress}% Complete</span>
-        </div>
-      </div>
-
-      {/* Stage Timeline */}
-      <div className="stage-timeline">
-        <h2>Project Stages</h2>
-        <div className="stages">
-          <div className={`stage ${getStageStatus(1)}`}>
-            <div className="stage-number">1</div>
-            <div className="stage-content">
-              <h3>UI/UX Design</h3>
-              <div className="stage-progress">
-                <div className="progress-bar small">
-                  <div className="progress-fill" style={{ width: `${project.stages.uiux.progress}%` }}></div>
-                </div>
-                <p>{clientData.projects.length}</p>
-              </div>
-              <div className="stage-status">{project.stages.uiux.status}</div>
-              {project.stages.uiux.endDate && (
-                <div className="stage-date">Completed: {project.stages.uiux.endDate}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="stage-connector"></div>
-
-          <div className={`stage ${getStageStatus(2)}`}>
-            <div className="stage-number">2</div>
-            <div className="stage-content">
-              <h3>Development</h3>
-              <div className="stage-progress">
-                <div className="progress-bar small">
-                  <div className="progress-fill" style={{ width: `${project.stages.development.progress}%` }}></div>
-                </div>
-                <span>{project.stages.development.progress}%</span>
-              </div>
-              <div className="stage-status">{project.stages.development.status}</div>
-              {project.stages.development.endDate && (
-                <div className="stage-date">Expected: {project.stages.development.endDate}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="stage-connector"></div>
-
-          <div className={`stage ${getStageStatus(3)}`}>
-            <div className="stage-number">3</div>
-            <div className="stage-content">
-              <h3>Testing</h3>
-              <div className="stage-progress">
-                <div className="progress-bar small">
-                  <div className="progress-fill" style={{ width: `${project.stages.testing.progress}%` }}></div>
-                </div>
-                <p>${clientData.totalInvestment.toLocaleString()}</p>
-              </div>
-              <div className="stage-status">{project.stages.testing.status}</div>
-            </div>
+            <h3>Avg Progress</h3>
+            <div className="stat-value">{stats.totalProgress}%</div>
           </div>
         </div>
       </div>
 
-      {/* Milestones */}
-      <div className="milestones-section">
-        <h2>Key Milestones</h2>
-        <div className="milestones-list">
-          {clientData.upcomingMilestones.map((milestone, index) => (
-            <div key={milestone.id} className={`milestone ${milestone.status.toLowerCase()}`}>
-              {clientData.upcomingMilestones.length > 0 ? (
-                <div className="milestone-icon">
-                  {milestone.status === 'Completed' ? <FiCheckCircle /> : <FiClock />}
-                </div>
-              ) : null}
-              <div className="milestone-content">
-                <div className="milestone-name">{milestone.name}</div>
-                <div className="milestone-date">{milestone.date}</div>
+      {/* Projects Section */}
+      <div className="projects-section">
+        <div className="section-header">
+          <h2>Your Projects</h2>
+          <button className="btn-view-all">View All</button>
+        </div>
+
+        <div className="projects-grid">
+          {projects.map(project => (
+            <div key={project.id} className="project-card">
+              <div className="project-header">
+                <h3>{project.name}</h3>
+                <span className={`status-badge ${project.status}`}>
+                  {project.status.replace('-', ' ')}
+                </span>
               </div>
-              <div className={`milestone-status ${milestone.status.toLowerCase()}`}>
-                {milestone.status}
+
+              {/* Stage Indicator */}
+              <div className="stage-indicator">
+                <div className={`stage ${project.currentStage === 'ui_ux' ? 'active' : 'completed'}`}>
+                  <div className="stage-dot"></div>
+                  <span>UI/UX</span>
+                </div>
+                <div className="stage-line"></div>
+                <div className={`stage ${project.currentStage === 'development' ? 'active' : project.currentStage === 'testing' ? 'completed' : ''}`}>
+                  <div className="stage-dot"></div>
+                  <span>Dev</span>
+                </div>
+                <div className="stage-line"></div>
+                <div className={`stage ${project.currentStage === 'testing' ? 'active' : ''}`}>
+                  <div className="stage-dot"></div>
+                  <span>Test</span>
+                </div>
+              </div>
+
+              {/* Current Stage */}
+              <div className="current-stage">
+                <span className="stage-label">Current Stage:</span>
+                <span
+                  className="stage-name"
+                  style={{ color: getStageColor(project.currentStage) }}
+                >
+                  {getStageLabel(project.currentStage)}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="progress-section">
+                <div className="progress-header">
+                  <span>Overall Progress</span>
+                  <span className="progress-percentage">{project.progress}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${project.progress}%`,
+                      backgroundColor: getStageColor(project.currentStage)
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Project Meta */}
+              <div className="project-meta">
+                <div className="meta-item">
+                  <FaClock />
+                  <span>Due: {new Date(project.dueDate).toLocaleDateString()}</span>
+                </div>
+                {project.pendingApprovals > 0 && (
+                  <div className="meta-item pending">
+                    <FaCheckCircle />
+                    <span>{project.pendingApprovals} Approval{project.pendingApprovals > 1 ? 's' : ''} Pending</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="project-actions">
+                <button className="btn-view">View Details</button>
+                <button className="btn-deliverables">Deliverables</button>
               </div>
             </div>
           ))}
@@ -209,35 +220,34 @@ export default function ClientDashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="recent-activity">
-        <h2>Recent Updates</h2>
+      <div className="activity-section">
+        <h2>Recent Activity</h2>
         <div className="activity-list">
           <div className="activity-item">
-            <div className="activity-icon"><FiCheckCircle /></div>
+            <div className="activity-icon">📋</div>
             <div className="activity-content">
-              <div className="activity-title">Design System Approved</div>
-              <div className="activity-time">2 hours ago</div>
+              <p><strong>New deliverable</strong> uploaded for E-Commerce Website</p>
+              <span className="activity-time">2 hours ago</span>
             </div>
           </div>
           <div className="activity-item">
-            <div className="activity-icon"><FiFileText /></div>
+            <div className="activity-icon">✅</div>
             <div className="activity-content">
-              <div className="activity-title">New deliverable uploaded: Homepage Mockups v3</div>
-              <div className="activity-time">5 hours ago</div>
+              <p><strong>Approval required</strong> for Mobile App wireframes</p>
+              <span className="activity-time">5 hours ago</span>
             </div>
           </div>
           <div className="activity-item">
-            <div className="activity-icon"><FiMessageCircle /></div>
+            <div className="activity-icon">🚀</div>
             <div className="activity-content">
-              <div className="activity-title">Message from Project Manager</div>
-              <div className="activity-time">1 day ago</div>
+              <p><strong>Stage transition</strong> - CRM System moved to Testing</p>
+              <span className="activity-time">1 day ago</span>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
-
-
+export default ClientDashboard;
