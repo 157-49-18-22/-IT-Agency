@@ -410,6 +410,18 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       <span>Self-Testing</span>
                     </Link>
                   </li>
+                  <li className={isActive('/development/sprints')}>
+                    <Link to="/development/sprints">
+                      <FaCalendarAlt className="submenu-icon" />
+                      <span>Sprints</span>
+                    </Link>
+                  </li>
+                  <li className={isActive('/development/bug-fixes')}>
+                    <Link to="/development/bug-fixes">
+                      <FaExclamationTriangle className="submenu-icon" />
+                      <span>Bug Fixes</span>
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>

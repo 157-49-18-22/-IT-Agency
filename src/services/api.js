@@ -220,17 +220,20 @@ export const timeTrackingAPI = {
 
 // Client APIs
 export const clientAPI = {
+  getAll: () => api.get('/clients'),
   getDashboard: () => api.get('/client/dashboard'),
   getStats: (clientId) => api.get(`/client/${clientId}/stats`)
 };
 
 // Team APIs
 export const teamAPI = {
-  getAll: () => api.get('/team'),
-  getTeamMember: (id) => api.get(`/team/${id}`),
-  createTeamMember: (data) => api.post('/team', data),
-  updateTeamMember: (id, data) => api.put(`/team/${id}`, data),
-  deleteTeamMember: (id) => api.delete(`/team/${id}`)
+  getAll: () => api.get('/teams'),
+  getTeamMember: (id) => api.get(`/teams/${id}`),
+  createTeamMember: (data) => api.post('/teams', data),
+  addMember: (data) => api.post('/teams', data), // Alias for createTeamMember
+  updateTeamMember: (id, data) => api.put(`/teams/${id}`, data),
+  deleteTeamMember: (id) => api.delete(`/teams/${id}`),
+  removeMember: (id) => api.delete(`/teams/${id}`) // Alias for deleteTeamMember
 };
 
 // Code/Repository APIs

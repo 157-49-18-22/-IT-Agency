@@ -489,6 +489,39 @@ const UILayout = ({ projectId, onComplete }) => {
     { id: 3, name: 'Prototype', status: 'Not Started', dueDate: '2025-12-29' },
   ]);
 
+  // Wireframes state
+  const [wireframes, setWireframes] = useState([]);
+  const [wireframeForm, setWireframeForm] = useState({
+    title: '',
+    description: '',
+    files: [],
+    status: 'Draft'
+  });
+
+  // Mockups state
+  const [mockups, setMockups] = useState([]);
+  const [mockupForm, setMockupForm] = useState({
+    title: '',
+    description: '',
+    files: [],
+    status: 'Draft'
+  });
+
+  // Prototypes state
+  const [prototypes, setPrototypes] = useState([]);
+  const [prototypeForm, setPrototypeForm] = useState({
+    title: '',
+    description: '',
+    link: '',
+    files: [],
+    status: 'Draft'
+  });
+
+  // Modal states
+  const [showWireframeModal, setShowWireframeModal] = useState(false);
+  const [showMockupModal, setShowMockupModal] = useState(false);
+  const [showPrototypeModal, setShowPrototypeModal] = useState(false);
+
   const handleCompletePhase = () => {
     // TODO: Save any final UI/UX phase data
 
@@ -824,6 +857,31 @@ const UILayout = ({ projectId, onComplete }) => {
                 <span className="badge">5</span>
               </Link>
             </li>
+
+            {/* Design Section */}
+            <li className="nav-section-header">
+              <FaPalette className="nav-icon" />
+              <span>Design Work</span>
+            </li>
+            <li className={isActive('/design/wireframes')}>
+              <Link to="/design/wireframes">
+                <FaImage className="nav-icon" />
+                <span>Wireframes</span>
+              </Link>
+            </li>
+            <li className={isActive('/design/mockups')}>
+              <Link to="/design/mockups">
+                <FaDesktop className="nav-icon" />
+                <span>Mockups</span>
+              </Link>
+            </li>
+            <li className={isActive('/design/prototypes')}>
+              <Link to="/design/prototypes">
+                <FaMobileAlt className="nav-icon" />
+                <span>Prototypes</span>
+              </Link>
+            </li>
+
             <li className={isActive('/team')}>
               <Link to="/team">
                 <FaUsers className="nav-icon" />

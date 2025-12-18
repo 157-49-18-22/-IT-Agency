@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser, 
-  FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff, 
-  FiCheckSquare, FiClock, FiCalendar, FiType, FiBookmark 
+import {
+  FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser,
+  FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff,
+  FiCheckSquare, FiClock, FiCalendar, FiType, FiBookmark
 } from 'react-icons/fi';
 import './Team.css';
 import { userAPI, teamAPI } from '../services/api';
@@ -45,14 +45,14 @@ const Team = () => {
 
   const updateDepartmentCounts = (membersList) => {
     const counts = { ...departments.reduce((acc, dept) => ({ ...acc, [dept.name]: 0 }), {}) };
-    
+
     membersList.forEach(member => {
       if (member.department && counts.hasOwnProperty(member.department)) {
         counts[member.department]++;
       }
     });
 
-    setDepartments(prevDepartments => 
+    setDepartments(prevDepartments =>
       prevDepartments.map(dept => ({
         ...dept,
         count: counts[dept.name] || 0
@@ -69,13 +69,13 @@ const Team = () => {
       setLoading(true);
       const response = await teamAPI.getAll();
       const membersData = response.data?.data?.members || [];
-      
+
       setMembers(membersData);
       setFilteredMembers(membersData);
-      
+
       // Update department counts
       updateDepartmentCounts(membersData);
-      
+
     } catch (error) {
       console.error('Error fetching team:', error);
       setError('Failed to load team members');
@@ -166,7 +166,7 @@ const Team = () => {
 
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!taskForm.title || !taskForm.dueDate) {
       setError('Title and Due Date are required');
       return;
@@ -187,14 +187,14 @@ const Team = () => {
       };
 
       await createTask(taskData);
-      
+
       // Close modal and reset form
       setShowTaskModal(false);
       resetTaskForm();
-      
+
       // Show success message
       alert('Task assigned successfully!');
-      
+
     } catch (error) {
       console.error('Error assigning task:', error);
       setError(error.message || 'Failed to assign task');
@@ -233,20 +233,20 @@ const Team = () => {
 
       // Call the API to add the team member
       const response = await teamAPI.addMember(newMember);
-      
+
       if (response.data) {
         // Update the members list with the new member
         const updatedMembers = [...members, response.data];
         setMembers(updatedMembers);
         setFilteredMembers(updatedMembers);
-        
+
         // Update department counts
         updateDepartmentCounts(updatedMembers);
-        
+
         // Close the modal and reset the form
         setShowAddMemberModal(false);
         resetForm();
-        
+
         // Show success message
         alert('Team member added successfully!');
       }
@@ -266,7 +266,7 @@ const Team = () => {
 
     try {
       if (!formData.id) throw new Error('Invalid member ID');
-      
+
       // Validate required fields
       if (!formData.name || !formData.email || !formData.role || !formData.department) {
         throw new Error('All fields are required');
@@ -290,23 +290,23 @@ const Team = () => {
 
       // Call the API to update the team member
       const response = await teamAPI.updateMember(formData.id, updatedMember);
-      
+
       if (response.data) {
         // Update the members list with the updated member
-        const updatedMembers = members.map(member => 
+        const updatedMembers = members.map(member =>
           member.id === formData.id ? { ...member, ...response.data } : member
         );
-        
+
         setMembers(updatedMembers);
         setFilteredMembers(updatedMembers);
-        
+
         // Update department counts
         updateDepartmentCounts(updatedMembers);
-        
+
         // Close the modal and reset the form
         setShowAddMemberModal(false);
         resetForm();
-        
+
         // Show success message
         alert('Team member updated successfully!');
       }
@@ -334,13 +334,13 @@ const Team = () => {
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    
-    const filtered = members.filter(member => 
+
+    const filtered = members.filter(member =>
       member.name.toLowerCase().includes(term) ||
       member.role.toLowerCase().includes(term) ||
       member.department.toLowerCase().includes(term)
     );
-    
+
     setFilteredMembers(filtered);
   };
 
@@ -378,7 +378,7 @@ const Team = () => {
           <h2>Team Members</h2>
           <p>Manage your team members and their permissions</p>
         </div>
-        <button 
+        <button
           className="add-member-btn"
           onClick={openAddMemberModal}
         >
@@ -396,24 +396,24 @@ const Team = () => {
             onChange={handleSearch}
           />
         </div>
-        
+
         <div className="filter-options">
           <div className="filter-group">
             <label>Status:</label>
             <div className="tab-buttons">
-              <button 
+              <button
                 className={activeTab === 'all' ? 'active' : ''}
                 onClick={() => handleTabChange('all')}
               >
                 All ({members.length})
               </button>
-              <button 
+              <button
                 className={activeTab === 'active' ? 'active' : ''}
                 onClick={() => handleTabChange('active')}
               >
                 Active ({members.filter(m => m.status === 'active').length})
               </button>
-              <button 
+              <button
                 className={activeTab === 'inactive' ? 'active' : ''}
                 onClick={() => handleTabChange('inactive')}
               >
@@ -421,7 +421,7 @@ const Team = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="filter-group">
             <label>Department:</label>
             <div className="dropdown">
@@ -462,21 +462,21 @@ const Team = () => {
                   </span>
                 </div>
                 <div className="member-actions">
-                  <button 
+                  <button
                     className="action-btn assign-btn"
                     onClick={() => openTaskModal(member)}
                     title="Assign Task"
                   >
                     <FiCheckSquare />
                   </button>
-                  <button 
+                  <button
                     className="action-btn edit-btn"
                     onClick={() => handleEditMember(member)}
                     title="Edit Member"
                   >
                     <FiEdit2 />
                   </button>
-                  <button 
+                  <button
                     className="action-btn delete-btn"
                     onClick={() => handleDeleteMember(member.id)}
                     title="Delete Member"
@@ -517,7 +517,7 @@ const Team = () => {
             </div>
             <form onSubmit={formData.id ? handleUpdateMember : handleAddMember}>
               {error && <div className="error-message">{error}</div>}
-              
+
               <div className="form-group">
                 <label>Full Name *</label>
                 <input
@@ -529,7 +529,7 @@ const Team = () => {
                   required
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Email Address *</label>
                 <input
@@ -541,7 +541,7 @@ const Team = () => {
                   required
                 />
               </div>
-              
+
               {!formData.id && (
                 <div className="form-group">
                   <label>Password *</label>
@@ -555,8 +555,8 @@ const Team = () => {
                       required={!formData.id}
                       minLength="6"
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="toggle-password"
                       onClick={() => setShowPassword(!showPassword)}
                     >
@@ -565,7 +565,7 @@ const Team = () => {
                   </div>
                 </div>
               )}
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <select
@@ -577,17 +577,15 @@ const Team = () => {
                     className="form-control"
                   >
                     <option value="">Select Role</option>
-                    <option value="Designer">UI/UX Designer</option>
-                    <option value="Frontend">Frontend Developer</option>
-                    <option value="Backend">Backend Developer</option>
-                    <option value="Fullstack">Full Stack Developer</option>
-                    <option value="Tester">QA Tester</option>
-                    <option value="Manager">Project Manager</option>
-                    <option value="Lead">Team Lead</option>
+                    <option value="Designer">Designer</option>
+                    <option value="Developer">Developer</option>
+                    <option value="Tester">Tester</option>
+                    <option value="Project Manager">Project Manager</option>
                     <option value="Admin">Admin</option>
+                    <option value="Client">Client</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Department *</label>
                   <select
@@ -604,7 +602,7 @@ const Team = () => {
                   </select>
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label>Phone Number</label>
                 <input
@@ -615,7 +613,7 @@ const Team = () => {
                   placeholder="Enter phone number"
                 />
               </div>
-              
+
               {formData.id && (
                 <div className="form-group">
                   <label>Status</label>
@@ -629,10 +627,10 @@ const Team = () => {
                   </select>
                 </div>
               )}
-              
+
               <div className="form-actions">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="cancel-btn"
                   onClick={() => {
                     setShowAddMemberModal(false);
@@ -641,8 +639,8 @@ const Team = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="submit-btn"
                   disabled={isSubmitting}
                 >
@@ -663,8 +661,8 @@ const Team = () => {
                 <h3>Assign New Task</h3>
                 <p className="modal-subtitle">Assigning to {selectedMember.name}</p>
               </div>
-              <button 
-                className="close-btn" 
+              <button
+                className="close-btn"
                 onClick={() => {
                   setShowTaskModal(false);
                   resetTaskForm();
@@ -674,7 +672,7 @@ const Team = () => {
                 &times;
               </button>
             </div>
-            
+
             <div className="modal-body">
               <form onSubmit={handleTaskSubmit}>
                 {error && (
@@ -683,7 +681,7 @@ const Team = () => {
                     {error}
                   </div>
                 )}
-                
+
                 <div className="form-group">
                   <label htmlFor="taskTitle">Task Title *</label>
                   <div className="input-with-icon">
@@ -700,7 +698,7 @@ const Team = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="taskDescription">Description</label>
                   <div className="input-with-icon">
@@ -715,7 +713,7 @@ const Team = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="dueDate">Due Date *</label>
@@ -732,7 +730,7 @@ const Team = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="taskPriority">Priority</label>
                     <div className="input-with-icon">
@@ -751,11 +749,11 @@ const Team = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="form-actions">
                   <div className="form-actions-left">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-text"
                       onClick={() => {
                         setShowTaskModal(false);
@@ -766,8 +764,8 @@ const Team = () => {
                     </button>
                   </div>
                   <div className="form-actions-right">
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-primary"
                       disabled={isSubmitting}
                     >

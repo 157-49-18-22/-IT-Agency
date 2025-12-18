@@ -150,16 +150,17 @@ const Task = () => {
     if (task) {
       setEditingId(task.id);
       setForm({
+        projectId: task.projectId || '',
         title: task.title,
         description: task.description || '',
         status: task.status,
         priority: task.priority,
-        assignee: task.assignee || '',
+        assignedTo: task.assignedTo || task.assignee || '',
         dueDate: task.dueDate || ''
       });
     } else {
       setEditingId(null);
-      setForm({ title: '', description: '', status: 'todo', priority: 'medium', assignee: '', dueDate: '' });
+      setForm({ projectId: '', title: '', description: '', status: 'todo', priority: 'medium', assignedTo: '', dueDate: '' });
     }
     setShowModal(true);
   };
@@ -337,8 +338,15 @@ const Task = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Title</label>
-                <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Task title" />
+                <label>Project *</label>
+                <select value={form.projectId || ''} onChange={e => setForm({ ...form, projectId: e.target.value })} required>
+                  <option value="">Select Project</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name || p.projectName}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Title *</label>
+                <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Task title" required />
               </div>
               <div className="form-group">
                 <label>Description</label>
@@ -363,7 +371,10 @@ const Task = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Assignee</label>
-                  <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Assignee name" />
+                  <select value={form.assignedTo || ''} onChange={e => setForm({ ...form, assignedTo: e.target.value })}>
+                    <option value="">Select Assignee</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Due Date</label>

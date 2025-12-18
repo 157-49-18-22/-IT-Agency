@@ -10,10 +10,10 @@ const NewProjects = () => {
   const { addProject } = useContext(ProjectContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     projectName: '',
-    clientName: '',
+    clientId: '',
     projectType: 'web',
     startDate: '',
     endDate: '',
@@ -26,26 +26,38 @@ const NewProjects = () => {
   });
 
   const [teamMembers, setTeamMembers] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch team members from API
+  // Fetch team members and clients from API
   useEffect(() => {
-    const fetchTeamMembers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await teamAPI.getAll();
-        if (response.data && response.data.data && response.data.data.members) {
-          setTeamMembers(response.data.data.members);
+        // Fetch team members
+        const teamResponse = await teamAPI.getAll();
+        if (teamResponse.data && teamResponse.data.data && teamResponse.data.data.members) {
+          setTeamMembers(teamResponse.data.data.members);
+        }
+
+        // Fetch clients
+        const { clientAPI } = await import('../services/api');
+        const clientsResponse = await clientAPI.getAll();
+        console.log('Clients response:', clientsResponse);
+        if (clientsResponse.data) {
+          const clientsData = clientsResponse.data.data || clientsResponse.data;
+          console.log('Clients data:', clientsData);
+          setClients(Array.isArray(clientsData) ? clientsData : []);
         }
       } catch (err) {
-        console.error('Error fetching team members:', err);
-        setError('Failed to load team members');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTeamMembers();
+    fetchData();
   }, []);
 
   const handleChange = (e) => {
@@ -68,13 +80,13 @@ const NewProjects = () => {
     setFormData(prev => {
       const updatedMembers = [...prev.teamMembers];
       const index = updatedMembers.findIndex(id => id === memberId);
-      
+
       if (index === -1) {
         updatedMembers.push(memberId);
       } else {
         updatedMembers.splice(index, 1);
       }
-      
+
       return {
         ...prev,
         teamMembers: updatedMembers
@@ -85,16 +97,16 @@ const NewProjects = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Get full member details including their departments
       const selectedMembers = formData.teamMembers.map(id => {
         const member = teamMembers.find(m => m.id === id);
         if (!member) return null;
-        
+
         // Ensure department is set, default to 'Development' if not specified
         const department = member.department || 'Development';
-        
+
         return {
           id: member.id,
           name: member.name,
@@ -104,7 +116,7 @@ const NewProjects = () => {
           status: member.status || 'active'
         };
       }).filter(Boolean); // Remove any undefined members
-      
+
       // Create the new project with team members and their departments
       const newProject = {
         ...formData,
@@ -112,12 +124,16 @@ const NewProjects = () => {
         // Extract unique departments from team members
         departments: [...new Set(selectedMembers.map(member => member.department))]
       };
-      
-      addProject(newProject);
-      
+
+      console.log('NewProjects - formData:', formData);
+      console.log('NewProjects - newProject being sent:', newProject);
+
+      // Save to database via API (now async)
+      await addProject(newProject);
+
       // Show success state
       setSubmitSuccess(true);
-      
+
       // Redirect after a short delay
       setTimeout(() => {
         navigate('/projects');
@@ -165,17 +181,22 @@ const NewProjects = () => {
             </div>
 
             <div className="form-group">
-              <label>Client Name *</label>
+              <label>Client *</label>
               <div className="input-with-icon">
                 <FaUserTie className="input-icon" />
-                <input
-                  type="text"
-                  name="clientName"
-                  value={formData.clientName}
+                <select
+                  name="clientId"
+                  value={formData.clientId}
                   onChange={handleChange}
-                  placeholder="Enter client name"
                   required
-                />
+                >
+                  <option value="">Select a client</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} {client.company ? `- ${client.company}` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -281,8 +302,8 @@ const NewProjects = () => {
           ) : (
             <div className="team-members-grid">
               {teamMembers.map(member => (
-                <div 
-                  key={member.id} 
+                <div
+                  key={member.id}
                   className={`team-member-card ${formData.teamMembers.includes(member.id) ? 'selected' : ''}`}
                   onClick={() => toggleTeamMember(member.id)}
                 >
@@ -331,7 +352,7 @@ const NewProjects = () => {
               />
             </label>
             <p className="file-upload-hint">Upload project documents, images, or other files (Max 10MB)</p>
-            
+
             {formData.attachments.length > 0 && (
               <div className="attachments-list">
                 {formData.attachments.map((file, index) => (
@@ -356,16 +377,16 @@ const NewProjects = () => {
         </div>
 
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="cancel-button" 
+          <button
+            type="button"
+            className="cancel-button"
             onClick={() => navigate('/projects')}
             disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`submit-button ${submitSuccess ? 'success' : ''}`}
             disabled={isSubmitting || submitSuccess}
           >

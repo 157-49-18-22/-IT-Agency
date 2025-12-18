@@ -26,7 +26,8 @@ const Prototypes = ({ projectId }) => {
   const fetchPrototypes = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/prototypes?projectId=${projectId}`);
+      const url = projectId ? `/api/prototypes?projectId=${projectId}` : '/api/prototypes';
+      const response = await axios.get(url);
       setPrototypes(response.data);
     } catch (err) {
       setError('Failed to load prototypes');
@@ -37,9 +38,7 @@ const Prototypes = ({ projectId }) => {
   };
 
   useEffect(() => {
-    if (projectId) {
-      fetchPrototypes();
-    }
+    fetchPrototypes();
   }, [projectId]);
 
   // Handle file selection
@@ -87,7 +86,7 @@ const Prototypes = ({ projectId }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!currentPrototype.title || (!currentPrototype.image && !currentPrototype.id && !currentPrototype.link)) {
       setError('Title and either image or link is required');
       return;
@@ -101,7 +100,7 @@ const Prototypes = ({ projectId }) => {
     formData.append('category', currentPrototype.category);
     formData.append('projectId', currentPrototype.projectId);
     formData.append('link', currentPrototype.link);
-    
+
     if (currentPrototype.image) {
       formData.append('image', currentPrototype.image);
     }
@@ -122,7 +121,7 @@ const Prototypes = ({ projectId }) => {
           },
         });
       }
-      
+
       setIsModalOpen(false);
       resetForm();
       fetchPrototypes();
@@ -208,7 +207,7 @@ const Prototypes = ({ projectId }) => {
           <h2>Prototypes</h2>
           <p>Manage and organize your project prototypes</p>
         </div>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => {
             resetForm();
@@ -253,13 +252,13 @@ const Prototypes = ({ projectId }) => {
               <div className="prototype-details">
                 <h3>{prototype.title}</h3>
                 {prototype.description && <p className="description">{prototype.description}</p>}
-                
+
                 <div className="prototype-meta">
                   <span className="version">v{prototype.version}</span>
                   {prototype.link && (
-                    <a 
-                      href={prototype.link} 
-                      target="_blank" 
+                    <a
+                      href={prototype.link}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="prototype-link"
                       onClick={(e) => e.stopPropagation()}
@@ -268,15 +267,15 @@ const Prototypes = ({ projectId }) => {
                     </a>
                   )}
                 </div>
-                
+
                 <div className="prototype-footer">
                   <div className="updated-info">
                     <FaCalendarAlt className="icon" />
                     <span>{formatDate(prototype.updatedAt)}</span>
                   </div>
                   <div className="prototype-actions">
-                    <button 
-                      className="btn-icon" 
+                    <button
+                      className="btn-icon"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEdit(prototype);
@@ -285,8 +284,8 @@ const Prototypes = ({ projectId }) => {
                     >
                       <FaEdit />
                     </button>
-                    <button 
-                      className="btn-icon danger" 
+                    <button
+                      className="btn-icon danger"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(prototype.id);
@@ -305,7 +304,7 @@ const Prototypes = ({ projectId }) => {
             <FaImage size={48} className="empty-icon" />
             <h3>No prototypes found</h3>
             <p>Create your first prototype to get started</p>
-            <button 
+            <button
               className="btn btn-primary"
               onClick={() => {
                 resetForm();
@@ -324,7 +323,7 @@ const Prototypes = ({ projectId }) => {
           <div className="modal">
             <div className="modal-header">
               <h3>{currentPrototype.id ? 'Edit' : 'Add New'} Prototype</h3>
-              <button 
+              <button
                 className="btn-icon close-btn"
                 onClick={() => {
                   setIsModalOpen(false);
@@ -334,7 +333,7 @@ const Prototypes = ({ projectId }) => {
                 <FaTimes />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Title *</label>

@@ -37,11 +37,12 @@ const Task = () => {
   const [sortBy, setSortBy] = useState('dueDate');
   const [sortOrder, setSortOrder] = useState('asc');
   const [newTask, setNewTask] = useState({
+    projectId: '',
     title: '',
     description: '',
     dueDate: '',
     priority: 'medium',
-    status: 'to_do',
+    status: 'todo',
     assignee: ''
   });
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -162,6 +163,7 @@ const Task = () => {
     try {
       setLoading(true);
       const taskData = {
+        projectId: newTask.projectId,
         title: newTask.title,
         description: newTask.description,
         dueDate: newTask.dueDate,
@@ -169,6 +171,10 @@ const Task = () => {
         status: newTask.status,
         assigneeId: 1 // This should be replaced with actual assignee ID from your user management
       };
+
+      console.log('Creating task with data:', taskData);
+      console.log('Status value:', taskData.status);
+      console.log('Status type:', typeof taskData.status);
 
       const createdTask = await createTask(taskData);
 
@@ -187,11 +193,12 @@ const Task = () => {
 
       setTasks(prev => [transformedTask, ...prev]);
       setNewTask({
+        projectId: '',
         title: '',
         description: '',
         dueDate: '',
         priority: 'medium',
-        status: 'to_do',
+        status: 'todo',
         assignee: ''
       });
       setIsAddingTask(false);
@@ -291,7 +298,7 @@ const Task = () => {
         description: '',
         dueDate: '',
         priority: 'medium',
-        status: 'to_do',
+        status: 'todo',
         assignee: ''
       });
     } catch (error) {
@@ -310,7 +317,7 @@ const Task = () => {
       description: '',
       dueDate: '',
       priority: 'medium',
-      status: 'to_do',
+      status: 'todo',
       assignee: ''
     });
   };
@@ -491,6 +498,21 @@ const Task = () => {
             />
           </div>
           <div className="form-group">
+            <label>Project *</label>
+            <input
+              type="text"
+              name="projectId"
+              placeholder="Enter Project ID (e.g., 1)"
+              value={newTask.projectId || ''}
+              onChange={handleInputChange}
+              className="form-control"
+              required
+            />
+            <small style={{ color: '#666', fontSize: '12px' }}>
+              Temporary: Enter your project ID. Go to Projects page to find it.
+            </small>
+          </div>
+          <div className="form-group">
             <textarea
               name="description"
               placeholder="Task description (optional)"
@@ -532,9 +554,10 @@ const Task = () => {
                 onChange={handleInputChange}
                 className="form-control"
               >
-                <option value="to_do">To Do</option>
+                <option value="todo">To Do</option>
                 <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
+                <option value="in_review">In Review</option>
+                <option value="done">Done</option>
               </select>
             </div>
             <div className="form-group">

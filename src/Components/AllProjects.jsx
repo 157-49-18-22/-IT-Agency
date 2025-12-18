@@ -28,10 +28,33 @@ const AllProjects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
+      console.log('Fetching projects...');
       const response = await projectsAPI.getProjects();
-      setProjects(response.data || []);
+      console.log('API Response:', response);
+      console.log('Response data:', response.data);
+
+      // Handle different response structures
+      let projectsData = [];
+      if (response.data) {
+        // If data is directly an array
+        if (Array.isArray(response.data)) {
+          projectsData = response.data;
+        }
+        // If data is nested in a 'data' or 'projects' property
+        else if (response.data.data) {
+          projectsData = response.data.data;
+        }
+        else if (response.data.projects) {
+          projectsData = response.data.projects;
+        }
+      }
+
+      console.log('Processed projects:', projectsData);
+      setProjects(projectsData);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      console.error('Error details:', error.response);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -110,6 +133,7 @@ const AllProjects = () => {
   };
 
   const getPhaseBadge = (phase) => {
+    if (!phase) return <span className="phase-badge">N/A</span>;
     return <span className={`phase-badge ${phase.toLowerCase().replace(/\s+/g, '-')}`}>{phase}</span>;
   };
 
@@ -213,7 +237,9 @@ const AllProjects = () => {
 
               <div className="project-client">
                 <span className="label">Client:</span>
-                <span className="value">{project.client}</span>
+                <span className="value">
+                  {typeof project.client === 'object' ? project.client?.name || project.client?.company || 'N/A' : project.client || 'N/A'}
+                </span>
               </div>
 
               <div className="project-phase">
@@ -252,11 +278,11 @@ const AllProjects = () => {
 
               <div className="project-footer">
                 <div className="team-avatars">
-                  {project.team.map((member, index) => (
+                  {(project.team && Array.isArray(project.team)) ? project.team.map((member, index) => (
                     <div key={index} className="team-avatar">
                       {member}
                     </div>
-                  ))}
+                  )) : <span>No team assigned</span>}
                 </div>
                 <div className="days-left">
                   {calculateDaysLeft(project.endDate)}

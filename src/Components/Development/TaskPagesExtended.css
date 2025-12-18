@@ -1,0 +1,357 @@
+/* Additional styles for new components */
+
+/* Environment Setup */
+.setup-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.setup-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setup-step {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border-left: 4px solid #e0e0e0;
+}
+
+.setup-step.completed {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.setup-step:hover {
+    transform: translateX(4px);
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.setup-step.completed .step-number {
+    background: #28a745;
+}
+
+.step-info {
+    flex: 1;
+}
+
+.step-info h3 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.step-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.step-check {
+    color: #28a745;
+    font-size: 1.5rem;
+}
+
+.step-command {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+.step-command svg {
+    color: #667eea;
+}
+
+.step-command code {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.setup-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.info-card h3 svg {
+    color: #667eea;
+}
+
+.info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-card li {
+    padding: 0.5rem 0;
+    color: #666;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-card li:last-child {
+    border-bottom: none;
+}
+
+.info-card p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+/* Submission Checklist */
+.checklist-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.progress-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.progress-section h3 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.progress-bar-large {
+    height: 30px;
+    background: #f0f0f0;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+    color: white;
+    font-weight: bold;
+}
+
+.progress-text {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.checklist-item:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.checklist-item.completed {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.checkbox {
+    font-size: 1.5rem;
+    color: #667eea;
+    flex-shrink: 0;
+}
+
+.checklist-item.completed .checkbox {
+    color: #28a745;
+}
+
+.item-text {
+    flex: 1;
+    color: #333;
+    font-size: 1rem;
+}
+
+.checklist-item.completed .item-text {
+    color: #155724;
+    font-weight: 500;
+}
+
+.checklist-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+}
+
+.checklist-actions .action-btn {
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+}
+
+.checklist-actions .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Coming Soon */
+.coming-soon-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+}
+
+.coming-soon-card {
+    background: white;
+    border-radius: 20px;
+    padding: 4rem 3rem;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+}
+
+.coming-soon-icon {
+    color: #667eea;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+}
+
+.coming-soon-card h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.coming-soon-card>p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.planned-features {
+    text-align: left;
+    margin: 2rem 0;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.planned-features h3 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.planned-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.planned-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    color: #666;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.planned-features li:last-child {
+    border-bottom: none;
+}
+
+.planned-features svg {
+    color: #667eea;
+    flex-shrink: 0;
+}
+
+.progress-indicator {
+    margin-top: 2rem;
+}
+
+.progress-indicator .progress-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-indicator span {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Responsive for new components */
+@media (max-width: 768px) {
+    .setup-content {
+        grid-template-columns: 1fr;
+    }
+
+    .coming-soon-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .coming-soon-card h2 {
+        font-size: 1.8rem;
+    }
+}

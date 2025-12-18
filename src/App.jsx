@@ -31,12 +31,25 @@ import Code from './Components/Development/Code';
 import Deployment from './Components/Development/Deployment';
 import DevelopmentTask from './Components/Development/Task';
 import Version from './Components/Development/Version';
+import Sprints from './Components/Development/Sprints';
+import Backlog from './Components/Development/Backlog';
+import ApprovedDesigns from './Components/Development/ApprovedDesigns';
+import BugFixes from './Components/Development/BugFixes';
+import AssignedTasks from './Components/Development/AssignedTasks';
+import InProgressTasks from './Components/Development/InProgressTasks';
+import CompletedTasks from './Components/Development/CompletedTasks';
+import Blockers from './Components/Development/Blockers';
+import EnvironmentSetup from './Components/Development/EnvironmentSetup';
+import SubmissionChecklist from './Components/Development/SubmissionChecklist';
 
 // Import Testing Components
 import Bug from './Components/Testing/Bug';
 import Cases from './Components/Testing/Cases';
 import Performance from './Components/Testing/Performance';
 import Uat from './Components/Testing/Uat';
+import TestingDashboard from './Components/Testing/TestingDashboard';
+import PerformanceTesting from './Components/Testing/PerformanceTesting';
+import SecurityTesting from './Components/Testing/SecurityTesting';
 
 // Import Team Component
 import Team from './Components/Team';
@@ -59,8 +72,6 @@ import Notifications from './Components/Notifications';
 import DepartmentProjects from './Components/DepartmentProjects';
 
 // Import NEW Components
-import Backlog from './Components/Development/Backlog';
-import Sprints from './Components/Development/Sprints';
 import StageTransition from './Components/StageManagement/StageTransition';
 import ClientDashboard from './Components/ClientPortal/ClientDashboard';
 import ClientApprovals from './Components/ClientPortal/ClientApprovals';
@@ -105,14 +116,9 @@ const ProtectedRoute = () => {
     Layout = Testing;
   }
 
-  return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflow: 'hidden' }}>
-      <Layout />
-      <main className="main-content">
-        <Outlet />
-      </main>
-    </div>
-  );
+  // DeveloperLayout, UILayout, and Testing already have <Outlet /> inside them
+  // So we just render the Layout component
+  return <Layout />;
 };
 
 // Main App Routes
@@ -165,24 +171,63 @@ const AppRoutes = () => {
 
         {/* Developer specific routes */}
         {isDeveloper && (
-          <Route path="/development">
-            <Route index element={<Navigate to="code" replace />} />
-            <Route path="backlog" element={<Backlog />} />
-            <Route path="sprints" element={<Sprints />} />
-            <Route path="code" element={<Code />} />
-            <Route path="deployment" element={<Deployment />} />
-            <Route path="task" element={<Task />} />
-            <Route path="version" element={<Version />} />
-          </Route>
+          <>
+            {/* Task Management Routes */}
+            <Route path="/tasks/assigned" element={<AssignedTasks />} />
+            <Route path="/tasks/in-progress" element={<InProgressTasks />} />
+            <Route path="/tasks/completed" element={<CompletedTasks />} />
+            <Route path="/tasks/design-files" element={<ApprovedDesigns />} />
+            <Route path="/tasks/environment-setup" element={<EnvironmentSetup />} />
+            <Route path="/tasks/blockers" element={<Blockers />} />
+
+            {/* Development Routes */}
+            <Route path="/development">
+              <Route index element={<Navigate to="code" replace />} />
+              <Route path="code" element={<Code />} />
+              <Route path="coding-standards" element={<div>Coding Standards</div>} />
+              <Route path="apis" element={<div>API Endpoints</div>} />
+              <Route path="database" element={<div>Database</div>} />
+              <Route path="integrations" element={<div>Integrations</div>} />
+              <Route path="testing" element={<div>Testing</div>} />
+              <Route path="self-testing" element={<div>Self Testing</div>} />
+              <Route path="sprints" element={<Sprints />} />
+              <Route path="bug-fixes" element={<BugFixes />} />
+              <Route path="backlog" element={<Backlog />} />
+              <Route path="deployment" element={<Deployment />} />
+              <Route path="task" element={<Task />} />
+              <Route path="version" element={<Version />} />
+            </Route>
+
+            {/* Deliverables Routes */}
+            <Route path="/deliverables/checklist" element={<SubmissionChecklist />} />
+            <Route path="/deliverables/code-review" element={<div>Code Review</div>} />
+            <Route path="/deliverables/peer-review" element={<div>Peer Review</div>} />
+            <Route path="/deliverables/history" element={<div>Version History</div>} />
+            <Route path="/deliverables/feedback" element={<div>Review Feedback</div>} />
+
+            {/* Time Tracking Routes */}
+            <Route path="/time-logs" element={<div>Time Logs</div>} />
+
+            {/* Collaboration Routes */}
+            <Route path="/collaboration/standup" element={<div>Daily Standup</div>} />
+            <Route path="/collaboration/code-reviews" element={<div>Code Reviews</div>} />
+            <Route path="/collaboration/discussions" element={<div>Discussions</div>} />
+            <Route path="/collaboration/documentation" element={<div>Documentation</div>} />
+
+            {/* Calendar */}
+            <Route path="/calendar" element={<div>Calendar</div>} />
+          </>
         )}
 
         {/* Tester specific routes */}
         {isTester && (
           <Route path="/testing">
-            <Route index element={<Navigate to="bug" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<TestingDashboard />} />
             <Route path="bug" element={<Bug />} />
             <Route path="cases" element={<Cases />} />
-            <Route path="performance" element={<Performance />} />
+            <Route path="performance" element={<PerformanceTesting />} />
+            <Route path="security" element={<SecurityTesting />} />
             <Route path="uat" element={<Uat />} />
           </Route>
         )}
