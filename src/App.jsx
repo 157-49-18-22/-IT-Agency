@@ -51,6 +51,17 @@ import TestingDashboard from './Components/Testing/TestingDashboard';
 import PerformanceTesting from './Components/Testing/PerformanceTesting';
 import SecurityTesting from './Components/Testing/SecurityTesting';
 
+// Import Client Portal Components
+import ClientLayout from './Components/Client/ClientLayout';
+import ClientDashboard from './Components/Client/ClientDashboard';
+import ProjectProgress from './Components/Client/ProjectProgress';
+import UIUXMonitoring from './Components/Client/UIUXMonitoring';
+import DevelopmentMonitoring from './Components/Client/DevelopmentMonitoring';
+import TestingMonitoring from './Components/Client/TestingMonitoring';
+import DeliverablesView from './Components/Client/DeliverablesView';
+import FeedbackApproval from './Components/Client/FeedbackApproval';
+import MessagesCenter from './Components/Client/MessagesCenter';
+
 // Import Team Component
 import Team from './Components/Team';
 // Import standalone Tasks page
@@ -60,7 +71,7 @@ import TaskManagement from './Components/UIUX/TaskManagement';
 import Calendar from './Components/Calendar';
 import Tracking from './Components/Tracking';
 // Import Report Components
-import ProjectProgress from './Components/Reports/ProjectProgress';
+import ReportsProjectProgress from './Components/Reports/ProjectProgress';
 import TeamPerformance from './Components/Reports/TeamPerformance';
 import Finacial from './Components/Reports/Finacial';
 import Custom from './Components/Reports/Custom';
@@ -73,7 +84,6 @@ import DepartmentProjects from './Components/DepartmentProjects';
 
 // Import NEW Components
 import StageTransition from './Components/StageManagement/StageTransition';
-import ClientDashboard from './Components/ClientPortal/ClientDashboard';
 import ClientApprovals from './Components/ClientPortal/ClientApprovals';
 
 // Import ENHANCED Components (New Features)
@@ -249,6 +259,22 @@ const AppRoutes = () => {
             <Route path="/tasks/:projectId" element={<TaskManagement />} />
             <Route path="/team" element={<Team />} />
           </>
+        )}
+
+        {/* Client routes */}
+        {currentUser?.role === 'client' && (
+          <Route path="/client" element={<ClientLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="progress" element={<ProjectProgress />} />
+            <Route path="uiux-monitoring" element={<UIUXMonitoring />} />
+            <Route path="development-monitoring" element={<DevelopmentMonitoring />} />
+            <Route path="testing-monitoring" element={<TestingMonitoring />} />
+            <Route path="deliverables" element={<DeliverablesView />} />
+            <Route path="feedback" element={<FeedbackApproval />} />
+            <Route path="messages" element={<MessagesCenter />} />
+            <Route path="notifications" element={<div>Notifications - Coming Soon</div>} />
+          </Route>
         )}
 
         {/* Admin only routes */}

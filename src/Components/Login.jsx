@@ -15,7 +15,7 @@ const Login = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [loginError, setLoginError] = useState('');
-  
+
   const navigate = useNavigate();
 
   // No auto-redirect here - let ProtectedRoute handle it
@@ -47,7 +47,7 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (formErrors[name] || loginError) {
       setFormErrors(prev => ({
@@ -61,38 +61,54 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
-    
+
     if (Object.keys(errors).length === 0) {
       setIsLoading(true);
       setLoginError('');
       setFormErrors({});
-      
+
       try {
         // Call the login API
         const response = await authAPI.login({
           email: formData.email.trim(),
           password: formData.password
         });
-        
+
         console.log('Login API response:', response);
-        
+
         if (response.data && response.data.user) {
           // Store token in localStorage if it exists
           if (response.data.token) {
             localStorage.setItem('token', response.data.token);
           }
-          
+
           // Call the login function from AuthContext with complete user data
           const loginSuccess = await login({
             ...response.data.user,
             id: response.data.user.id || Date.now().toString(),
             role: response.data.user.role || 'user'
           });
-          
+
           if (loginSuccess) {
-            console.log('Login successful, redirecting to dashboard');
+            console.log('Login successful, redirecting based on role');
+
+            // Role-based redirect
+            const userRole = (response.data.user.role || '').toLowerCase();
+            let redirectPath = '/dashboard'; // default
+
+            if (userRole === 'developer') {
+              redirectPath = '/developer/tasks';
+            } else if (userRole === 'ui/ux' || userRole === 'designer') {
+              redirectPath = '/design/wireframes';
+            } else if (userRole === 'tester') {
+              redirectPath = '/testing/dashboard';
+            } else if (userRole === 'client') {
+              redirectPath = '/client/dashboard';
+            }
+
+            console.log('Redirecting to:', redirectPath);
             // Force a full page reload to ensure all state is properly initialized
-            window.location.href = '/dashboard';
+            window.location.href = redirectPath;
           } else {
             throw new Error('Failed to initialize user session');
           }
@@ -127,28 +143,28 @@ const Login = () => {
             </div>
           )}
         </div>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <div className="input-field">
               <span className="input-icon">
                 <FaUser />
               </span>
-             <input
-  type="email"
-  id="email"
-  name="email"
-  value={formData.email}
-  onChange={handleChange}
-  placeholder="Enter your email"
-  className="login-input"
-  style={{ border: "none" }}
-/>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                className="login-input"
+                style={{ border: "none" }}
+              />
 
             </div>
             {formErrors.email && <span className="error-message">{formErrors.email}</span>}
           </div>
-          
+
           <div className="form-group">
             <div className="input-field">
               <span className="input-icon">
@@ -162,10 +178,10 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="Enter your password"
                 className="login-input"
-                  style={{ border: "none" }}
+                style={{ border: "none" }}
               />
-             
-              <span 
+
+              <span
                 className="password-toggle"
                 onClick={(e) => {
                   e.preventDefault();
@@ -190,8 +206,8 @@ const Login = () => {
             </a>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`login-button ${isLoading ? 'loading' : ''}`}
             disabled={isLoading}
           >
@@ -199,13 +215,13 @@ const Login = () => {
               Sign In <FaArrowRight style={{ marginLeft: '8px' }} />
             </span>
           </button>
-          
-         
-               
-           
+
+
+
+
         </form>
 
-      
+
       </div>
     </div>
   );
