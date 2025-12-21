@@ -292,6 +292,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               </div>
               {expandedSections.myProjects && (
                 <ul className="submenu">
+                  <li className={isActive('/projects/approved')}>
+                    <Link to="/projects/approved">
+                      <FaCheckCircle className="submenu-icon" />
+                      <span>Approved Projects</span>
+                    </Link>
+                  </li>
                   {myProjects.length > 0 ? (
                     myProjects.map(project => (
                       <li key={project.id} className={isActive(`/projects/${project.id}`)}>
@@ -563,76 +569,78 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
       </div>
 
       <main className="main-content">
-        {/* Progress Overview Card */}
-        <div className="progress-overview">
-          <div className="progress-card">
-            <h3>Project Progress</h3>
-            <div className="progress-bar-container">
-              <div
-                className="progress-bar"
-                style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}
-              ></div>
-            </div>
-            <div className="progress-stats">
-              <span>{progressData.tasksCompleted}/{progressData.totalTasks} tasks</span>
-              <span>{Math.round((progressData.tasksCompleted / progressData.totalTasks) * 100)}% complete</span>
-            </div>
+        {/* Progress Overview Card - Only show on Dashboard */}
+        {location.pathname === '/dashboard' && (
+          <div className="progress-overview">
+            <div className="progress-card">
+              <h3>Project Progress</h3>
+              <div className="progress-bar-container">
+                <div
+                  className="progress-bar"
+                  style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}
+                ></div>
+              </div>
+              <div className="progress-stats">
+                <span>{progressData.tasksCompleted}/{progressData.totalTasks} tasks</span>
+                <span>{Math.round((progressData.tasksCompleted / progressData.totalTasks) * 100)}% complete</span>
+              </div>
 
-            <div className="progress-chart">
-              <Line
-                data={{
-                  labels: progressData.labels,
-                  datasets: [
-                    {
-                      label: 'Progress',
-                      data: progressData.progressHistory,
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                      tension: 0.4,
-                      fill: true
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      max: 100,
-                      ticks: {
-                        callback: function (value) {
-                          return value + '%';
+              <div className="progress-chart">
+                <Line
+                  data={{
+                    labels: progressData.labels,
+                    datasets: [
+                      {
+                        label: 'Progress',
+                        data: progressData.progressHistory,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                      }
+                    ]
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        display: false
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                          callback: function (value) {
+                            return value + '%';
+                          }
                         }
                       }
                     }
-                  }
-                }}
-              />
-            </div>
+                  }}
+                />
+              </div>
 
-            <div className="progress-metrics">
-              <div className="metric">
-                <span className="metric-label">Code Coverage</span>
-                <span className="metric-value">{progressData.codeCoverage}%</span>
-              </div>
-              <div className="metric">
-                <span className="metric-label">Bugs Fixed</span>
-                <span className="metric-value">{progressData.bugsFixed}/{progressData.totalBugs}</span>
-              </div>
-              <div className="metric">
-                <span className="metric-label">Time Logged</span>
-                <span className="metric-value">
-                  {Math.round(timeLogs.reduce((total, log) => total + log.duration, 0) / 3600000)}h
-                </span>
+              <div className="progress-metrics">
+                <div className="metric">
+                  <span className="metric-label">Code Coverage</span>
+                  <span className="metric-value">{progressData.codeCoverage}%</span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">Bugs Fixed</span>
+                  <span className="metric-value">{progressData.bugsFixed}/{progressData.totalBugs}</span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">Time Logged</span>
+                  <span className="metric-value">
+                    {Math.round(timeLogs.reduce((total, log) => total + log.duration, 0) / 3600000)}h
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         <Outlet />
       </main>

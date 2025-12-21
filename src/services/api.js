@@ -324,9 +324,12 @@ export const calendarAPI = {
 
 // Approval APIs (legacy)
 export const approvalAPI = {
+  getAll: () => api.get('/approvals'),
   getApprovals: (params) => api.get('/approvals', { params }),
   getApproval: (id) => api.get(`/approvals/${id}`),
   createApproval: (data) => api.post('/approvals', data),
+  approve: (id, data) => api.put(`/approvals/${id}/approve`, data),
+  reject: (id, data) => api.put(`/approvals/${id}/reject`, data),
   respondToApproval: (id, data) => api.put(`/approvals/${id}/respond`, data)
 };
 

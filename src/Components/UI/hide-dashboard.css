@@ -1,0 +1,31 @@
+/* ============================================
+   HIDE DASHBOARD ELEMENTS ON DESIGN PAGES
+   ============================================ */
+
+/* Hide content-header (breadcrumbs + dashboard cards) on design pages */
+.wireframes-container,
+.mockups-container,
+.prototypes-container {
+    /* Mark these containers so we can target parent elements */
+}
+
+/* When wireframes/mockups/prototypes containers exist, hide dashboard elements */
+.main-content:has(.wireframes-container) .content-header,
+.main-content:has(.mockups-container) .content-header,
+.main-content:has(.prototypes-container) .content-header {
+    display: none !important;
+}
+
+/* Hide dashboard sections on design pages */
+.main-content:has(.wireframes-container) .dashboard-section,
+.main-content:has(.mockups-container) .dashboard-section,
+.main-content:has(.prototypes-container) .dashboard-section {
+    display: none !important;
+}
+
+/* Hide header actions on design pages */
+.main-content:has(.wireframes-container) .header-actions,
+.main-content:has(.mockups-container) .header-actions,
+.main-content:has(.prototypes-container) .header-actions {
+    display: none !important;
+}

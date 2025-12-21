@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV } from 'react-icons/fa';
+import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV, FaLink } from 'react-icons/fa';
 import axios from 'axios';
 import './Prototypes.css';
 
-const Prototypes = ({ projectId }) => {
+const Prototypes = () => {
   const [prototypes, setPrototypes] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,18 +18,25 @@ const Prototypes = ({ projectId }) => {
     version: '1.0',
     status: 'draft',
     category: 'web',
-    projectId: projectId,
+    projectId: '',
     link: ''
   });
   const [preview, setPreview] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch prototypes from API
   const fetchPrototypes = async () => {
     try {
       setIsLoading(true);
-      const url = projectId ? `/api/prototypes?projectId=${projectId}` : '/api/prototypes';
-      const response = await axios.get(url);
-      setPrototypes(response.data);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/prototypes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const prototypesData = response.data?.data || [];
+      setPrototypes(prototypesData);
     } catch (err) {
       setError('Failed to load prototypes');
       console.error('Error fetching prototypes:', err);
@@ -37,9 +45,27 @@ const Prototypes = ({ projectId }) => {
     }
   };
 
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const projectsData = response.data?.data || [];
+      setProjects(projectsData);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    }
+  };
+
   useEffect(() => {
     fetchPrototypes();
-  }, [projectId]);
+    fetchProjects();
+  }, []);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -76,7 +102,7 @@ const Prototypes = ({ projectId }) => {
       version: '1.0',
       status: 'draft',
       category: 'web',
-      projectId: projectId,
+      projectId: '',
       link: ''
     });
     setPreview('');
@@ -86,48 +112,69 @@ const Prototypes = ({ projectId }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submission started');
+    console.log('Current Prototype State:', currentPrototype);
 
-    if (!currentPrototype.title || (!currentPrototype.image && !currentPrototype.id && !currentPrototype.link)) {
-      setError('Title and either image or link is required');
+    if (!currentPrototype.title) {
+      setError('Title is required');
       return;
     }
 
+    if (!currentPrototype.projectId) {
+      setError('Project selection is required');
+      return;
+    }
+
+    /* 
+    if (!currentPrototype.image && !currentPrototype.id && !currentPrototype.link) {
+      setError('Either an image or a link is required for a new prototype');
+      return;
+    }
+    */
+
     const formData = new FormData();
     formData.append('title', currentPrototype.title);
-    formData.append('description', currentPrototype.description);
-    formData.append('version', currentPrototype.version);
-    formData.append('status', currentPrototype.status);
-    formData.append('category', currentPrototype.category);
+    formData.append('description', currentPrototype.description || '');
+    formData.append('version', currentPrototype.version || '1.0');
+    formData.append('status', currentPrototype.status || 'draft');
+    formData.append('category', currentPrototype.category || 'web');
     formData.append('projectId', currentPrototype.projectId);
-    formData.append('link', currentPrototype.link);
+    formData.append('link', currentPrototype.link || '');
 
     if (currentPrototype.image) {
       formData.append('image', currentPrototype.image);
     }
 
+    console.log('Validation passed, sending request...');
     try {
+      setIsSubmitting(true);
+      setError('');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
+      };
+
       if (currentPrototype.id) {
         // Update existing prototype
-        await axios.put(`/api/prototypes/${currentPrototype.id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        console.log('Updating prototype:', currentPrototype.id);
+        await axios.put(`/api/prototypes/${currentPrototype.id}`, formData, config);
       } else {
         // Create new prototype
-        await axios.post('/api/prototypes', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        console.log('Creating new prototype');
+        await axios.post('/api/prototypes', formData, config);
       }
 
       setIsModalOpen(false);
       resetForm();
       fetchPrototypes();
     } catch (err) {
-      setError('Failed to save prototype');
+      setError(err.response?.data?.error || 'Failed to save prototype');
       console.error('Error saving prototype:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -335,6 +382,8 @@ const Prototypes = ({ projectId }) => {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {error && <div className="error-message">{error}</div>}
+
               <div className="form-group">
                 <label>Title *</label>
                 <input
@@ -356,6 +405,23 @@ const Prototypes = ({ projectId }) => {
                   placeholder="Enter prototype description"
                   rows="3"
                 ></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Project *</label>
+                <select
+                  name="projectId"
+                  value={currentPrototype.projectId}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select a project</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-row">
@@ -443,8 +509,12 @@ const Prototypes = ({ projectId }) => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {currentPrototype.id ? 'Update' : 'Create'} Prototype
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : (currentPrototype.id ? 'Update' : 'Create') + ' Prototype'}
                 </button>
               </div>
             </form>

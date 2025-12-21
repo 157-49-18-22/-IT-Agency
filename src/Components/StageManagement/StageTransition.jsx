@@ -69,6 +69,7 @@ const StageTransition = () => {
       await stageTransitionsAPI.transitionStage(projectId, {
         fromStageId: currentStage.id,
         toStageId: nextStage.id,
+        toStage: nextStage.stageName,
         notes: transitionNotes
       });
 

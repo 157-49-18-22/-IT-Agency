@@ -75,6 +75,7 @@ import {
   FaEnvelope,
   FaUserFriends,
   FaClipboardCheck,
+  FaFolderOpen,
   FaFilePdf,
   FaFileWord,
   FaFileImage as FaImageFile,
@@ -879,6 +880,19 @@ const UILayout = ({ projectId, onComplete }) => {
               <Link to="/design/prototypes">
                 <FaMobileAlt className="nav-icon" />
                 <span>Prototypes</span>
+              </Link>
+            </li>
+
+            <li className={isActive('/files')}>
+              <Link to="/files">
+                <FaFolderOpen className="nav-icon" />
+                <span>Deliverables</span>
+              </Link>
+            </li>
+            <li className={isActive('/approvals')}>
+              <Link to="/approvals">
+                <FaClipboardCheck className="nav-icon" />
+                <span>Client Approval</span>
               </Link>
             </li>
 

@@ -12,6 +12,7 @@ const Mockups = () => {
   const navigate = useNavigate();
   // Ensure mockups is always an array
   const [mockups, setMockups] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -21,7 +22,7 @@ const Mockups = () => {
     title: '',
     description: '',
     category: 'Web App',
-    projectId: 1, // Default or get from URL/context
+    projectId: '',
     image: null
   });
   const [uploading, setUploading] = useState(false);
@@ -32,16 +33,16 @@ const Mockups = () => {
     try {
       const token = localStorage.getItem('token');
       console.log('Fetching mockups with token:', token ? 'Token exists' : 'No token');
-      
+
       const response = await axios.get(`${API_URL}/mockups`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('API Response:', response.data);
-      
+
       // Handle different response formats
       let mockupsData = [];
       if (Array.isArray(response.data)) {
@@ -51,7 +52,7 @@ const Mockups = () => {
       } else if (response.data && response.data.mockups) {
         mockupsData = response.data.mockups;
       }
-      
+
       console.log('Processed mockups:', mockupsData);
       setMockups(mockupsData);
       return mockupsData;
@@ -69,17 +70,35 @@ const Mockups = () => {
     }
   }, []);
 
+  // Fetch projects from API
+  const fetchProjects = React.useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/projects`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const projectsData = response.data?.data || [];
+      setProjects(projectsData);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     fetchMockups();
-  }, [fetchMockups]);
+    fetchProjects();
+  }, [fetchMockups, fetchProjects]);
 
   // Memoize filtered and sorted mockups
   const filteredMockups = useMemo(() => {
     return mockups
       .filter(mockup => {
         const matchesSearch = mockup.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           mockup.description?.toLowerCase().includes(searchTerm.toLowerCase());
+          mockup.description?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = categoryFilter === 'all' || mockup.category === categoryFilter;
         return matchesSearch && matchesCategory;
       })
@@ -94,7 +113,7 @@ const Mockups = () => {
   // Helper function to get status class
   const getStatusClass = (status) => {
     if (!status) return 'status-draft';
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'approved': return 'status-approved';
       case 'pending': return 'status-pending';
       case 'rejected': return 'status-rejected';
@@ -117,7 +136,7 @@ const Mockups = () => {
   // Helper function to get thumbnail based on category
   const getThumbnail = (category) => {
     if (!category) return '📋';
-    switch(category.toLowerCase()) {
+    switch (category.toLowerCase()) {
       case 'web app': return '🌐';
       case 'mobile': return '📱';
       case 'dashboard': return '📊';
@@ -157,7 +176,7 @@ const Mockups = () => {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setUploading(true);
-    
+
     const formDataToSend = new FormData();
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
@@ -175,7 +194,7 @@ const Mockups = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       toast.success('Mockup created successfully');
       setIsModalOpen(false);
       setFormData({
@@ -233,7 +252,7 @@ const Mockups = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="filter-group">
           <select
             value={categoryFilter}
@@ -246,7 +265,7 @@ const Mockups = () => {
             <option value="Marketing">Marketing</option>
           </select>
         </div>
-        
+
         <div className="sort-group">
           <select
             value={sortBy}
@@ -257,7 +276,7 @@ const Mockups = () => {
             <option value="status">Sort by: Status</option>
           </select>
         </div>
-        
+
         <button
           className="btn-primary"
           onClick={() => setIsModalOpen(true)}
@@ -284,8 +303,8 @@ const Mockups = () => {
               <div className="mockup-header">
                 <div className="mockup-thumbnail">
                   {mockup.image_url ? (
-                    <img 
-                      src={`http://localhost:5000${mockup.image_url}`} 
+                    <img
+                      src={`http://localhost:5000${mockup.image_url}`}
                       alt={mockup.title || 'Mockup'}
                       onError={(e) => {
                         const target = e.target;
@@ -331,8 +350,8 @@ const Mockups = () => {
       )}
       {/* Add Mockup Modal */}
       {isModalOpen && (
-        <div 
-          className="modal-overlay" 
+        <div
+          className="modal-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -355,7 +374,7 @@ const Mockups = () => {
             }
           }}
         >
-          <div 
+          <div
             className="modal-content"
             style={{
               background: 'white',
@@ -382,7 +401,7 @@ const Mockups = () => {
               alignItems: 'center'
             }}>
               <h3 style={{ margin: 0, fontSize: '18px', color: '#2d3748' }}>Add New Mockup</h3>
-              <button 
+              <button
                 className="close-btn"
                 onClick={() => setIsModalOpen(false)}
                 disabled={uploading}
@@ -412,7 +431,7 @@ const Mockups = () => {
                   disabled={uploading}
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="description">Description</label>
                 <textarea
@@ -424,7 +443,26 @@ const Mockups = () => {
                   disabled={uploading}
                 />
               </div>
-              
+
+              <div className="form-group">
+                <label htmlFor="projectId">Project *</label>
+                <select
+                  id="projectId"
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleChange}
+                  required
+                  disabled={uploading}
+                >
+                  <option value="">Select a project</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="category">Category *</label>
                 <select
@@ -441,7 +479,7 @@ const Mockups = () => {
                   <option value="Dashboard">Dashboard</option>
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="image">Mockup Image *</label>
                 <input
@@ -459,7 +497,7 @@ const Mockups = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="form-actions">
                 <button
                   type="button"

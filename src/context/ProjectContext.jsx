@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../context/AuthContext';
 
 export const ProjectContext = createContext();
 
@@ -47,7 +47,7 @@ export const ProjectProvider = ({ children }) => {
         clientId: typeof newProject.client === 'object' ? newProject.client.id : parseInt(newProject.clientId || newProject.client),
         status: newProject.status || 'Planning',
         priority: newProject.priority || 'Medium',
-        currentPhase: newProject.currentPhase || 'Planning',
+        currentPhase: newProject.currentPhase || 'UI/UX Design',
         startDate: newProject.startDate,
         endDate: newProject.endDate,
         budget: newProject.budget ? parseFloat(newProject.budget) : null,
@@ -121,7 +121,7 @@ export const ProjectProvider = ({ children }) => {
   const getProjectsByUser = (userId) => {
     if (!userId) return [];
     return projects.filter(project =>
-      project.teamMembers.some(member => member.id === userId)
+      project.teamMembers && project.teamMembers.some(member => member.id === userId)
     );
   };
 

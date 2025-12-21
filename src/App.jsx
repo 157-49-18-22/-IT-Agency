@@ -24,6 +24,7 @@ import Design from './Components/UI/Design';
 import Wireframes from './Components/UI/Wireframes';
 import Mockups from './Components/UI/Mockups';
 import Prototypes from './Components/UI/Prototypes';
+import DesignDeliverables from './Components/UI/DesignDeliverables';
 import Client from './Components/UI/Client';
 
 // Import Development Components
@@ -41,6 +42,7 @@ import CompletedTasks from './Components/Development/CompletedTasks';
 import Blockers from './Components/Development/Blockers';
 import EnvironmentSetup from './Components/Development/EnvironmentSetup';
 import SubmissionChecklist from './Components/Development/SubmissionChecklist';
+import ApprovedProjects from './Components/Development/ApprovedProjects';
 
 // Import Testing Components
 import Bug from './Components/Testing/Bug';
@@ -178,6 +180,7 @@ const AppRoutes = () => {
 
         {/* Client Portal */}
         <Route path="/client/dashboard" element={<ClientDashboard />} />
+        <Route path="/client/approvals" element={<ClientApprovals />} />
 
         {/* Developer specific routes */}
         {isDeveloper && (
@@ -189,6 +192,7 @@ const AppRoutes = () => {
             <Route path="/tasks/design-files" element={<ApprovedDesigns />} />
             <Route path="/tasks/environment-setup" element={<EnvironmentSetup />} />
             <Route path="/tasks/blockers" element={<Blockers />} />
+            <Route path="/projects/approved" element={<ApprovedProjects />} />
 
             {/* Development Routes */}
             <Route path="/development">
@@ -255,6 +259,8 @@ const AppRoutes = () => {
               <Route path="design-system" element={<div>Design System - Work in Progress</div>} />
               <Route path="client-approval" element={<div>Client Approval - Work in Progress</div>} />
             </Route>
+            <Route path="/files" element={<DesignDeliverables />} />
+            <Route path="/approvals" element={<Approvals />} />
             <Route path="/tasks" element={<TaskManagement />} />
             <Route path="/tasks/:projectId" element={<TaskManagement />} />
             <Route path="/team" element={<Team />} />

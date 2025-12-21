@@ -5,6 +5,15 @@
   padding: 24px;
 }
 
+/* Hide UILayout dashboard elements when on Wireframes page */
+.wireframes-container~.content-header .dashboard-cards,
+.wireframes-container~.dashboard-section,
+body:has(.wireframes-container) .dashboard-cards,
+body:has(.wireframes-container) .dashboard-section,
+body:has(.wireframes-container) .top-bar .page-title h1 {
+  display: none !important;
+}
+
 /* Header Styles */
 .wireframes-header {
   display: flex;
@@ -286,13 +295,13 @@
   .wireframes-toolbar {
     flex-direction: column;
   }
-  
+
   .search-box,
   .filter-group,
   .sort-group {
     width: 100%;
   }
-  
+
   .wireframes-grid {
     grid-template-columns: 1fr;
   }
@@ -300,8 +309,15 @@
 
 /* Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .wireframe-card {
@@ -310,7 +326,18 @@
 }
 
 /* Add delay for staggered animation */
-.wireframe-card:nth-child(1) { animation-delay: 0.1s; }
-.wireframe-card:nth-child(2) { animation-delay: 0.2s; }
-.wireframe-card:nth-child(3) { animation-delay: 0.3s; }
-.wireframe-card:nth-child(4) { animation-delay: 0.4s; }
+.wireframe-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.wireframe-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.wireframe-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.wireframe-card:nth-child(4) {
+  animation-delay: 0.4s;
+}

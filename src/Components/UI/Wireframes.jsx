@@ -9,6 +9,7 @@ const Wireframes = () => {
   // projectId is now optional and can be passed as a prop or will be null
   const [projectId] = useState(null);
   const [wireframes, setWireframes] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,7 +22,7 @@ const Wireframes = () => {
     version: '1.0',
     status: 'draft',
     category: 'web',
-    projectId: projectId
+    projectId: ''
   });
   const [preview, setPreview] = useState('');
 
@@ -36,10 +37,10 @@ const Wireframes = () => {
       }
 
       // Build the URL with projectId if it exists
-      const url = projectId 
+      const url = projectId
         ? `${API_URL}/wireframes?projectId=${projectId}`
         : `${API_URL}/wireframes`;
-      
+
       const response = await axios.get(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -58,9 +59,29 @@ const Wireframes = () => {
     }
   };
 
-  // Fetch wireframes on component mount and when projectId changes
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await axios.get(`${API_URL}/projects`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const projectsData = response.data?.data || [];
+      setProjects(projectsData);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    }
+  };
+
+  // Fetch wireframes and projects on component mount
   useEffect(() => {
     fetchWireframes();
+    fetchProjects();
   }, [projectId]);
 
   // Handle file selection
@@ -72,14 +93,14 @@ const Wireframes = () => {
         setError('File size should be less than 10MB');
         return;
       }
-      
+
       // Check file type
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         setError('Please upload a valid image file (PNG, JPG, GIF)');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
@@ -116,11 +137,11 @@ const Wireframes = () => {
       version: '1.0',
       status: 'draft',
       category: 'web',
-      projectId: projectId
+      projectId: ''
     });
     setPreview('');
     setError('');
-    
+
     // Reset file input
     const fileInput = document.querySelector('input[type="file"]');
     if (fileInput) {
@@ -133,26 +154,26 @@ const Wireframes = () => {
     console.log('Form submission started');
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Clear previous errors
     setError('');
-    
+
     // Trim the title and check if it's empty
     const title = currentWireframe.title ? currentWireframe.title.trim() : '';
-    
+
     // Basic validation
     if (!title) {
       console.log('Title is required');
       setError('Title is required');
       return;
     }
-    
-    // projectId is now optional, so we'll use a default integer value if not provided
-    const projectIdToUse = projectId || 1; // Using 1 as default project ID
-    
-    // Image is now optional
-    console.log('Image is optional');
-    
+
+    // Validate project selection
+    if (!currentWireframe.projectId) {
+      setError('Please select a project');
+      return;
+    }
+
     console.log('All validations passed, proceeding with form submission');
 
     // Create form data
@@ -162,13 +183,13 @@ const Wireframes = () => {
     formData.append('version', currentWireframe.version || '1.0');
     formData.append('status', currentWireframe.status || 'draft');
     formData.append('category', currentWireframe.category || 'web');
-    formData.append('projectId', projectIdToUse); // Use the project ID or default value
-    
+    formData.append('projectId', currentWireframe.projectId);
+
     // Add image to form data if it exists
     if (currentWireframe.image) {
       formData.append('image', currentWireframe.image, currentWireframe.image.name || 'wireframe.jpg');
     }
-    
+
     // Log form data for debugging
     for (let [key, value] of formData.entries()) {
       console.log(key, value);
@@ -182,7 +203,7 @@ const Wireframes = () => {
       }
 
       console.log('Auth token:', token ? 'Token exists' : 'No token found');
-      
+
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -191,13 +212,13 @@ const Wireframes = () => {
         },
         withCredentials: true // Ensure cookies are sent with the request
       };
-      
+
       // Log the headers being sent
       console.log('Request headers:', config.headers);
 
       // Show loading state
       setError('Saving wireframe...');
-      
+
       if (currentWireframe.id) {
         // Update existing wireframe
         await axios.put(`${API_URL}/wireframes/${currentWireframe.id}`, formData, config);
@@ -205,20 +226,20 @@ const Wireframes = () => {
         // Create new wireframe
         await axios.post(`${API_URL}/wireframes`, formData, config);
       }
-      
+
       // On success - close modal and reset form
       console.log('Wireframe saved successfully');
       await fetchWireframes(); // Wait for the data to be refreshed
       resetForm();
       setIsModalOpen(false);
-      
+
     } catch (err) {
       console.error('Error saving wireframe:', err);
       console.error('Error response data:', err.response?.data);
       console.error('Error response status:', err.response?.status);
-      
+
       let errorMessage = 'Failed to save wireframe. Please check your connection and try again.';
-      
+
       if (err.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
@@ -240,7 +261,7 @@ const Wireframes = () => {
             }
           }
         }
-        
+
         // Add status code to the error message
         errorMessage = `[${err.response.status}] ${errorMessage}`;
       } else if (err.request) {
@@ -252,7 +273,7 @@ const Wireframes = () => {
         console.error('Request setup error:', err.message);
         errorMessage = `Request error: ${err.message}`;
       }
-      
+
       setError(errorMessage);
     }
   };
@@ -311,11 +332,11 @@ const Wireframes = () => {
   };
 
   // Filter wireframes based on search term
-  const filteredWireframes = Array.isArray(wireframes) 
+  const filteredWireframes = Array.isArray(wireframes)
     ? wireframes.filter(wireframe =>
-        (wireframe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        wireframe.description?.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
+    (wireframe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      wireframe.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
     : [];
 
   return (
@@ -325,7 +346,7 @@ const Wireframes = () => {
           <h2>Wireframes</h2>
           <p>Manage and organize your project wireframes</p>
         </div>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => {
             resetForm();
@@ -375,9 +396,9 @@ const Wireframes = () => {
               <div key={wireframe.id} className="wireframe-card">
                 <div className="wireframe-thumbnail">
                   {wireframe.imageUrl ? (
-                    <img 
-                      src={wireframe.imageUrl} 
-                      alt={wireframe.title} 
+                    <img
+                      src={wireframe.imageUrl}
+                      alt={wireframe.title}
                       className="wireframe-image"
                     />
                   ) : (
@@ -387,14 +408,14 @@ const Wireframes = () => {
                     </div>
                   )}
                   <div className="card-actions">
-                    <button 
+                    <button
                       className="btn-icon"
                       onClick={() => handleEdit(wireframe)}
                       title="Edit"
                     >
                       <FaEdit />
                     </button>
-                    <button 
+                    <button
                       className="btn-icon danger"
                       onClick={() => handleDelete(wireframe.id)}
                       title="Delete"
@@ -410,11 +431,11 @@ const Wireframes = () => {
                       {wireframe.status?.replace('_', ' ')}
                     </span>
                   </div>
-                  
+
                   <p className="wireframe-description">
                     {wireframe.description || 'No description provided'}
                   </p>
-                  
+
                   <div className="wireframe-meta">
                     <div className="meta-item">
                       <FaUser className="meta-icon" />
@@ -436,7 +457,7 @@ const Wireframes = () => {
               <FaImage size={48} className="empty-icon" />
               <h3>No wireframes found</h3>
               <p>Create your first wireframe to get started</p>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => setIsModalOpen(true)}
               >
@@ -453,7 +474,7 @@ const Wireframes = () => {
           <div className="modal">
             <div className="modal-header">
               <h3>{currentWireframe.id ? 'Edit' : 'Add New'} Wireframe</h3>
-              <button 
+              <button
                 className="btn-icon close-btn"
                 onClick={() => {
                   setIsModalOpen(false);
@@ -476,7 +497,7 @@ const Wireframes = () => {
                     className={!currentWireframe.title ? 'error' : ''}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>Description</label>
                   <textarea
@@ -499,7 +520,7 @@ const Wireframes = () => {
                       placeholder="e.g., 1.0.0"
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label>Status</label>
                     <select
@@ -513,6 +534,24 @@ const Wireframes = () => {
                       <option value="approved">Approved</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Project <span className="required">*</span></label>
+                  <select
+                    name="projectId"
+                    value={currentWireframe.projectId}
+                    onChange={handleInputChange}
+                    required
+                    className={!currentWireframe.projectId ? 'error' : ''}
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -551,12 +590,12 @@ const Wireframes = () => {
                       )}
                     </label>
                   </div>
-                  
+
                   {(preview || currentWireframe.imageUrl) && (
                     <div className="image-preview">
-                      <img 
-                        src={preview || currentWireframe.imageUrl} 
-                        alt="Preview" 
+                      <img
+                        src={preview || currentWireframe.imageUrl}
+                        alt="Preview"
                         className={preview ? 'preview-image' : 'preview-image existing'}
                       />
                     </div>
@@ -575,8 +614,8 @@ const Wireframes = () => {
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn btn-primary"
                     onClick={handleSubmit}
                   >

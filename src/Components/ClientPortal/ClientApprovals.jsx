@@ -12,9 +12,13 @@ export default function ClientApprovals() {
       try {
         setLoading(true);
         const response = await approvalAPI.getAll();
-        setApprovals(response.data || []);
+        console.log('Approvals response:', response);
+        // Handle both response.data and response.data.data formats
+        const approvalsData = response.data?.data || response.data || [];
+        setApprovals(Array.isArray(approvalsData) ? approvalsData : []);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching approvals:', error);
+        setApprovals([]);
       } finally {
         setLoading(false);
       }
@@ -30,11 +34,47 @@ export default function ClientApprovals() {
 
   const handleApprove = async (id) => {
     try {
-      await approvalAPI.approve(id, {});
+      const approval = approvals.find(a => a.id === id);
+
+      // Approve the design
+      await approvalAPI.approve(id, {
+        status: 'Approved',
+        approvedAt: new Date().toISOString(),
+        feedback: 'Approved by client'
+      });
+
+      // Notify developers about approved designs
+      try {
+        const token = localStorage.getItem('token');
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'design_approved',
+            title: `✅ Designs Approved: ${approval.title}`,
+            message: `Client has approved the designs. You can now start development.`,
+            recipientRole: 'developer',
+            priority: 'high',
+            relatedId: approval.projectId,
+            relatedType: 'project'
+          })
+        });
+      } catch (notifError) {
+        console.error('Notification error:', notifError);
+      }
+
+      // Refresh approvals
       const response = await approvalAPI.getAll();
-      setApprovals(response.data || []);
+      const approvalsData = response.data?.data || response.data || [];
+      setApprovals(Array.isArray(approvalsData) ? approvalsData : []);
+
+      alert('✅ Design approved successfully! Developers have been notified.');
     } catch (error) {
-      alert('Error');
+      console.error('Approval error:', error);
+      alert('❌ Failed to approve. Please try again.');
     }
   };
 
@@ -43,7 +83,7 @@ export default function ClientApprovals() {
       alert('Please provide feedback');
       return;
     }
-    setApprovals(prev => prev.map(app => 
+    setApprovals(prev => prev.map(app =>
       app.id === id ? { ...app, status: 'Approved', approvedDate: new Date().toISOString().split('T')[0], feedback } : app
     ));
     setSelectedApproval(null);
@@ -55,14 +95,14 @@ export default function ClientApprovals() {
       alert('Please provide reason for rejection');
       return;
     }
-    setApprovals(prev => prev.map(app => 
+    setApprovals(prev => prev.map(app =>
       app.id === id ? { ...app, status: 'Rejected', rejectedDate: new Date().toISOString().split('T')[0], feedback } : app
     ));
     setSelectedApproval(null);
     setFeedback('');
   };
 
-  const filteredApprovals = approvals.filter(app => 
+  const filteredApprovals = approvals.filter(app =>
     filter === 'All' || app.status === filter
   );
 
@@ -135,30 +175,37 @@ export default function ClientApprovals() {
             <div className="approval-details">
               <div className="detail-item">
                 <span className="detail-label">Stage:</span>
-                <span className="detail-value">{approval.stage}</span>
+                <span className="detail-value">{approval.stage || 'Design Review'}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Requested by:</span>
-                <span className="detail-value">{approval.requestedBy}</span>
+                <span className="detail-value">{approval.requestedBy?.name || approval.requestedBy || 'N/A'}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Requested:</span>
-                <span className="detail-value">{approval.requestedDate}</span>
+                <span className="detail-value">{approval.requestedDate || new Date(approval.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Due:</span>
-                <span className="detail-value">{approval.dueDate}</span>
+                <span className="detail-value">{approval.dueDate ? new Date(approval.dueDate).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
 
-            {approval.files.length > 0 && (
+            {approval.attachments && approval.attachments.length > 0 && (
               <div className="approval-files">
-                <div className="files-label">Attachments:</div>
-                {approval.files.map((file, idx) => (
+                <div className="files-label">Attachments ({approval.attachments.length}):</div>
+                {approval.attachments.map((file, idx) => (
                   <div key={idx} className="file-item">
+                    <span className="type-badge">{file.type}</span>
                     <span className="file-name">{file.name}</span>
-                    <span className="file-size">{file.size}</span>
-                    <button className="file-download"><FiDownload /></button>
+                    <span className="file-size">{file.size || '0 KB'}</span>
+                    <button
+                      className="file-download"
+                      onClick={() => file.url && window.open(file.url, '_blank')}
+                      title="View/Download"
+                    >
+                      <FiDownload />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -233,8 +280,8 @@ export default function ClientApprovals() {
                   <div><strong>Stage:</strong> {selectedApproval.stage}</div>
                   <div><strong>Priority:</strong> {selectedApproval.priority}</div>
                   <div><strong>Status:</strong> {selectedApproval.status}</div>
-                  <div><strong>Requested by:</strong> {selectedApproval.requestedBy}</div>
-                  <div><strong>Due Date:</strong> {selectedApproval.dueDate}</div>
+                  <div><strong>Requested by:</strong> {selectedApproval.requestedBy?.name || selectedApproval.requestedBy || 'N/A'}</div>
+                  <div><strong>Due Date:</strong> {selectedApproval.dueDate ? new Date(selectedApproval.dueDate).toLocaleDateString() : 'N/A'}</div>
                 </div>
               </div>
 

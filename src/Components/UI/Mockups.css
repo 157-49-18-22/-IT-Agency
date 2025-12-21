@@ -6,6 +6,14 @@
   position: relative;
 }
 
+/* Hide UILayout dashboard elements when on Mockups page */
+body:has(.mockups-container) .dashboard-cards,
+body:has(.mockups-container) .dashboard-section,
+body:has(.mockups-container) .top-bar .page-title h1,
+body:has(.mockups-container) .content-header {
+  display: none !important;
+}
+
 /* Loading State */
 .loading-container {
   display: flex;
