@@ -1139,6 +1139,13 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
               </Link>
             </li>
 
+            <li className={isActive('/testing/approved')}>
+              <Link to="/testing/approved">
+                <FaCheckCircle className="nav-icon" />
+                <span className="nav-text">Approved Projects</span>
+              </Link>
+            </li>
+
             <li className={isActive('/testing/cases')}>
               <Link to="/testing/cases">
                 <FaClipboardCheck className="nav-icon" />
@@ -1171,6 +1178,20 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
               <Link to="/testing/uat">
                 <FaUserTie className="nav-icon" />
                 <span className="nav-text">UAT</span>
+              </Link>
+            </li>
+
+            <li className={isActive('/testing/deliverables')}>
+              <Link to="/testing/deliverables">
+                <FaClipboardCheck className="nav-icon" />
+                <span className="nav-text">Testing Deliverables</span>
+              </Link>
+            </li>
+
+            <li className={isActive('/testing/submit')}>
+              <Link to="/testing/submit">
+                <FaCheckCircle className="nav-icon" />
+                <span className="nav-text">Submit to Client</span>
               </Link>
             </li>
           </ul>

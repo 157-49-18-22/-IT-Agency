@@ -1,0 +1,203 @@
+.approved-projects-container {
+    padding: 20px;
+    background: #f8fafc;
+    min-height: 100%;
+}
+
+.approved-projects-container h2 {
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.approved-projects-container .subtitle {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    color: #334155;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+    display: inline-block;
+    width: 100%;
+}
+
+.mt-4 {
+    margin-top: 2rem;
+}
+
+.mb-4 {
+    margin-bottom: 2rem;
+}
+
+.empty-text,
+.empty-state {
+    color: #94a3b8;
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.project-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.project-card.dev-card {
+    border-left: 4px solid #f59e0b;
+}
+
+.project-card.other-card {
+    border-left: 4px solid #94a3b8;
+    opacity: 0.9;
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #334155;
+}
+
+.phase-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.phase-badge.testing {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.phase-badge.development {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.phase-badge.other {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.card-body {
+    padding: 20px;
+    flex: 1;
+}
+
+.card-body p {
+    color: #475569;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.meta-item .label {
+    color: #94a3b8;
+}
+
+.meta-item .value {
+    color: #334155;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.text-success {
+    color: #10b981;
+}
+
+.card-footer {
+    padding: 15px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-start-testing {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-start-testing:hover {
+    background: #4338ca;
+}
+
+.btn-secondary {
+    background: #64748b;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+}
+
+.btn-outline:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.error-text {
+    color: #ef4444;
+}

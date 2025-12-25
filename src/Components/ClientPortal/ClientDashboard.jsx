@@ -18,47 +18,54 @@ const ClientDashboard = () => {
   }, []);
 
   const fetchClientData = async () => {
-    // TODO: Replace with actual API call
-    // const response = await clientAPI.getDashboard();
+    try {
+      // Fetch real projects from API
+      const response = await fetch('/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-    // Mock data for demo
-    const mockProjects = [
-      {
-        id: 1,
-        name: 'E-Commerce Website',
-        currentStage: 'development',
-        progress: 65,
-        status: 'in-progress',
-        dueDate: '2024-02-15',
-        pendingApprovals: 2
-      },
-      {
-        id: 2,
-        name: 'Mobile App',
-        currentStage: 'ui_ux',
-        progress: 30,
-        status: 'in-progress',
-        dueDate: '2024-03-01',
-        pendingApprovals: 1
-      },
-      {
-        id: 3,
-        name: 'CRM System',
-        currentStage: 'testing',
-        progress: 85,
-        status: 'in-progress',
-        dueDate: '2024-01-30',
-        pendingApprovals: 0
+      if (response.ok) {
+        const data = await response.json();
+        const allProjects = data.data || data || [];
+
+        // Filter projects for current client
+        // Show projects in Client Review phase
+        const clientProjects = allProjects.filter(p => {
+          return p.phase === 'Client Review' ||
+            p.currentPhase === 'Client Review' ||
+            p.clientId === currentUser?.id;
+        });
+
+        console.log('Client projects:', clientProjects);
+
+        setProjects(clientProjects);
+        setStats({
+          activeProjects: clientProjects.filter(p =>
+            p.status === 'Pending Client Approval' ||
+            p.phase === 'Client Review'
+          ).length,
+          pendingApprovals: clientProjects.filter(p =>
+            p.status === 'Pending Client Approval'
+          ).length,
+          completedProjects: clientProjects.filter(p =>
+            p.status === 'Completed' || p.phase === 'Completed'
+          ).length,
+          totalProgress: clientProjects.length > 0
+            ? Math.round(clientProjects.reduce((sum, p) => sum + (p.progress || 0), 0) / clientProjects.length)
+            : 0
+        });
+      } else {
+        console.error('Failed to fetch projects');
+        // Fallback to empty array
+        setProjects([]);
       }
-    ];
-
-    setProjects(mockProjects);
-    setStats({
-      activeProjects: mockProjects.filter(p => p.status === 'in-progress').length,
-      pendingApprovals: mockProjects.reduce((sum, p) => sum + p.pendingApprovals, 0),
-      completedProjects: 5,
-      totalProgress: Math.round(mockProjects.reduce((sum, p) => sum + p.progress, 0) / mockProjects.length)
-    });
+    } catch (err) {
+      console.error('Error fetching client data:', err);
+      // Fallback to empty array
+      setProjects([]);
+    }
   };
 
   const getStageLabel = (stage) => {

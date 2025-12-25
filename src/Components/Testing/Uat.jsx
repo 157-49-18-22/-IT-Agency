@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAuthenticated, getCurrentUser } from '../../services/auth';
-import { 
-  FiSearch, 
-  FiPlus, 
-  FiFilter, 
-  FiUser, 
+import {
+  FiSearch,
+  FiPlus,
+  FiFilter,
+  FiUser,
   FiClock,
   FiCheck,
   FiX,
@@ -49,6 +49,7 @@ import './Uat.css';
 import uatAPI from '../../services/uatAPI';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { projectsAPI } from '../../services/api';
 
 const statusOptions = [
   { value: 'all', label: 'All Statuses' },
@@ -92,6 +93,7 @@ const Uat = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [projects, setProjects] = useState([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -101,6 +103,7 @@ const Uat = () => {
     actualResult: '',
     status: 'pending',
     priority: 'medium',
+    projectId: '',
     testerName: ''
   });
 
@@ -113,7 +116,17 @@ const Uat = () => {
       return;
     }
     fetchTests();
+    fetchProjects();
   }, [navigate]);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await projectsAPI.getProjects().catch(() => ({ data: [] }));
+      setProjects(response.data?.data || response.data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    }
+  };
 
   const fetchTests = async () => {
     try {
@@ -211,6 +224,7 @@ const Uat = () => {
       actualResult: '',
       status: 'pending',
       priority: 'medium',
+      projectId: '',
       testerName: ''
     });
   };
@@ -226,6 +240,7 @@ const Uat = () => {
       actualResult: test.actualResult,
       status: test.status,
       priority: test.priority,
+      projectId: test.projectId || '',
       testerName: test.testerName
     });
     setShowModal(true);
@@ -285,14 +300,14 @@ const Uat = () => {
 
   const filteredTests = uatTests.filter(test => {
     if (!test) return false;
-    
-    const matchesSearch = searchTerm === '' || 
+
+    const matchesSearch = searchTerm === '' ||
       (test.title && test.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (test.description && test.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === 'all' || test.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || test.priority === priorityFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
@@ -300,7 +315,7 @@ const Uat = () => {
     <div className="uat-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>User Acceptance Testing</h1>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => {
             resetForm();
@@ -327,8 +342,8 @@ const Uat = () => {
           </div>
         </div>
         <div className="col-md-4 mb-2">
-          <select 
-            className="form-select" 
+          <select
+            className="form-select"
             value={statusFilter}
             onChange={handleFilterChange}
             name="statusFilter"
@@ -341,7 +356,7 @@ const Uat = () => {
           </select>
         </div>
         <div className="col-md-4 mb-2">
-          <select 
+          <select
             className="form-select"
             value={priorityFilter}
             onChange={handleFilterChange}
@@ -361,8 +376,8 @@ const Uat = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>Create New Test Case</h3>
-              <button 
-                className="close-btn" 
+              <button
+                className="close-btn"
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
@@ -371,7 +386,7 @@ const Uat = () => {
                 <FiX size={20} />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Title *</label>
@@ -384,7 +399,7 @@ const Uat = () => {
                   placeholder="Enter test case title"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Description *</label>
                 <textarea
@@ -396,7 +411,7 @@ const Uat = () => {
                   placeholder="Describe the test case in detail"
                 ></textarea>
               </div>
-              
+
               <div className="form-group">
                 <label>Test Steps *</label>
                 {formData.testSteps.map((step, index) => (
@@ -410,8 +425,8 @@ const Uat = () => {
                       placeholder={`Step ${index + 1}`}
                     />
                     {formData.testSteps.length > 1 && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="remove-step"
                         onClick={() => removeTestStep(index)}
                         aria-label="Remove step"
@@ -421,20 +436,20 @@ const Uat = () => {
                     )}
                   </div>
                 ))}
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="add-step"
                   onClick={addTestStep}
                 >
                   + Add Step
                 </button>
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Status</label>
-                  <select 
-                    name="status" 
+                  <select
+                    name="status"
                     value={formData.status}
                     onChange={handleInputChange}
                   >
@@ -444,11 +459,11 @@ const Uat = () => {
                     <option value="rejected">Rejected</option>
                   </select>
                 </div>
-                
+
                 <div className="form-group">
                   <label>Priority</label>
-                  <select 
-                    name="priority" 
+                  <select
+                    name="priority"
                     value={formData.priority}
                     onChange={handleInputChange}
                   >
@@ -458,7 +473,24 @@ const Uat = () => {
                   </select>
                 </div>
               </div>
-              
+
+              <div className="form-group">
+                <label>Project <span className="text-danger">*</span></label>
+                <select
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select a Project</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.phase || 'N/A'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label>Tester Name</label>
                 <input
@@ -469,10 +501,10 @@ const Uat = () => {
                   placeholder="Enter tester's name"
                 />
               </div>
-              
+
               <div className="modal-actions">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-outline"
                   onClick={() => {
                     setShowModal(false);
@@ -482,8 +514,8 @@ const Uat = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-primary"
                   disabled={isSubmitting}
                 >
@@ -509,8 +541,8 @@ const Uat = () => {
         </div>
 
         <div className="filters">
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={handleFilterChange}
             name="statusFilter"
             className="form-select"
@@ -551,10 +583,10 @@ const Uat = () => {
                   </span>
                 </div>
               </div>
-              
+
               <h3>{test.title}</h3>
               <p className="test-description">{test.description}</p>
-              
+
               {test.steps && test.steps.length > 0 && (
                 <div className="test-steps">
                   <h4>Test Steps:</h4>
@@ -565,7 +597,7 @@ const Uat = () => {
                   </ol>
                 </div>
               )}
-              
+
               <div className="test-actions">
                 <button className="btn-outline">
                   <FiMessageSquare size={14} /> Add Comment

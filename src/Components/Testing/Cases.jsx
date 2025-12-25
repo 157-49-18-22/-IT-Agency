@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { AuthContext } from '../../context/AuthContext';
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiPlus, 
-  FiCheck, 
-  FiX, 
-  FiUser, 
-  FiClock, 
-  FiAlertCircle, 
-  FiSave, 
+import {
+  FiSearch,
+  FiFilter,
+  FiPlus,
+  FiCheck,
+  FiX,
+  FiUser,
+  FiClock,
+  FiAlertCircle,
+  FiSave,
   FiXCircle,
   FiPlusCircle
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { projectsAPI } from '../../services/api';
 import './Cases.css';
 
 // Initial empty test cases array
@@ -26,11 +27,11 @@ export const createMockAPI = (testCases, setTestCases) => ({
   getAll: async (params = {}) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     let filtered = [...testCases];
-    
+
     if (params.projectId) {
       filtered = filtered.filter(tc => tc.projectId === parseInt(params.projectId));
     }
-    
+
     if (params._sort && params._order) {
       filtered.sort((a, b) => {
         const aVal = a[params._sort];
@@ -40,10 +41,10 @@ export const createMockAPI = (testCases, setTestCases) => ({
         return 0;
       });
     }
-    
+
     return { data: filtered };
   },
-  
+
   create: async (data) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     const newTestCase = {
@@ -56,11 +57,11 @@ export const createMockAPI = (testCases, setTestCases) => ({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    
+
     // Update the test cases in the component state
     const updatedTestCases = [newTestCase, ...testCases];
     setTestCases(updatedTestCases);
-    
+
     return { data: newTestCase };
   }
 });
@@ -74,11 +75,25 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
     description: '',
     type: 'functional',
     priority: 'medium',
+    projectId: '',
     steps: '',
     expectedResult: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await projectsAPI.getProjects().catch(() => ({ data: [] }));
+        setProjects(response.data?.data || response.data || []);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,16 +109,16 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
       setError('Title is required');
       return;
     }
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       await onSave({
         ...formData,
         steps: formData.steps.split('\n').filter(step => step.trim() !== '')
       });
-      
+
       // Reset form on successful save
       setFormData({
         title: '',
@@ -137,7 +152,25 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             className="form-control"
           />
         </div>
-        
+
+        <div className="form-group">
+          <label>Project <span className="text-danger">*</span></label>
+          <select
+            name="projectId"
+            value={formData.projectId}
+            onChange={handleChange}
+            className="form-control"
+            required
+          >
+            <option value="">Select a Project</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.phase || 'N/A'})
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="form-group">
           <label>Description</label>
           <textarea
@@ -149,7 +182,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             className="form-control"
           />
         </div>
-        
+
         <div className="row">
           <div className="col-md-6">
             <div className="form-group">
@@ -169,7 +202,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
               </select>
             </div>
           </div>
-          
+
           <div className="col-md-6">
             <div className="form-group">
               <label>Priority</label>
@@ -186,7 +219,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             </div>
           </div>
         </div>
-        
+
         <div className="form-group">
           <label>Test Steps (one per line)</label>
           <textarea
@@ -200,7 +233,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
           />
           <small className="text-muted">Each line will be treated as a separate test step</small>
         </div>
-        
+
         <div className="form-group">
           <label>Expected Result</label>
           <textarea
@@ -213,7 +246,7 @@ const NewTestCaseForm = ({ onSave, onCancel }) => {
             required
           />
         </div>
-        
+
         <div className="d-flex justify-content-end gap-2 mt-4">
           <button
             type="button"
@@ -253,7 +286,7 @@ const Cases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  
+
   const fetchTestCases = async () => {
     try {
       setLoading(true);
@@ -261,21 +294,21 @@ const Cases = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-      
+
       const response = await fetch('http://localhost:5000/api/test-cases', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to fetch test cases');
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         // Transform the data to match the expected format
         const formattedTestCases = result.data.map(tc => ({
@@ -293,7 +326,7 @@ const Cases = () => {
           createdAt: tc.createdAt,
           updatedAt: tc.updatedAt
         }));
-        
+
         setTestCases(formattedTestCases);
       } else {
         throw new Error(result.message || 'Failed to load test cases');
@@ -311,15 +344,15 @@ const Cases = () => {
   useEffect(() => {
     fetchTestCases();
   }, []);
-  
+
   const handleSaveTestCase = async (newTestCase) => {
     try {
       // Process steps
       let stepsArray = [];
       if (newTestCase.steps) {
-        stepsArray = typeof newTestCase.steps === 'string' 
+        stepsArray = typeof newTestCase.steps === 'string'
           ? newTestCase.steps.split('\n').filter(step => step.trim() !== '')
-          : Array.isArray(newTestCase.steps) 
+          : Array.isArray(newTestCase.steps)
             ? newTestCase.steps.filter(step => step && step.trim() !== '')
             : [];
       }
@@ -336,7 +369,7 @@ const Cases = () => {
           expected: step
         })),
         status: 'not_run',
-        projectId: currentUser?.projectId || 1,
+        projectId: newTestCase.projectId ? parseInt(newTestCase.projectId) : (currentUser?.projectId || 1),
         createdBy: currentUser?.id || 1  // Use the numeric user ID for MySQL
       };
 
@@ -356,11 +389,11 @@ const Cases = () => {
       }
 
       const savedTestCase = await response.json();
-      
+
       // Update the local state with the saved test case from the server
       setTestCases([savedTestCase.data, ...testCases]);
       setShowNewTestCaseForm(false);
-      
+
       toast.success('Test case created successfully!', {
         position: 'top-right',
         autoClose: 5000,
@@ -384,12 +417,12 @@ const Cases = () => {
 
   const filteredCases = testCases.filter(testCase => {
     if (!testCase) return false;
-    
+
     const matchesSearch = testCase.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         testCase.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      testCase.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || testCase.status === statusFilter;
     const matchesType = typeFilter === 'all' || testCase.type === typeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -399,13 +432,13 @@ const Cases = () => {
     <div className="cases-container">
       {showNewTestCaseForm ? (
         <div className="new-test-case-container">
-          <button 
+          <button
             className="btn btn-link back-button"
             onClick={() => setShowNewTestCaseForm(false)}
           >
             &larr; Back to Test Cases
           </button>
-          <NewTestCaseForm 
+          <NewTestCaseForm
             onSave={handleSaveTestCase}
             onCancel={() => setShowNewTestCaseForm(false)}
           />
@@ -414,7 +447,7 @@ const Cases = () => {
         <>
           <div className="cases-header">
             <h2>Test Cases</h2>
-            <button 
+            <button
               className="btn btn-primary"
               onClick={() => setShowNewTestCaseForm(true)}
             >
@@ -434,8 +467,8 @@ const Cases = () => {
             </div>
 
             <div className="filters">
-              <select 
-                value={statusFilter} 
+              <select
+                value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="filter-select"
               >
@@ -445,8 +478,8 @@ const Cases = () => {
                 <option value="not_run">Not Run</option>
               </select>
 
-              <select 
-                value={typeFilter} 
+              <select
+                value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="filter-select"
               >
@@ -490,8 +523,8 @@ const Cases = () => {
                   <p className="case-description">{testCase.description || 'No description provided'}</p>
                   <div className="case-footer">
                     <span className="case-steps">
-                      {Array.isArray(testCase.steps) ? testCase.steps.length : 
-                       typeof testCase.steps === 'string' ? 1 : 0} steps
+                      {Array.isArray(testCase.steps) ? testCase.steps.length :
+                        typeof testCase.steps === 'string' ? 1 : 0} steps
                     </span>
                     <div className="case-meta">
                       <span className="case-date">

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiPlus, 
-  FiAlertTriangle, 
-  FiClock, 
-  FiCheck, 
-  FiX, 
+import {
+  FiSearch,
+  FiFilter,
+  FiPlus,
+  FiAlertTriangle,
+  FiClock,
+  FiCheck,
+  FiX,
   FiUser,
   FiSave,
   FiAlertCircle,
@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Bug.css';
 import bugAPI from '../../services/bugAPI';
+import { projectsAPI } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 
 // New Bug Form Component
@@ -51,19 +52,19 @@ const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
       setError('Title is required');
       return;
     }
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       // Add reported_by from the current user
       const bugData = {
         ...formData,
         reported_by: user?.id
       };
-      
+
       const response = await bugAPI.create(bugData);
-      
+
       // Reset form on successful save
       setFormData({
         title: '',
@@ -77,14 +78,14 @@ const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
         project_id: projects[0]?.id || '',
         assigned_to: users[0]?.id || ''
       });
-      
+
       toast.success('Bug report created successfully!');
-      
+
       // Notify parent component about the successful save
       if (onSave) {
         onSave(response.data);
       }
-      
+
     } catch (err) {
       console.error('Error creating bug:', err);
       const errorMessage = err?.message || 'Failed to save bug report';
@@ -100,22 +101,22 @@ const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
     <div className="new-bug-form">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3>Report New Bug</h3>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn btn-link text-decoration-none"
           onClick={onCancel}
         >
           <FiX size={20} />
         </button>
       </div>
-      
+
       {error && (
         <div className="alert alert-danger d-flex align-items-center" role="alert">
           <FiAlertCircle className="me-2" />
           {error}
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="needs-validation" noValidate>
         <div className="mb-3">
           <label htmlFor="bugTitle" className="form-label">
@@ -319,18 +320,14 @@ const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
 
 const Bug = () => {
   const [showNewBugForm, setShowNewBugForm] = useState(false);
-  const [projects] = useState([
-    { id: 1, name: 'Project A' },
-    { id: 2, name: 'Project B' },
-    { id: 3, name: 'Project C' },
-  ]);
-  
+  const [projects, setProjects] = useState([]);
+
   const [users] = useState([
     { id: 1, name: 'John Doe', email: 'john@example.com' },
     { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
     { id: 3, name: 'Bob Johnson', email: 'bob@example.com' },
   ]);
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -360,7 +357,7 @@ const Bug = () => {
       assignee: { id: 1, name: 'John Doe', email: 'john@example.com' }
     }
   ]);
-  
+
   const [filters, setFilters] = useState({
     status: '',
     priority: '',
@@ -384,24 +381,21 @@ const Bug = () => {
   const loadBugs = useCallback(async () => {
     setLoading(true);
     try {
-      const [bugsRes, projectsRes, usersRes] = await Promise.all([
+      // Fetch real projects from API
+      const projectsResponse = await projectsAPI.getProjects().catch(() => ({ data: [] }));
+      const realProjects = projectsResponse.data?.data || projectsResponse.data || [];
+
+      const [bugsRes, usersRes] = await Promise.all([
         bugAPI.getAll(),
-        Promise.resolve({ 
-          data: [
-            { id: 1, name: 'Project A' },
-            { id: 2, name: 'Project B' },
-            { id: 3, name: 'Project C' }
-          ] 
-        }),
-        Promise.resolve({ 
+        Promise.resolve({
           data: [
             { id: 1, name: 'John Doe', email: 'john@example.com' },
             { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
             { id: 3, name: 'Bob Johnson', email: 'bob@example.com' }
-          ] 
+          ]
         })
       ]);
-      
+
       setBugs(bugsRes?.data || [
         {
           id: 1,
@@ -428,8 +422,8 @@ const Bug = () => {
           assignee: { id: 1, name: 'John Doe', email: 'john@example.com' }
         }
       ]);
-      
-      setProjects(projectsRes.data || []);
+
+      setProjects(realProjects);
       setUsers(usersRes.data || []);
     } catch (err) {
       console.error('Error loading data:', err);
@@ -487,22 +481,22 @@ const Bug = () => {
     // Filter by search term
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      if (!bug.title.toLowerCase().includes(searchLower) && 
-          !bug.description.toLowerCase().includes(searchLower)) {
+      if (!bug.title.toLowerCase().includes(searchLower) &&
+        !bug.description.toLowerCase().includes(searchLower)) {
         return false;
       }
     }
-    
+
     // Filter by status
     if (filters.status && bug.status !== filters.status) {
       return false;
     }
-    
+
     // Filter by priority
     if (filters.priority && bug.priority !== filters.priority) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -555,7 +549,7 @@ const Bug = () => {
       <div className="bug-header">
         <h2>Bugs</h2>
         {!showNewBugForm && (
-          <button 
+          <button
             className="btn btn-primary"
             onClick={handleNewBugClick}
           >
@@ -566,7 +560,7 @@ const Bug = () => {
 
       {showNewBugForm ? (
         <div className="bug-form-container">
-          <NewBugForm 
+          <NewBugForm
             onSave={handleSaveBug}
             onCancel={() => setShowNewBugForm(false)}
             projects={projects}
@@ -586,11 +580,11 @@ const Bug = () => {
                 className="form-control"
               />
             </div>
-            
+
             <div className="filters">
               <div className="filter-group">
-                <select 
-                  value={statusFilter} 
+                <select
+                  value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="form-select"
                 >
@@ -602,10 +596,10 @@ const Bug = () => {
                   <option value="reopened">Reopened</option>
                 </select>
               </div>
-              
+
               <div className="filter-group">
-                <select 
-                  value={priorityFilter} 
+                <select
+                  value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value)}
                   className="form-select"
                 >
@@ -625,7 +619,7 @@ const Bug = () => {
                 <FiAlertTriangle className="no-bugs-icon" />
                 <p>No bugs found</p>
                 {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' ? (
-                  <button 
+                  <button
                     className="btn btn-link"
                     onClick={() => {
                       setSearchTerm('');
@@ -652,14 +646,14 @@ const Bug = () => {
                   </thead>
                   <tbody>
                     {filteredBugs.map(bug => (
-                      <tr key={bug.id} className="bug-row" onClick={() => {/* Add click handler for bug details */}}>
+                      <tr key={bug.id} className="bug-row" onClick={() => {/* Add click handler for bug details */ }}>
                         <td>#{bug.id}</td>
                         <td>
                           <div className="bug-title">{bug.title}</div>
                           {bug.description && (
                             <div className="bug-description text-muted">
-                              {bug.description.length > 100 
-                                ? `${bug.description.substring(0, 100)}...` 
+                              {bug.description.length > 100
+                                ? `${bug.description.substring(0, 100)}...`
                                 : bug.description}
                             </div>
                           )}

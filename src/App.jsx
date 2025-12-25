@@ -110,6 +110,9 @@ import PerformanceTesting from './Components/Testing/PerformanceTesting';
 import SecurityTesting from './Components/Testing/SecurityTesting';
 import Uat from './Components/Testing/Uat';
 import Performance from './Components/Testing/Performance';
+import TestingApprovedProjects from './Components/Testing/ApprovedProjects';
+import TestingDeliverables from './Components/Testing/TestingDeliverables';
+import SubmitDeliverables from './Components/Testing/SubmitDeliverables';
 
 // Protected route with role-based layouts
 const ProtectedRoute = () => {
@@ -260,7 +263,11 @@ const AppRoutes = () => {
             <Route path="cases" element={<Cases />} />
             <Route path="performance" element={<PerformanceTesting />} />
             <Route path="security" element={<SecurityTesting />} />
+
             <Route path="uat" element={<Uat />} />
+            <Route path="approved" element={<TestingApprovedProjects />} />
+            <Route path="deliverables" element={<TestingDeliverables />} />
+            <Route path="submit" element={<SubmitDeliverables />} />
           </Route>
         )}
 

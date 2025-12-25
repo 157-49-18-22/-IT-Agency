@@ -1,7 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheck, FiX, FiEye, FiDownload, FiMessageCircle } from 'react-icons/fi';
 import './ClientApprovals.css';
-import { approvalAPI, deliverablesAPI } from '../../services/api';
+import { approvalAPI, deliverablesAPI, projectsAPI } from '../../services/api';
+
+// Helper to categorize approvals (Moved outside component for access)
+const getCategory = (app) => {
+  const type = (app.type || '').toLowerCase();
+  const stage = (app.stage || app.phase || '').toLowerCase();
+  const title = (app.title || app.name || '').toLowerCase();
+
+  // Check strict Design keywords
+  if (stage.includes('design') || type.includes('design') || title.includes('design') ||
+    type.includes('wireframe') || type.includes('mockup') || type.includes('prototype') || type.includes('ui/ux')) {
+    return 'UI/UX';
+  }
+
+  if (stage.includes('development') || type.includes('code') || type === 'development' || stage.includes('implementation')) {
+    return 'Development';
+  }
+
+  if (stage.includes('test') || type.includes('test') || type.includes('qa')) {
+    return 'Testing';
+  }
+
+  // Fallback based on source if available
+  if (app.source === 'deliverable' && (app.phase === 'Development' || app.type === 'Code')) return 'Development';
+
+  // Legacy approval default fallback
+  if (!app.source && !stage && !type) return 'UI/UX';
+  if (!stage) return 'UI/UX';
+
+  return 'Other';
+};
 
 export default function ClientApprovals() {
   const [approvals, setApprovals] = useState([]);
@@ -64,22 +94,36 @@ export default function ClientApprovals() {
       const approval = approvals.find(a => a.id === id);
 
       if (approval.source === 'deliverable') {
+        const category = getCategory(approval);
+
         // Use Deliverables API
         await deliverablesAPI.updateDeliverable(id, {
           status: 'Approved',
           approvals: [...(approval.approvals || []), {
             by: 'Client',
             date: new Date(),
-            feedback: 'Approved by client'
+            feedback: feedback || 'Approved by client'
           }]
         });
-        alert('✅ Deliverable approved successfully!');
+
+        // If Development deliverable is approved, move Project to Testing phase
+        if (category === 'Development' && approval.projectId) {
+          try {
+            await projectsAPI.update(approval.projectId, { phase: 'Testing', status: 'Testing' });
+            alert('✅ Deliverable approved! Project moved to Testing phase.');
+          } catch (err) {
+            console.error('Failed to update project phase:', err);
+            alert('✅ Deliverable approved, but failed to update Project phase.');
+          }
+        } else {
+          alert('✅ Deliverable approved successfully!');
+        }
       } else {
         // Use Legacy Approval API
         await approvalAPI.approve(id, {
           status: 'Approved',
           approvedAt: new Date().toISOString(),
-          feedback: 'Approved by client'
+          feedback: feedback || 'Approved by client'
         });
         alert('✅ Design approved successfully! Developers have been notified.');
       }
@@ -125,36 +169,7 @@ export default function ClientApprovals() {
 
 
 
-  // Helper to categorize approvals
-  const getCategory = (app) => {
-    const type = (app.type || '').toLowerCase();
-    const stage = (app.stage || app.phase || '').toLowerCase();
-    const title = (app.title || app.name || '').toLowerCase();
 
-    // Check strict Design keywords
-    if (stage.includes('design') || type.includes('design') || title.includes('design') ||
-      type.includes('wireframe') || type.includes('mockup') || type.includes('prototype') || type.includes('ui/ux')) {
-      return 'UI/UX';
-    }
-
-    if (stage.includes('development') || type.includes('code') || type === 'development' || stage.includes('implementation')) {
-      return 'Development';
-    }
-
-    if (stage.includes('test') || type.includes('test') || type.includes('qa')) {
-      return 'Testing';
-    }
-
-    // Fallback based on source if available
-    if (app.source === 'deliverable' && (app.phase === 'Development' || app.type === 'Code')) return 'Development';
-
-    // Legacy approval default fallback - if nothing else matched and it's legacy, it's likely Design
-    if (!app.source && !stage && !type) return 'UI/UX';
-    // Or if stage is 'Design Review' default
-    if (!stage) return 'UI/UX';
-
-    return 'Other';
-  };
 
   const filteredApprovals = approvals.filter(app => {
     const statusMatch = filter === 'All' || app.status.includes(filter) || (filter === 'Pending' && app.status === 'Pending Approval');
@@ -293,7 +308,7 @@ export default function ClientApprovals() {
             )}
 
             <div className="approval-actions">
-              {approval.status === 'Pending' ? (
+              {approval.status.includes('Pending') ? (
                 <>
                   <button className="btn-view" onClick={() => setSelectedApproval(approval)}>
                     <FiEye /> Review & Respond
@@ -361,7 +376,7 @@ export default function ClientApprovals() {
                 </div>
               )}
 
-              {selectedApproval.status === 'Pending' && (
+              {selectedApproval.status.includes('Pending') && (
                 <div className="modal-section">
                   <h3>Your Feedback</h3>
                   <textarea
@@ -382,7 +397,7 @@ export default function ClientApprovals() {
               )}
             </div>
 
-            {selectedApproval.status === 'Pending' && (
+            {selectedApproval.status.includes('Pending') && (
               <div className="modal-footer">
                 <button className="btn-secondary" onClick={() => setSelectedApproval(null)}>
                   Cancel
