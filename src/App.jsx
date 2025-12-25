@@ -36,27 +36,6 @@ import Sprints from './Components/Development/Sprints';
 import Backlog from './Components/Development/Backlog';
 import ApprovedDesigns from './Components/Development/ApprovedDesigns';
 import BugFixes from './Components/Development/BugFixes';
-import AssignedTasks from './Components/Development/AssignedTasks';
-import InProgressTasks from './Components/Development/InProgressTasks';
-import CompletedTasks from './Components/Development/CompletedTasks';
-import Blockers from './Components/Development/Blockers';
-import EnvironmentSetup from './Components/Development/EnvironmentSetup';
-import SubmissionChecklist from './Components/Development/SubmissionChecklist';
-import ApprovedProjects from './Components/Development/ApprovedProjects';
-
-// Import Testing Components
-import Bug from './Components/Testing/Bug';
-import Cases from './Components/Testing/Cases';
-import Performance from './Components/Testing/Performance';
-import Uat from './Components/Testing/Uat';
-import TestingDashboard from './Components/Testing/TestingDashboard';
-import PerformanceTesting from './Components/Testing/PerformanceTesting';
-import SecurityTesting from './Components/Testing/SecurityTesting';
-
-// Import Client Portal Components
-import ClientLayout from './Components/Client/ClientLayout';
-import ClientDashboard from './Components/Client/ClientDashboard';
-import ProjectProgress from './Components/Client/ProjectProgress';
 import UIUXMonitoring from './Components/Client/UIUXMonitoring';
 import DevelopmentMonitoring from './Components/Client/DevelopmentMonitoring';
 import TestingMonitoring from './Components/Client/TestingMonitoring';
@@ -93,6 +72,44 @@ import EnhancedDashboard from './Components/EnhancedDashboard';
 import NotificationsCenter from './Components/NotificationsCenter';
 import TaskBoard from './Components/Tasks/TaskBoard';
 import DeliverablesManager from './Components/Deliverables/DeliverablesManager';
+
+// Import Client Components
+import ClientDashboard from './Components/Client/ClientDashboard';
+import ClientLayout from './Components/Client/ClientLayout';
+import ProjectProgress from './Components/Client/ProjectProgress';
+
+// Import Developer Components
+import AssignedTasks from './Components/Development/AssignedTasks';
+import InProgressTasks from './Components/Development/InProgressTasks';
+import CompletedTasks from './Components/Development/CompletedTasks';
+import ApprovedProjects from './Components/Development/ApprovedProjects';
+import EnvironmentSetup from './Components/Development/EnvironmentSetup';
+import Blockers from './Components/Development/Blockers';
+import CodingStandards from './Components/Development/CodingStandards';
+import APIEndpoints from './Components/Development/APIEndpoints';
+import Database from './Components/Development/Database';
+import Integrations from './Components/Development/Integrations';
+import DevelopmentTesting from './Components/Development/Testing';
+import SelfTesting from './Components/Development/SelfTesting';
+import CodeReview from './Components/Development/CodeReview';
+import PeerReview from './Components/Development/PeerReview';
+import VersionHistory from './Components/Development/VersionHistory';
+import SubmissionChecklist from './Components/Development/SubmissionChecklist';
+import DailyStandup from './Components/Development/DailyStandup';
+import Discussions from './Components/Development/Discussions';
+import Documentation from './Components/Development/Documentation';
+import TimeLogs from './Components/Development/TimeLogs';
+import ReviewFeedback from './Components/Development/ReviewFeedback';
+import DeveloperDeliverables from './Components/Development/DeveloperDeliverables';
+
+// Import Tester Components
+import TestingDashboard from './Components/Testing/TestingDashboard';
+import Bug from './Components/Testing/Bug';
+import Cases from './Components/Testing/Cases';
+import PerformanceTesting from './Components/Testing/PerformanceTesting';
+import SecurityTesting from './Components/Testing/SecurityTesting';
+import Uat from './Components/Testing/Uat';
+import Performance from './Components/Testing/Performance';
 
 // Protected route with role-based layouts
 const ProtectedRoute = () => {
@@ -198,41 +215,42 @@ const AppRoutes = () => {
             <Route path="/development">
               <Route index element={<Navigate to="code" replace />} />
               <Route path="code" element={<Code />} />
-              <Route path="coding-standards" element={<div>Coding Standards</div>} />
-              <Route path="apis" element={<div>API Endpoints</div>} />
-              <Route path="database" element={<div>Database</div>} />
-              <Route path="integrations" element={<div>Integrations</div>} />
-              <Route path="testing" element={<div>Testing</div>} />
-              <Route path="self-testing" element={<div>Self Testing</div>} />
+              <Route path="coding-standards" element={<CodingStandards />} />
+              <Route path="apis" element={<APIEndpoints />} />
+              <Route path="database" element={<Database />} />
+              <Route path="integrations" element={<Integrations />} />
+              <Route path="testing" element={<DevelopmentTesting />} />
+              <Route path="self-testing" element={<SelfTesting />} />
+              <Route path="code-review" element={<CodeReview />} />
+              <Route path="peer-review" element={<PeerReview />} />
+              <Route path="version-history" element={<VersionHistory />} />
               <Route path="sprints" element={<Sprints />} />
               <Route path="bug-fixes" element={<BugFixes />} />
               <Route path="backlog" element={<Backlog />} />
               <Route path="deployment" element={<Deployment />} />
-              <Route path="task" element={<Task />} />
-              <Route path="version" element={<Version />} />
             </Route>
 
             {/* Deliverables Routes */}
             <Route path="/deliverables/checklist" element={<SubmissionChecklist />} />
-            <Route path="/deliverables/code-review" element={<div>Code Review</div>} />
-            <Route path="/deliverables/peer-review" element={<div>Peer Review</div>} />
-            <Route path="/deliverables/history" element={<div>Version History</div>} />
-            <Route path="/deliverables/feedback" element={<div>Review Feedback</div>} />
+            <Route path="/deliverables/code-review" element={<CodeReview />} />
+            <Route path="/deliverables/peer-review" element={<PeerReview />} />
+            <Route path="/deliverables/history" element={<VersionHistory />} />
+            <Route path="/deliverables/feedback" element={<ReviewFeedback />} />
+            <Route path="/deliverables/submit" element={<DeveloperDeliverables />} />
 
             {/* Time Tracking Routes */}
-            <Route path="/time-logs" element={<div>Time Logs</div>} />
+            <Route path="/time-logs" element={<TimeLogs />} />
 
             {/* Collaboration Routes */}
-            <Route path="/collaboration/standup" element={<div>Daily Standup</div>} />
-            <Route path="/collaboration/code-reviews" element={<div>Code Reviews</div>} />
-            <Route path="/collaboration/discussions" element={<div>Discussions</div>} />
-            <Route path="/collaboration/documentation" element={<div>Documentation</div>} />
+            <Route path="/collaboration/standup" element={<DailyStandup />} />
+            <Route path="/collaboration/code-reviews" element={<CodeReview />} />
+            <Route path="/collaboration/discussions" element={<Discussions />} />
+            <Route path="/collaboration/documentation" element={<Documentation />} />
 
             {/* Calendar */}
             <Route path="/calendar" element={<div>Calendar</div>} />
           </>
         )}
-
         {/* Tester specific routes */}
         {isTester && (
           <Route path="/testing">
@@ -342,7 +360,7 @@ const AppRoutes = () => {
             </Route>
             <Route path="reports">
               <Route index element={<Navigate to="project-progress" replace />} />
-              <Route path="project-progress" element={<ProjectProgress />} />
+              <Route path="project-progress" element={<ReportsProjectProgress />} />
               <Route path="team-performance" element={<TeamPerformance />} />
               <Route path="financial" element={<Finacial />} />
               <Route path="custom" element={<Custom />} />

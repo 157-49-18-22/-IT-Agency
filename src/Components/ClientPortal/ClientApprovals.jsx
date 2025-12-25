@@ -1,21 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheck, FiX, FiEye, FiDownload, FiMessageCircle } from 'react-icons/fi';
 import './ClientApprovals.css';
-import { approvalAPI } from '../../services/api';
+import { approvalAPI, deliverablesAPI } from '../../services/api';
 
 export default function ClientApprovals() {
   const [approvals, setApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [selectedApproval, setSelectedApproval] = useState(null);
+  const [feedback, setFeedback] = useState('');
+  const [filter, setFilter] = useState('Pending');
 
   useEffect(() => {
     const fetchApprovals = async () => {
       try {
         setLoading(true);
-        const response = await approvalAPI.getAll();
-        console.log('Approvals response:', response);
-        // Handle both response.data and response.data.data formats
-        const approvalsData = response.data?.data || response.data || [];
-        setApprovals(Array.isArray(approvalsData) ? approvalsData : []);
+        // Fetch legacy approvals (UI/UX)
+        const legacyResponse = await approvalAPI.getAll().catch(err => ({ data: [] }));
+        const legacyData = legacyResponse.data?.data || legacyResponse.data || [];
+
+        // Fetch new deliverables (Development)
+        const deliverablesResponse = await deliverablesAPI.getDeliverables().catch(err => ({ data: [] }));
+        const deliverablesData = deliverablesResponse.data?.data || deliverablesResponse.data || [];
+
+        console.log('Legacy Data:', legacyData);
+        console.log('Deliverables Data:', deliverablesData);
+
+        // Normalize deliverables to match approval structure
+        const normalizedDeliverables = Array.isArray(deliverablesData) ? deliverablesData.map(d => ({
+          ...d,
+          id: d.id, // Ensure ID uniqueness if possible, or handle collision
+          title: d.name,
+          status: d.status,
+          priority: 'Normal', // Default
+          stage: d.phase,
+          requestedDate: d.createdAt,
+          source: 'deliverable', // Flag to use correct API for actions
+          attachments: d.fileUrl ? [{ name: d.fileName, url: d.fileUrl, type: d.fileType }] : []
+        })) : [];
+
+        const merged = [...(Array.isArray(legacyData) ? legacyData : []), ...normalizedDeliverables];
+
+        // Sort by date desc
+        merged.sort((a, b) => new Date(b.createdAt || b.requestedDate) - new Date(a.createdAt || a.requestedDate));
+
+        setApprovals(merged);
       } catch (error) {
         console.error('Error fetching approvals:', error);
         setApprovals([]);
@@ -26,9 +55,7 @@ export default function ClientApprovals() {
     fetchApprovals();
   }, []);
 
-  const [selectedApproval, setSelectedApproval] = useState(null);
-  const [feedback, setFeedback] = useState('');
-  const [filter, setFilter] = useState('Pending');
+
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -36,42 +63,36 @@ export default function ClientApprovals() {
     try {
       const approval = approvals.find(a => a.id === id);
 
-      // Approve the design
-      await approvalAPI.approve(id, {
-        status: 'Approved',
-        approvedAt: new Date().toISOString(),
-        feedback: 'Approved by client'
-      });
-
-      // Notify developers about approved designs
-      try {
-        const token = localStorage.getItem('token');
-        await fetch('/api/notifications', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            type: 'design_approved',
-            title: `✅ Designs Approved: ${approval.title}`,
-            message: `Client has approved the designs. You can now start development.`,
-            recipientRole: 'developer',
-            priority: 'high',
-            relatedId: approval.projectId,
-            relatedType: 'project'
-          })
+      if (approval.source === 'deliverable') {
+        // Use Deliverables API
+        await deliverablesAPI.updateDeliverable(id, {
+          status: 'Approved',
+          approvals: [...(approval.approvals || []), {
+            by: 'Client',
+            date: new Date(),
+            feedback: 'Approved by client'
+          }]
         });
-      } catch (notifError) {
-        console.error('Notification error:', notifError);
+        alert('✅ Deliverable approved successfully!');
+      } else {
+        // Use Legacy Approval API
+        await approvalAPI.approve(id, {
+          status: 'Approved',
+          approvedAt: new Date().toISOString(),
+          feedback: 'Approved by client'
+        });
+        alert('✅ Design approved successfully! Developers have been notified.');
       }
 
-      // Refresh approvals
-      const response = await approvalAPI.getAll();
-      const approvalsData = response.data?.data || response.data || [];
-      setApprovals(Array.isArray(approvalsData) ? approvalsData : []);
+      // Refresh both lists logic is in fetchApprovals, so verify triggering re-fetch?
+      // For now, let's manually update local state or reload. 
+      // Ideally call fetchApprovals() again, but it's inside useEffect. 
+      // We can move fetch logic outside useEffect or essentially just reload window or filter local state.
 
-      alert('✅ Design approved successfully! Developers have been notified.');
+      setApprovals(prev => prev.map(app =>
+        app.id === id ? { ...app, status: 'Approved' } : app
+      ));
+
     } catch (error) {
       console.error('Approval error:', error);
       alert('❌ Failed to approve. Please try again.');
@@ -102,14 +123,49 @@ export default function ClientApprovals() {
     setFeedback('');
   };
 
-  const filteredApprovals = approvals.filter(app =>
-    filter === 'All' || app.status === filter
-  );
+
+
+  // Helper to categorize approvals
+  const getCategory = (app) => {
+    const type = (app.type || '').toLowerCase();
+    const stage = (app.stage || app.phase || '').toLowerCase();
+    const title = (app.title || app.name || '').toLowerCase();
+
+    // Check strict Design keywords
+    if (stage.includes('design') || type.includes('design') || title.includes('design') ||
+      type.includes('wireframe') || type.includes('mockup') || type.includes('prototype') || type.includes('ui/ux')) {
+      return 'UI/UX';
+    }
+
+    if (stage.includes('development') || type.includes('code') || type === 'development' || stage.includes('implementation')) {
+      return 'Development';
+    }
+
+    if (stage.includes('test') || type.includes('test') || type.includes('qa')) {
+      return 'Testing';
+    }
+
+    // Fallback based on source if available
+    if (app.source === 'deliverable' && (app.phase === 'Development' || app.type === 'Code')) return 'Development';
+
+    // Legacy approval default fallback - if nothing else matched and it's legacy, it's likely Design
+    if (!app.source && !stage && !type) return 'UI/UX';
+    // Or if stage is 'Design Review' default
+    if (!stage) return 'UI/UX';
+
+    return 'Other';
+  };
+
+  const filteredApprovals = approvals.filter(app => {
+    const statusMatch = filter === 'All' || app.status.includes(filter) || (filter === 'Pending' && app.status === 'Pending Approval');
+    const categoryMatch = categoryFilter === 'All' || getCategory(app) === categoryFilter;
+    return statusMatch && categoryMatch;
+  });
 
   const counts = {
-    Pending: approvals.filter(a => a.status === 'Pending').length,
-    Approved: approvals.filter(a => a.status === 'Approved').length,
-    Rejected: approvals.filter(a => a.status === 'Rejected').length
+    Pending: approvals.filter(a => a.status.includes('Pending')).length,
+    Approved: approvals.filter(a => a.status.includes('Approved')).length,
+    Rejected: approvals.filter(a => a.status.includes('Rejected')).length
   };
 
   return (
@@ -121,23 +177,36 @@ export default function ClientApprovals() {
         </div>
       </div>
 
+      {/* Category Tabs */}
+      <div className="category-tabs">
+        {['All', 'UI/UX', 'Development', 'Testing'].map(cat => (
+          <button
+            key={cat}
+            className={`category-tab ${categoryFilter === cat ? 'active' : ''}`}
+            onClick={() => setCategoryFilter(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       {/* Stats */}
       <div className="approval-stats">
         <div className="stat-badge pending">
           <span className="count">{counts.Pending}</span>
-          <span className="label">Pending</span>
+          <span className="label">Total Pending</span>
         </div>
         <div className="stat-badge approved">
           <span className="count">{counts.Approved}</span>
-          <span className="label">Approved</span>
+          <span className="label">Total Approved</span>
         </div>
         <div className="stat-badge rejected">
           <span className="count">{counts.Rejected}</span>
-          <span className="label">Rejected</span>
+          <span className="label">Total Rejected</span>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Status Filters */}
       <div className="approval-filters">
         {['Pending', 'Approved', 'Rejected', 'All'].map(f => (
           <button
@@ -159,8 +228,8 @@ export default function ClientApprovals() {
                 <span className={`type-badge ${approval.type.toLowerCase().replace(' ', '-')}`}>
                   {approval.type}
                 </span>
-                <span className={`priority-badge ${approval.priority.toLowerCase()}`}>
-                  {approval.priority}
+                <span className={`priority-badge ${(approval.priority || 'Normal').toLowerCase()}`}>
+                  {approval.priority || 'Normal'}
                 </span>
                 <span className="approval-id">#{approval.id}</span>
               </div>
@@ -169,13 +238,13 @@ export default function ClientApprovals() {
               </div>
             </div>
 
-            <h3 className="approval-title">{approval.title}</h3>
+            <h3 className="approval-title">{approval.title || approval.name}</h3>
             <p className="approval-description">{approval.description}</p>
 
             <div className="approval-details">
               <div className="detail-item">
                 <span className="detail-label">Stage:</span>
-                <span className="detail-value">{approval.stage || 'Design Review'}</span>
+                <span className="detail-value">{approval.stage || approval.phase || 'Design Review'}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Requested by:</span>
@@ -263,7 +332,7 @@ export default function ClientApprovals() {
         <div className="modal-overlay" onClick={() => setSelectedApproval(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{selectedApproval.title}</h2>
+              <h2>{selectedApproval.title || selectedApproval.name}</h2>
               <button className="modal-close" onClick={() => setSelectedApproval(null)}>×</button>
             </div>
 
@@ -277,8 +346,8 @@ export default function ClientApprovals() {
                 <h3>Details</h3>
                 <div className="modal-details-grid">
                   <div><strong>Type:</strong> {selectedApproval.type}</div>
-                  <div><strong>Stage:</strong> {selectedApproval.stage}</div>
-                  <div><strong>Priority:</strong> {selectedApproval.priority}</div>
+                  <div><strong>Stage:</strong> {selectedApproval.stage || selectedApproval.phase}</div>
+                  <div><strong>Priority:</strong> {selectedApproval.priority || 'Normal'}</div>
                   <div><strong>Status:</strong> {selectedApproval.status}</div>
                   <div><strong>Requested by:</strong> {selectedApproval.requestedBy?.name || selectedApproval.requestedBy || 'N/A'}</div>
                   <div><strong>Due Date:</strong> {selectedApproval.dueDate ? new Date(selectedApproval.dueDate).toLocaleDateString() : 'N/A'}</div>

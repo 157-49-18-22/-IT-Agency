@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FiCode, FiGitBranch, FiClock, FiUser, FiAlertCircle, FiCheckCircle, FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter, FiEye } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Prism as SyntaxHighlighter } from 'prism-react-renderer';
 import './Code.css';
 import { codeAPI } from '../../services/api';
+import { ProjectContext } from '../../context/ProjectContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Code = () => {
+  const { currentUser } = useAuth();
+  const { getProjectsByUser } = useContext(ProjectContext);
+
   // State declarations at the top
-  // State declarations at the top
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [myProjects, setMyProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -87,31 +93,31 @@ export default App;`,
 
   const handleFileUpdate = async (content) => {
     if (!activeFile) return;
-    
+
     try {
       const updatedFile = {
         ...activeFile,
         content,
         lastUpdated: new Date().toISOString()
       };
-      
+
       // Update local state immediately for better UX
-      setFiles(prevFiles => 
-        prevFiles.map(file => 
+      setFiles(prevFiles =>
+        prevFiles.map(file =>
           file.id === activeFile.id ? updatedFile : file
         )
       );
       setActiveFile(updatedFile);
-      
+
       // Call API to update the file
       await codeAPI.update(activeFile.id, { content });
-      
+
       // Show success message
       toast.success('File saved successfully!');
     } catch (error) {
       console.error('Error updating file:', error);
       toast.error('Failed to save file. Please try again.');
-      
+
       // Revert local state on error
       setActiveFile(prevFile => ({
         ...prevFile,
@@ -132,16 +138,16 @@ export default App;`,
       setError('File name contains invalid characters');
       return;
     }
-    
+
     try {
       setIsSubmitting(true);
       setError(null);
-      
+
       const extension = newFile.language === 'javascript' ? 'js' : newFile.language;
-      const fileName = newFile.name.endsWith(`.${extension}`) 
-        ? newFile.name 
+      const fileName = newFile.name.endsWith(`.${extension}`)
+        ? newFile.name
         : `${newFile.name}.${extension}`;
-      
+
       // Prepare the data according to the backend's expected format
       const fileData = {
         name: fileName,  // Required field
@@ -149,27 +155,21 @@ export default App;`,
         language: newFile.language.toLowerCase(), // Ensure lowercase language
         path: '/src'
       };
-      
-      // Get project ID from URL or use a default value (1 for now)
-      const pathSegments = window.location.pathname.split('/');
-      let projectId = 1; // Default project ID if not found in URL
-      
-      // Try to get project ID from URL
-      const urlProjectId = pathSegments[pathSegments.length - 1];
-      if (urlProjectId && !isNaN(parseInt(urlProjectId, 10))) {
-        projectId = parseInt(urlProjectId, 10);
-      }
-      
+
+
+      // Use selected project ID
+      const projectId = selectedProject?.id || 1;
+
       // Always include projectId as it's required by the backend
       fileData.projectId = projectId;
-      
+
       console.log('Creating file with data:', fileData);
-      
+
       // Call the API to create the file
       const response = await codeAPI.create(fileData);
-      
+
       console.log('API Response:', response);
-      
+
       if (response.data) {
         // Format the new file data to match the frontend's expected structure
         const newFileData = {
@@ -183,13 +183,13 @@ export default App;`,
           branch: 'main',
           issues: 0
         };
-        
+
         // Update local state with the new file
         setFiles(prevFiles => [...prevFiles, newFileData]);
         setActiveFile(newFileData);
         setNewFile({ name: '', content: '', language: 'javascript' });
         setIsNewFileModalOpen(false);
-        
+
         // Show success message
         toast.success('File created successfully!');
       }
@@ -199,9 +199,9 @@ export default App;`,
         response: error.response?.data,
         status: error.response?.status
       });
-      
+
       let errorMessage = 'Failed to create file. Please try again.';
-      
+
       if (error.response?.data?.errors) {
         // Handle validation errors from backend
         errorMessage = error.response.data.errors.map(err => err.msg).join(' ');
@@ -210,7 +210,7 @@ export default App;`,
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -226,13 +226,13 @@ export default App;`,
     }
   };
 
-  const filteredFiles = files.filter(file => 
+  const filteredFiles = files.filter(file =>
     file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (file.content && file.content.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getLanguageIcon = (language) => {
-    switch(language) {
+    switch (language) {
       case 'javascript':
         return <span className="file-icon">JS</span>;
       case 'css':
@@ -263,7 +263,7 @@ export default App;`,
     const now = new Date();
     const updated = new Date(dateString);
     const diffInHours = Math.floor((now - updated) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'just now';
     } else if (diffInHours < 24) {
@@ -274,24 +274,68 @@ export default App;`,
     }
   };
 
-  // Fetch files when component mounts
+  // Fetch user's projects when component mounts
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log('Loading projects for user:', currentUser.id);
+      const allProjects = getProjectsByUser(currentUser.id);
+      console.log('All projects loaded:', allProjects);
+
+      // Filter only approved projects (where UI/UX stage is completed and ready for development)
+      const approvedProjects = allProjects.filter(project => {
+        // Check if project has completed UI/UX stage or is in development/testing stage
+        const isApproved = project.currentStage === 'development' ||
+          project.currentStage === 'testing' ||
+          project.status === 'approved' ||
+          project.uiuxApproved === true;
+        return isApproved;
+      });
+
+      console.log('Approved projects:', approvedProjects);
+
+      // If no approved projects found, create mock data for testing
+      if (!approvedProjects || approvedProjects.length === 0) {
+        console.warn('No approved projects found, using mock data');
+        const mockProjects = [
+          {
+            id: 1,
+            projectName: 'Web Development (Approved)',
+            status: 'approved',
+            currentStage: 'development'
+          },
+          {
+            id: 2,
+            projectName: 'Mobile App (Approved)',
+            status: 'approved',
+            currentStage: 'development'
+          }
+        ];
+        setMyProjects(mockProjects);
+        setSelectedProject(mockProjects[0]);
+      } else {
+        setMyProjects(approvedProjects);
+        // Set first approved project as default if available
+        if (approvedProjects.length > 0 && !selectedProject) {
+          setSelectedProject(approvedProjects[0]);
+        }
+      }
+    }
+  }, [currentUser, getProjectsByUser]);
+
+  // Fetch files when component mounts or project changes
   useEffect(() => {
     const fetchFiles = async () => {
+      if (!selectedProject) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        // Get project ID from URL or use a default value (1 for now)
-        const pathSegments = window.location.pathname.split('/');
-        let projectId = 1; // Default project ID if not found in URL
-        
-        // Try to get project ID from URL
-        const urlProjectId = pathSegments[pathSegments.length - 1];
-        if (urlProjectId && !isNaN(parseInt(urlProjectId, 10))) {
-          projectId = parseInt(urlProjectId, 10);
-        }
-        
-        // Fetch files for the current project
-        const response = await codeAPI.getByProject(projectId);
-        
+
+        // Fetch files for the selected project
+        const response = await codeAPI.getByProject(selectedProject.id);
+
         if (response.data && response.data.length > 0) {
           // Format the files to match the expected structure
           const formattedFiles = response.data.map(file => ({
@@ -305,7 +349,7 @@ export default App;`,
             branch: file.branch || 'main',
             issues: file.issues || 0
           }));
-          
+
           setFiles(formattedFiles);
           if (!activeFile) {
             setActiveFile(formattedFiles[0]);
@@ -324,7 +368,7 @@ export default App;`,
     };
 
     fetchFiles();
-  }, [activeFile]); // Add activeFile to dependencies to prevent unnecessary re-fetches
+  }, [selectedProject]); // Re-fetch when selected project changes
 
   if (isLoading) {
     return (
@@ -337,7 +381,7 @@ export default App;`,
 
   return (
     <div className="code-container">
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={5000}
         hideProgressBar={false}
@@ -361,16 +405,16 @@ export default App;`,
             <div className="form-group">
               <label htmlFor="fileName">File Name</label>
               <div className="input-with-extension">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="fileName"
                   value={newFile.name}
-                  onChange={(e) => setNewFile({...newFile, name: e.target.value})}
+                  onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
                   placeholder="Enter file name"
                 />
-                <select 
+                <select
                   value={newFile.language}
-                  onChange={(e) => setNewFile({...newFile, language: e.target.value})}
+                  onChange={(e) => setNewFile({ ...newFile, language: e.target.value })}
                 >
                   {languages.map(lang => (
                     <option key={lang.value} value={lang.value}>{lang.label}</option>
@@ -378,19 +422,61 @@ export default App;`,
                 </select>
               </div>
             </div>
+
+            {/* Project Selector */}
+            <div className="form-group">
+              <label htmlFor="projectSelect">Project</label>
+              {myProjects.length > 0 ? (
+                <select
+                  id="projectSelect"
+                  value={selectedProject?.id || ''}
+                  onChange={(e) => {
+                    const project = myProjects.find(p => p.id === parseInt(e.target.value));
+                    setSelectedProject(project);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                >
+                  {myProjects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.projectName || `Project ${project.id}`}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{
+                  padding: '10px',
+                  background: '#fef3c7',
+                  border: '1px solid #fbbf24',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  color: '#92400e'
+                }}>
+                  No projects assigned. Please contact admin.
+                </div>
+              )}
+            </div>
+
             <div className="form-group">
               <label htmlFor="fileContent">Initial Content (Optional)</label>
               <textarea
                 id="fileContent"
                 rows="6"
                 value={newFile.content}
-                onChange={(e) => setNewFile({...newFile, content: e.target.value})}
+                onChange={(e) => setNewFile({ ...newFile, content: e.target.value })}
                 placeholder="Enter initial file content"
               ></textarea>
             </div>
             <div className="form-actions">
-              <button 
-                className="btn btn-secondary" 
+              <button
+                className="btn btn-secondary"
                 onClick={() => {
                   setIsNewFileModalOpen(false);
                   setError(null);
@@ -399,8 +485,8 @@ export default App;`,
               >
                 Cancel
               </button>
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 onClick={handleCreateFile}
                 disabled={!newFile.name.trim() || isSubmitting}
               >
@@ -412,11 +498,11 @@ export default App;`,
                 ) : 'Create File'}
               </button>
               {error && (
-                <div className="error-message" style={{ 
-                  color: '#ef4444', 
-                  marginTop: '10px', 
-                  padding: '8px', 
-                  backgroundColor: '#fef2f2', 
+                <div className="error-message" style={{
+                  color: '#ef4444',
+                  marginTop: '10px',
+                  padding: '8px',
+                  backgroundColor: '#fef2f2',
                   borderRadius: '4px',
                   fontSize: '14px',
                   gridColumn: '1 / -1'
@@ -433,10 +519,53 @@ export default App;`,
           <h2>Code Repository</h2>
           <p>Browse and manage your project's source code</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setIsNewFileModalOpen(true)}>
-          <FiCode className="btn-icon" />
-          <span>New File</span>
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Project Selector */}
+          {myProjects.length > 0 && (
+            <div className="project-selector" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '8px',
+              color: 'white'
+            }}>
+              <FiCode size={18} />
+              <select
+                value={selectedProject?.id || ''}
+                onChange={(e) => {
+                  const project = myProjects.find(p => p.id === parseInt(e.target.value));
+                  setSelectedProject(project);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  padding: '4px 8px'
+                }}
+              >
+                {myProjects.map(project => (
+                  <option
+                    key={project.id}
+                    value={project.id}
+                    style={{ background: '#1f2937', color: 'white' }}
+                  >
+                    {project.projectName || `Project ${project.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button className="btn btn-primary" onClick={() => setIsNewFileModalOpen(true)}>
+            <FiCode className="btn-icon" />
+            <span>New File</span>
+          </button>
+        </div>
       </div>
 
       <div className="code-toolbar">
@@ -487,7 +616,7 @@ export default App;`,
             <div className="header-issues">Issues</div>
             <div className="header-actions">Actions</div>
           </div>
-          
+
           <div className="files-list">
             {filteredFiles.map((file) => (
               <div key={file.id} className="file-item">
@@ -498,17 +627,17 @@ export default App;`,
                     <div className="file-path">{file.path}</div>
                   </div>
                 </div>
-                
+
                 <div className="file-branch">
                   <FiGitBranch className="branch-icon" />
                   <span>{file.branch}</span>
                 </div>
-                
+
                 <div className="file-updated">
                   <div className="updated-time">{formatTimeAgo(file.lastUpdated)}</div>
                   <div className="updated-by">by {file.updatedBy}</div>
                 </div>
-                
+
                 <div className="file-issues">
                   {file.issues > 0 ? (
                     <span className="issues-badge has-issues">
@@ -522,7 +651,7 @@ export default App;`,
                     </span>
                   )}
                 </div>
-                
+
                 <div className="file-actions">
                   <button className="btn-icon" title="View">
                     <FiEye size={16} />

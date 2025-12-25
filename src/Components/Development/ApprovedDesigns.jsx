@@ -1,86 +1,177 @@
 import React, { useState, useEffect } from 'react';
-import { FaImage, FaDownload, FaExternalLinkAlt, FaSearch, FaFilter, FaEye } from 'react-icons/fa';
+import { FiImage, FiLayers, FiSmartphone, FiDownload, FiEye, FiChevronDown, FiX } from 'react-icons/fi';
 import axios from 'axios';
 import './ApprovedDesigns.css';
 
-const ApprovedDesigns = () => {
-    const [wireframes, setWireframes] = useState([]);
-    const [mockups, setMockups] = useState([]);
-    const [prototypes, setPrototypes] = useState([]);
+export default function ApprovedDesigns() {
+    const [projects, setProjects] = useState([]);
+    const [selectedProject, setSelectedProject] = useState(null);
     const [activeTab, setActiveTab] = useState('wireframes');
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [designs, setDesigns] = useState({
+        wireframes: [],
+        mockups: [],
+        prototypes: []
+    });
+    const [loading, setLoading] = useState(true);
     const [selectedDesign, setSelectedDesign] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
-        fetchApprovedDesigns();
+        fetchApprovedProjects();
     }, []);
 
-    const fetchApprovedDesigns = async () => {
+    useEffect(() => {
+        if (selectedProject) {
+            fetchDesigns(selectedProject.id);
+        }
+    }, [selectedProject]);
+
+    const fetchApprovedProjects = async () => {
         try {
-            setIsLoading(true);
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            const approvalsRes = await axios.get('/api/approvals?status=Approved', config);
+            const approvedApprovals = approvalsRes.data?.data || approvalsRes.data || [];
+
+            const projectMap = new Map();
+            approvedApprovals.forEach(approval => {
+                if (approval.projectId && !projectMap.has(approval.projectId)) {
+                    projectMap.set(approval.projectId, {
+                        id: approval.projectId,
+                        name: approval.project?.name || `Project ${approval.projectId}`,
+                        approvedDate: approval.approvedAt
+                    });
+                }
+            });
+
+            const projectsList = Array.from(projectMap.values());
+            setProjects(projectsList);
+
+            if (projectsList.length > 0) {
+                setSelectedProject(projectsList[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching approved projects:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchDesigns = async (projectId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
             const [wireframesRes, mockupsRes, prototypesRes] = await Promise.all([
-                axios.get('/api/wireframes?status=approved'),
-                axios.get('/api/mockups?status=approved'),
-                axios.get('/api/prototypes?status=approved')
+                axios.get(`/api/wireframes?projectId=${projectId}`, config),
+                axios.get(`/api/mockups?projectId=${projectId}`, config),
+                axios.get(`/api/prototypes?projectId=${projectId}`, config)
             ]);
 
-            setWireframes(wireframesRes.data.wireframes || wireframesRes.data || []);
-            setMockups(mockupsRes.data.mockups || mockupsRes.data || []);
-            setPrototypes(prototypesRes.data.prototypes || prototypesRes.data || []);
+            setDesigns({
+                wireframes: wireframesRes.data?.data || wireframesRes.data || [],
+                mockups: mockupsRes.data?.data || mockupsRes.data || [],
+                prototypes: prototypesRes.data?.data || prototypesRes.data || []
+            });
         } catch (error) {
-            console.error('Error fetching approved designs:', error);
-        } finally {
-            setIsLoading(false);
+            console.error('Error fetching designs:', error);
         }
     };
 
-    const getCurrentData = () => {
-        switch (activeTab) {
-            case 'wireframes':
-                return wireframes;
-            case 'mockups':
-                return mockups;
-            case 'prototypes':
-                return prototypes;
-            default:
-                return [];
-        }
+    const handleProjectChange = (e) => {
+        const project = projects.find(p => p.id === parseInt(e.target.value));
+        setSelectedProject(project);
     };
 
-    const filteredData = getCurrentData().filter(item =>
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleViewDetails = (design) => {
+    const handleViewDesign = (design) => {
         setSelectedDesign(design);
         setShowModal(true);
     };
 
-    const handleDownload = async (design) => {
-        try {
-            const response = await fetch(`http://localhost:5000${design.imageUrl}`);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${design.title}.png`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (error) {
-            console.error('Error downloading file:', error);
-        }
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedDesign(null);
     };
 
-    if (isLoading) {
+    const renderDesigns = () => {
+        const currentDesigns = designs[activeTab] || [];
+
+        if (currentDesigns.length === 0) {
+            return (
+                <div className="empty-designs">
+                    <FiImage size={64} className="empty-icon" />
+                    <h3>No {activeTab} found</h3>
+                    <p>Approved designs will appear here once available</p>
+                </div>
+            );
+        }
+
         return (
-            <div className="approved-designs-container">
-                <div className="loading-spinner">
-                    <div className="spinner"></div>
+            <div className="designs-grid">
+                {currentDesigns.map((design) => (
+                    <div key={design.id} className="design-card">
+                        <div className="design-image">
+                            {design.imageUrl ? (
+                                <img src={design.imageUrl} alt={design.title} />
+                            ) : (
+                                <div className="image-placeholder">
+                                    <FiImage size={48} />
+                                </div>
+                            )}
+                        </div>
+                        <div className="design-info">
+                            <h4>{design.title}</h4>
+                            {design.description && (
+                                <p className="design-description">{design.description}</p>
+                            )}
+                            <div className="design-meta">
+                                <span className="design-date">
+                                    {new Date(design.createdAt).toLocaleDateString()}
+                                </span>
+                                {design.version && (
+                                    <span className="design-version">v{design.version}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="design-actions">
+                            <button
+                                className="action-btn view"
+                                onClick={() => handleViewDesign(design)}
+                                title="View Details"
+                            >
+                                <FiEye /> View
+                            </button>
+                            <button
+                                className="action-btn download"
+                                onClick={() => design.imageUrl && window.open(design.imageUrl, '_blank')}
+                                title="Download"
+                            >
+                                <FiDownload /> Download
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="approved-designs">
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
                     <p>Loading approved designs...</p>
                 </div>
             </div>
@@ -88,182 +179,144 @@ const ApprovedDesigns = () => {
     }
 
     return (
-        <div className="approved-designs-container">
-            <div className="page-header">
-                <div className="header-content">
-                    <h1>Approved Design Files</h1>
-                    <p>Access all approved wireframes, mockups, and prototypes</p>
+        <div className="approved-designs">
+            <div className="designs-header">
+                <div>
+                    <h1>Design Files & Specs</h1>
+                    <p>Access approved wireframes, mockups, and prototypes</p>
                 </div>
             </div>
 
-            <div className="design-tabs">
-                <button
-                    className={`tab-button ${activeTab === 'wireframes' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('wireframes')}
-                >
-                    <FaImage /> Wireframes ({wireframes.length})
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'mockups' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('mockups')}
-                >
-                    <FaImage /> Mockups ({mockups.length})
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'prototypes' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('prototypes')}
-                >
-                    <FaImage /> Prototypes ({prototypes.length})
-                </button>
-            </div>
-
-            <div className="search-filter-bar">
-                <div className="search-box">
-                    <FaSearch className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search designs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <div className="project-selector">
+                <label htmlFor="project-select">Select Project:</label>
+                <div className="select-wrapper">
+                    <select
+                        id="project-select"
+                        value={selectedProject?.id || ''}
+                        onChange={handleProjectChange}
+                    >
+                        {projects.length === 0 ? (
+                            <option value="">No approved projects</option>
+                        ) : (
+                            projects.map(project => (
+                                <option key={project.id} value={project.id}>
+                                    {project.name}
+                                </option>
+                            ))
+                        )}
+                    </select>
+                    <FiChevronDown className="select-icon" />
                 </div>
             </div>
 
-            <div className="designs-grid">
-                {filteredData.length > 0 ? (
-                    filteredData.map((design) => (
-                        <div key={design.id} className="design-card">
-                            <div className="design-image">
-                                {design.imageUrl ? (
-                                    <img
-                                        src={`http://localhost:5000${design.imageUrl}`}
-                                        alt={design.title}
-                                        onError={(e) => {
-                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                                        }}
-                                    />
+            {selectedProject && (
+                <>
+                    <div className="design-tabs">
+                        <button
+                            className={`tab-btn ${activeTab === 'wireframes' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('wireframes')}
+                        >
+                            <FiLayers />
+                            Wireframes ({designs.wireframes.length})
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'mockups' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('mockups')}
+                        >
+                            <FiImage />
+                            Mockups ({designs.mockups.length})
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'prototypes' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('prototypes')}
+                        >
+                            <FiSmartphone />
+                            Prototypes ({designs.prototypes.length})
+                        </button>
+                    </div>
+
+                    <div className="designs-content">
+                        {renderDesigns()}
+                    </div>
+                </>
+            )}
+
+            {!selectedProject && projects.length === 0 && (
+                <div className="empty-state">
+                    <FiImage size={64} className="empty-icon" />
+                    <h3>No Approved Projects</h3>
+                    <p>Projects will appear here once clients approve the designs</p>
+                </div>
+            )}
+
+            {/* Detail Modal */}
+            {showModal && selectedDesign && (
+                <div className="design-modal-overlay" onClick={closeModal}>
+                    <div className="design-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={closeModal}>
+                            <FiX />
+                        </button>
+
+                        <div className="modal-content">
+                            <div className="modal-image">
+                                {selectedDesign.imageUrl ? (
+                                    <img src={selectedDesign.imageUrl} alt={selectedDesign.title} />
                                 ) : (
-                                    <div className="no-image">
-                                        <FaImage size={48} />
-                                        <span>No preview available</span>
+                                    <div className="image-placeholder-large">
+                                        <FiImage size={80} />
                                     </div>
                                 )}
-                                <div className="design-overlay">
-                                    <button
-                                        className="overlay-button"
-                                        onClick={() => handleViewDetails(design)}
-                                    >
-                                        <FaEye /> View Details
-                                    </button>
-                                </div>
                             </div>
-                            <div className="design-info">
-                                <h3>{design.title}</h3>
-                                {design.description && <p>{design.description}</p>}
-                                <div className="design-meta">
-                                    <span className="version">v{design.version}</span>
-                                    <span className="category">{design.category}</span>
-                                </div>
-                                <div className="design-actions">
-                                    <button
-                                        className="action-button download"
-                                        onClick={() => handleDownload(design)}
-                                    >
-                                        <FaDownload /> Download
-                                    </button>
-                                    {design.link && (
-                                        <a
-                                            href={design.link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="action-button link"
-                                        >
-                                            <FaExternalLinkAlt /> Open Link
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="empty-state">
-                        <FaImage size={64} />
-                        <h3>No approved {activeTab} found</h3>
-                        <p>Approved designs will appear here once available</p>
-                    </div>
-                )}
-            </div>
 
-            {/* Design Details Modal */}
-            {showModal && selectedDesign && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
-                        <div className="modal-header">
-                            <h2>{selectedDesign.title}</h2>
-                            <span className="modal-version">Version {selectedDesign.version}</span>
-                        </div>
-                        <div className="modal-body">
-                            <div className="modal-image">
-                                <img
-                                    src={`http://localhost:5000${selectedDesign.imageUrl}`}
-                                    alt={selectedDesign.title}
-                                />
-                            </div>
                             <div className="modal-details">
-                                <div className="detail-row">
-                                    <label>Description:</label>
+                                <h2>{selectedDesign.title}</h2>
+
+                                <div className="detail-section">
+                                    <h3>Description</h3>
                                     <p>{selectedDesign.description || 'No description provided'}</p>
                                 </div>
-                                <div className="detail-row">
-                                    <label>Category:</label>
-                                    <p>{selectedDesign.category}</p>
+
+                                <div className="detail-grid">
+                                    <div className="detail-item">
+                                        <span className="detail-label">Version:</span>
+                                        <span className="detail-value">{selectedDesign.version || 'N/A'}</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Created:</span>
+                                        <span className="detail-value">
+                                            {new Date(selectedDesign.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Status:</span>
+                                        <span className="detail-value status-approved">Approved</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Type:</span>
+                                        <span className="detail-value">{activeTab.slice(0, -1)}</span>
+                                    </div>
                                 </div>
-                                <div className="detail-row">
-                                    <label>Status:</label>
-                                    <span className="status-badge approved">Approved</span>
-                                </div>
-                                {selectedDesign.link && (
-                                    <div className="detail-row">
-                                        <label>Prototype Link:</label>
-                                        <a href={selectedDesign.link} target="_blank" rel="noopener noreferrer">
-                                            {selectedDesign.link}
-                                        </a>
+
+                                {selectedDesign.notes && (
+                                    <div className="detail-section">
+                                        <h3>Notes</h3>
+                                        <p>{selectedDesign.notes}</p>
                                     </div>
                                 )}
-                                <div className="detail-row">
-                                    <label>Created By:</label>
-                                    <p>{selectedDesign.creator?.name || 'Unknown'}</p>
-                                </div>
-                                <div className="detail-row">
-                                    <label>Approved Date:</label>
-                                    <p>{new Date(selectedDesign.approvedAt || selectedDesign.updatedAt).toLocaleDateString()}</p>
+
+                                <div className="modal-actions">
+                                    <button
+                                        className="btn-download"
+                                        onClick={() => selectedDesign.imageUrl && window.open(selectedDesign.imageUrl, '_blank')}
+                                    >
+                                        <FiDownload /> Download Design
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button
-                                className="modal-button download"
-                                onClick={() => handleDownload(selectedDesign)}
-                            >
-                                <FaDownload /> Download
-                            </button>
-                            {selectedDesign.link && (
-                                <a
-                                    href={selectedDesign.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="modal-button link"
-                                >
-                                    <FaExternalLinkAlt /> Open Prototype
-                                </a>
-                            )}
                         </div>
                     </div>
                 </div>
             )}
         </div>
     );
-};
-
-export default ApprovedDesigns;
+}

@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar, FiPlus, FiX } from 'react-icons/fi';
+import React, { useState, useEffect, useContext } from 'react';
+import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar, FiPlus, FiX, FiCode } from 'react-icons/fi';
 import './Sprints.css';
 import { sprintAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ProjectContext } from '../../context/ProjectContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Sprints() {
+  const { currentUser } = useAuth();
+  const { getProjectsByUser } = useContext(ProjectContext);
+
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [myProjects, setMyProjects] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -18,27 +25,55 @@ export default function Sprints() {
     startDate: '',
     endDate: '',
     velocity: 20,
-    projectId: 1 // Default or get from context/params
+    projectId: 1 // Will be updated from selected project
   });
+
+  // Load approved projects
+  useEffect(() => {
+    if (currentUser?.id) {
+      const allProjects = getProjectsByUser(currentUser.id);
+      const approvedProjects = allProjects.filter(project => {
+        const isApproved = project.currentStage === 'development' ||
+          project.currentStage === 'testing' ||
+          project.status === 'approved' ||
+          project.uiuxApproved === true;
+        return isApproved;
+      });
+
+      if (approvedProjects.length > 0) {
+        setMyProjects(approvedProjects);
+        setSelectedProject(approvedProjects[0]);
+        setFormData(prev => ({ ...prev, projectId: approvedProjects[0].id }));
+      } else {
+        // Mock data for testing
+        const mockProjects = [
+          { id: 1, projectName: 'Web Development (Approved)', status: 'approved', currentStage: 'development' },
+          { id: 2, projectName: 'Mobile App (Approved)', status: 'approved', currentStage: 'development' }
+        ];
+        setMyProjects(mockProjects);
+        setSelectedProject(mockProjects[0]);
+        setFormData(prev => ({ ...prev, projectId: mockProjects[0].id }));
+      }
+    }
+  }, [currentUser, getProjectsByUser]);
 
   useEffect(() => {
     const fetchSprints = async () => {
+      if (!selectedProject) return;
+
       try {
         setLoading(true);
-        console.log('Fetching sprints...');
-        
-        // Try to fetch sprints directly
+        console.log('Fetching sprints for project:', selectedProject.id);
+
         try {
-          const response = await sprintAPI.getAll();
+          const response = await sprintAPI.getSprints({ projectId: selectedProject.id });
           console.log('Sprints API response:', response);
-          
+
           let sprintsData = [];
-          
-          // Handle different possible response structures
+
           if (Array.isArray(response)) {
             sprintsData = response;
           } else if (response?.data) {
-            // If response has data property, check if it's an array or has a nested data property
             if (Array.isArray(response.data)) {
               sprintsData = response.data;
             } else if (response.data.data && Array.isArray(response.data.data)) {
@@ -47,21 +82,22 @@ export default function Sprints() {
               sprintsData = response.data.sprints;
             }
           }
-          
-          console.log('Processed sprints data:', sprintsData);
+
+          // Data is already filtered by backend
+          console.log('Sprints loaded:', sprintsData);
           setSprints(sprintsData || []);
-          
+
           if (sprintsData.length === 0) {
-            toast.info('No sprints found. Click "Start New Sprint" to create one.');
+            toast.info('No sprints found for this project. Click "Start New Sprint" to create one.');
           }
-          
+
         } catch (apiError) {
           console.error('API Error:', apiError);
           const errorMessage = apiError.response?.data?.message || 'Failed to load sprints';
           toast.error(`Error: ${errorMessage}`);
           setSprints([]);
         }
-        
+
       } catch (error) {
         console.error('Unexpected error:', error);
         toast.error('An unexpected error occurred. Please check the console for details.');
@@ -70,9 +106,9 @@ export default function Sprints() {
         setLoading(false);
       }
     };
-    
+
     fetchSprints();
-  }, []);
+  }, [selectedProject]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -84,47 +120,47 @@ export default function Sprints() {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.name.trim()) {
       errors.name = 'Sprint name is required';
     }
-    
+
     if (!formData.goal.trim()) {
       errors.goal = 'Sprint goal is required';
     }
-    
+
     if (!formData.startDate) {
       errors.startDate = 'Start date is required';
     }
-    
+
     if (!formData.endDate) {
       errors.endDate = 'End date is required';
     } else if (new Date(formData.endDate) <= new Date(formData.startDate)) {
       errors.endDate = 'End date must be after start date';
     }
-    
+
     if (formData.velocity <= 0) {
       errors.velocity = 'Velocity must be greater than 0';
     }
-    
+
     return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form
     const errors = validateForm();
     setFormErrors(errors);
-    
+
     // If there are errors, don't submit
     if (Object.keys(errors).length > 0) {
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       // Format dates to ISO string
       const sprintData = {
         ...formData,
@@ -134,16 +170,16 @@ export default function Sprints() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
-      const response = await sprintAPI.create(sprintData);
-      
+
+      const response = await sprintAPI.createSprint(sprintData);
+
       // Update local state with the new sprint
       setSprints(prevSprints => [...prevSprints, response.data]);
-      
+
       // Close modal and show success message
       setIsNewSprintModalOpen(false);
       toast.success('Sprint created successfully! 🎉');
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -153,7 +189,7 @@ export default function Sprints() {
         velocity: 20,
         projectId: 1
       });
-      
+
     } catch (error) {
       console.error('Error creating sprint:', error);
       const errorMessage = error.response?.data?.message || 'Failed to create sprint';
@@ -227,6 +263,40 @@ export default function Sprints() {
                 />
                 {formErrors.name && <span className="error-message">{formErrors.name}</span>}
               </div>
+
+              {/* Project Selector */}
+              <div className="form-group">
+                <label htmlFor="projectSelect">Project *</label>
+                {myProjects.length > 0 ? (
+                  <select
+                    id="projectSelect"
+                    value={selectedProject?.id || ''}
+                    onChange={(e) => {
+                      const project = myProjects.find(p => p.id === parseInt(e.target.value));
+                      setSelectedProject(project);
+                      setFormData(prev => ({ ...prev, projectId: project.id }));
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid #e5e7eb',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {myProjects.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.projectName || `Project ${project.id}`}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: '10px', background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '6px', fontSize: '14px', color: '#92400e' }}>
+                    No approved projects available
+                  </div>
+                )}
+              </div>
+
               <div className="form-group">
                 <label htmlFor="goal">Sprint Goal *</label>
                 <textarea
@@ -287,8 +357,8 @@ export default function Sprints() {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-primary"
                   disabled={submitting}
                 >
@@ -309,31 +379,70 @@ export default function Sprints() {
           <h1>Sprints</h1>
           <p>Manage your development sprints and track progress</p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={(e) => {
-            console.log('Button clicked, opening modal...');
-            e.preventDefault();
-            e.stopPropagation();
-            setIsNewSprintModalOpen(true);
-            console.log('isNewSprintModalOpen should be true now');
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '10px 20px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500'
-          }}
-        >
-          <FiPlus size={16} style={{ marginRight: '8px' }} />
-          Start New Sprint
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Project Selector */}
+          {myProjects.length > 0 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '8px',
+              color: 'white'
+            }}>
+              <FiCode size={18} />
+              <select
+                value={selectedProject?.id || ''}
+                onChange={(e) => {
+                  const project = myProjects.find(p => p.id === parseInt(e.target.value));
+                  setSelectedProject(project);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  padding: '4px 8px'
+                }}
+              >
+                {myProjects.map(project => (
+                  <option key={project.id} value={project.id} style={{ background: '#1f2937', color: 'white' }}>
+                    {project.projectName || `Project ${project.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            className="btn-primary"
+            onClick={(e) => {
+              console.log('Button clicked, opening modal...');
+              e.preventDefault();
+              e.stopPropagation();
+              setIsNewSprintModalOpen(true);
+              console.log('isNewSprintModalOpen should be true now');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '10px 20px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <FiPlus size={16} style={{ marginRight: '8px' }} />
+            Start New Sprint
+          </button>
+        </div>
       </div>
 
       {/* Active Sprint Overview */}
@@ -379,10 +488,10 @@ export default function Sprints() {
               <div>
                 <div className="stat-label">End Date</div>
                 <div className="stat-value-small">
-                  {new Date(sprint.endDate).toLocaleDateString('en-US', { 
-                    month: 'short', 
+                  {new Date(sprint.endDate).toLocaleDateString('en-US', {
+                    month: 'short',
                     day: 'numeric',
-                    year: 'numeric' 
+                    year: 'numeric'
                   })}
                 </div>
               </div>
@@ -391,9 +500,9 @@ export default function Sprints() {
 
           <div className="progress-section">
             <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ 
+              <div
+                className="progress-fill"
+                style={{
                   width: `${getProgressPercentage(sprint)}%`,
                   background: 'linear-gradient(90deg, #3b82f6, #60a5fa)'
                 }}
@@ -410,9 +519,9 @@ export default function Sprints() {
                     <span className="task-title">{task.title}</span>
                     <span className="task-points">{task.points || 0} SP</span>
                   </div>
-                  <div 
-                    className="task-status" 
-                    style={{ 
+                  <div
+                    className="task-status"
+                    style={{
                       background: getTaskStatusColor(task.status) + '20',
                       color: getTaskStatusColor(task.status)
                     }}
@@ -441,8 +550,8 @@ export default function Sprints() {
         ) : (
           <div className="sprints-grid">
             {sprints.map(sprint => (
-              <div 
-                key={sprint.id} 
+              <div
+                key={sprint.id}
                 className={`sprint-card ${(sprint.status || 'Planned').toLowerCase()}`}
                 onClick={() => setSelectedSprint(sprint)}
               >
@@ -456,7 +565,7 @@ export default function Sprints() {
                     </h3>
                     <p className="sprint-dates">
                       <FiCalendar size={14} />
-                      {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
+                      {sprint.startDate ? new Date(sprint.startDate).toLocaleDateString() : 'Not set'} - {sprint.endDate ? new Date(sprint.endDate).toLocaleDateString() : 'Not set'}
                     </p>
                   </div>
                   <div className={`sprint-status ${(sprint.status || 'Planned').toLowerCase()}`}>
@@ -472,8 +581,8 @@ export default function Sprints() {
                     <span>{getProgressPercentage(sprint)}%</span>
                   </div>
                   <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
+                    <div
+                      className="progress-fill"
                       style={{ width: `${getProgressPercentage(sprint)}%` }}
                     ></div>
                   </div>
@@ -554,9 +663,9 @@ export default function Sprints() {
                         <span className="modal-task-title">{task.title}</span>
                         <span className="modal-task-points">{task.points} SP</span>
                       </div>
-                      <span 
+                      <span
                         className="modal-task-status"
-                        style={{ 
+                        style={{
                           background: getTaskStatusColor(task.status) + '20',
                           color: getTaskStatusColor(task.status)
                         }}

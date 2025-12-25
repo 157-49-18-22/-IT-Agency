@@ -476,6 +476,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       <span>Review Feedback</span>
                     </Link>
                   </li>
+                  <li className={isActive('/deliverables/submit')}>
+                    <Link to="/deliverables/submit">
+                      <FaUpload className="submenu-icon" />
+                      <span>Submit to Client</span>
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>

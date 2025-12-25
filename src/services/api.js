@@ -187,7 +187,8 @@ export const projectsAPI = {
   createProject: (data) => api.post('/projects', data),
   updateProject: (id, data) => api.put(`/projects/${id}`, data),
   deleteProject: (id) => api.delete(`/projects/${id}`),
-  getClientProjects: (clientId) => api.get(`/clients/${clientId}/projects`)
+  getClientProjects: (clientId) => api.get(`/clients/${clientId}/projects`),
+  getProjectsByUser: (userId) => api.get('/projects', { params: { userId } })
 };
 
 // Deliverables APIs
@@ -198,6 +199,8 @@ export const deliverablesAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
     ...config
   }),
+  createDeliverable: (data) => api.post('/deliverables', data),
+  updateDeliverable: (id, data) => api.put(`/deliverables/${id}`, data),
   deleteDeliverable: (id) => api.delete(`/deliverables/${id}`)
 };
 
@@ -237,12 +240,19 @@ export const teamAPI = {
 };
 
 // Code/Repository APIs
+// Code/Repository APIs
+
 export const codeAPI = {
   getRepositories: (params) => api.get('/repositories', { params }),
   getRepository: (id) => api.get(`/repositories/${id}`),
   getCommits: (repoId) => api.get(`/repositories/${repoId}/commits`),
   getBranches: (repoId) => api.get(`/repositories/${repoId}/branches`),
-  getPullRequests: (repoId) => api.get(`/repositories/${repoId}/pull-requests`)
+  getPullRequests: (repoId) => api.get(`/repositories/${repoId}/pull-requests`),
+  // File management methods
+  getByProject: (projectId) => api.get(`/code/project/${projectId}`),
+  create: (data) => api.post('/code', data),
+  update: (id, data) => api.put(`/code/${id}`, data),
+  delete: (id) => api.delete(`/code/${id}`)
 };
 
 // Deployment APIs
@@ -323,8 +333,9 @@ export const calendarAPI = {
 };
 
 // Approval APIs (legacy)
+// Approval APIs (legacy - for UI/UX)
 export const approvalAPI = {
-  getAll: () => api.get('/approvals'),
+  getAll: (params) => api.get('/approvals', { params }),
   getApprovals: (params) => api.get('/approvals', { params }),
   getApproval: (id) => api.get(`/approvals/${id}`),
   createApproval: (data) => api.post('/approvals', data),
@@ -366,5 +377,34 @@ export const projectAPI = {
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`)
 };
+
+// Blocker APIs
+export const blockerAPI = {
+  getBlockers: (params) => api.get('/blockers', { params }),
+  getBlocker: (id) => api.get(`/blockers/${id}`),
+  createBlocker: (data) => api.post('/blockers', data),
+  updateBlockerStatus: (id, status) => api.patch(`/blockers/${id}/status`, { status }),
+  deleteBlocker: (id) => api.delete(`/blockers/${id}`)
+};
+
+// Feedback APIs
+export const feedbackAPI = {
+  getFeedbacks: (params) => api.get('/feedbacks', { params }),
+  getFeedback: (id) => api.get(`/feedbacks/${id}`),
+  createFeedback: (data) => api.post('/feedbacks', data),
+  markAsAddressed: (id) => api.patch(`/feedbacks/${id}/address`),
+  deleteFeedback: (id) => api.delete(`/feedbacks/${id}`)
+};
+
+// Time Tracking APIs (enhanced)
+export const timeLogsAPI = {
+  getLogs: (params) => api.get('/time-tracking', { params }),
+  createLog: (data) => api.post('/time-tracking', data),
+  stopTimer: (id) => api.put(`/time-tracking/${id}/stop`),
+  updateLog: (id, data) => api.put(`/time-tracking/${id}`, data),
+  deleteLog: (id) => api.delete(`/time-tracking/${id}`)
+};
+
+// End of APIs
 
 export default api;

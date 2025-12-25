@@ -31,18 +31,34 @@
   gap: 4px;
 }
 
-.stat-badge.pending { background: #fef3c7; }
-.stat-badge.approved { background: #d1fae5; }
-.stat-badge.rejected { background: #fee2e2; }
+.stat-badge.pending {
+  background: #fef3c7;
+}
+
+.stat-badge.approved {
+  background: #d1fae5;
+}
+
+.stat-badge.rejected {
+  background: #fee2e2;
+}
 
 .stat-badge .count {
   font-size: 24px;
   font-weight: 700;
 }
 
-.stat-badge.pending .count { color: #f59e0b; }
-.stat-badge.approved .count { color: #10b981; }
-.stat-badge.rejected .count { color: #ef4444; }
+.stat-badge.pending .count {
+  color: #f59e0b;
+}
+
+.stat-badge.approved .count {
+  color: #10b981;
+}
+
+.stat-badge.rejected .count {
+  color: #ef4444;
+}
 
 .stat-badge .label {
   font-size: 13px;
@@ -91,7 +107,7 @@
 }
 
 .approval-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .approval-card.pending {
@@ -119,23 +135,54 @@
   align-items: center;
 }
 
-.type-badge, .priority-badge, .status-badge {
+.type-badge,
+.priority-badge,
+.status-badge {
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.type-badge.deliverable { background: #dbeafe; color: #1e40af; }
-.type-badge.stage-transition { background: #ede9fe; color: #6b21a8; }
+.type-badge.deliverable {
+  background: #dbeafe;
+  color: #1e40af;
+}
 
-.priority-badge.high { background: #fee2e2; color: #991b1b; }
-.priority-badge.medium { background: #fef3c7; color: #92400e; }
-.priority-badge.low { background: #e5e7eb; color: #374151; }
+.type-badge.stage-transition {
+  background: #ede9fe;
+  color: #6b21a8;
+}
 
-.status-badge.pending { background: #fef3c7; color: #92400e; }
-.status-badge.approved { background: #d1fae5; color: #065f46; }
-.status-badge.rejected { background: #fee2e2; color: #991b1b; }
+.priority-badge.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.priority-badge.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.priority-badge.low {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .approval-id {
   font-size: 13px;
@@ -233,7 +280,8 @@
   background: #2563eb;
 }
 
-.approval-notes, .approval-feedback {
+.approval-notes,
+.approval-feedback {
   padding: 12px;
   background: #eff6ff;
   border-left: 3px solid #3b82f6;
@@ -249,7 +297,9 @@
   flex-wrap: wrap;
 }
 
-.btn-view, .btn-approve, .btn-reject {
+.btn-view,
+.btn-approve,
+.btn-reject {
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -302,7 +352,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -390,7 +440,9 @@
   justify-content: flex-end;
 }
 
-.btn-secondary, .btn-approve-modal, .btn-reject-modal {
+.btn-secondary,
+.btn-approve-modal,
+.btn-reject-modal {
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -429,4 +481,34 @@
   .modal-details-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0;
+}
+
+.category-tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.category-tab:hover {
+  color: #111827;
+}
+
+.category-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
 }
