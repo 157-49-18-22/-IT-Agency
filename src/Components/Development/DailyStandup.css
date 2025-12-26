@@ -80,7 +80,7 @@
     font-size: 2.5rem;
     font-weight: 700;
     margin: 0;
-    color: #fff;
+    color: black;
 }
 
 .stat-content p {
@@ -101,7 +101,7 @@
 }
 
 .date-filter label {
-    color: rgba(255, 255, 255, 0.9);
+    color: black;
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -113,12 +113,12 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    color: #fff;
+    color: black;
     font-size: 1rem;
 }
 
 .showing-count {
-    color: rgba(255, 255, 255, 0.6);
+    color: black;
     margin-left: auto;
 }
 
@@ -168,12 +168,12 @@
     justify-content: center;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #fff;
+    color: black;
 }
 
 .developer-info h3 {
     margin: 0;
-    color: #fff;
+    color: black;
     font-size: 1.25rem;
 }
 
@@ -209,7 +209,7 @@
 }
 
 .standup-section h4 {
-    color: #fff;
+    color: black;
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
     display: flex;
@@ -248,7 +248,7 @@
 }
 
 .blocker-text {
-    color: rgba(255, 255, 255, 0.9);
+    color: black;
     margin: 0;
     padding: 0.5rem;
 }
@@ -269,7 +269,7 @@
 
 .btn-primary {
     background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    color: #fff;
+    color: black;
     box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
 }
 
@@ -280,7 +280,7 @@
 
 .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: black;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -304,7 +304,7 @@
 
 .empty-state h3 {
     font-size: 1.5rem;
-    color: #fff;
+    color: black;
     margin-bottom: 0.5rem;
 }
 
@@ -351,14 +351,14 @@
 
 .modal-header h2 {
     font-size: 1.75rem;
-    color: #fff;
+    color: black;
     margin: 0;
 }
 
 .modal-close {
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: #fff;
+    color: black;
     font-size: 1.5rem;
     width: 40px;
     height: 40px;
@@ -378,7 +378,7 @@
 
 .form-group label {
     display: block;
-    color: rgba(255, 255, 255, 0.9);
+    color: black;
     margin-bottom: 0.5rem;
     font-weight: 500;
     display: flex;
@@ -392,7 +392,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    color: #fff;
+    color: black;
     font-size: 1rem;
     transition: all 0.3s ease;
     resize: vertical;

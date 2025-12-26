@@ -103,7 +103,7 @@
     font-size: 2.5rem;
     font-weight: 700;
     margin: 0;
-    color: #fff;
+    color: black;
 }
 
 .stat-content p {
@@ -137,13 +137,13 @@
 
 .filter-tab:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: black;
     border-color: rgba(79, 172, 254, 0.5);
 }
 
 .filter-tab.active {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: #fff;
+    color: black;
     border-color: transparent;
     box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
 }
@@ -307,7 +307,7 @@
 .version-title-section h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #fff;
+    color: black;
     margin: 0;
 }
 
@@ -326,7 +326,7 @@
 }
 
 .version-description {
-    color: rgba(255, 255, 255, 0.8);
+    color: black;
     line-height: 1.6;
     margin-bottom: 1.5rem;
 }
@@ -373,7 +373,7 @@
 
 .changes-section h4 {
     font-size: 1.1rem;
-    color: #fff;
+    color: black;
     margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
@@ -450,7 +450,7 @@
 
 .btn-primary {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: #fff;
+    color: black;
     box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
 }
 
@@ -461,7 +461,7 @@
 
 .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: black;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -487,7 +487,7 @@
 
 .empty-state h3 {
     font-size: 1.5rem;
-    color: #fff;
+    color: black;
     margin-bottom: 0.5rem;
 }
 
@@ -534,14 +534,14 @@
 
 .modal-header h2 {
     font-size: 1.75rem;
-    color: #fff;
+    color: black;
     margin: 0;
 }
 
 .modal-close {
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: #fff;
+    color: black;
     font-size: 1.5rem;
     width: 40px;
     height: 40px;
@@ -585,7 +585,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    color: #fff;
+    color: black;
     font-size: 1rem;
     transition: all 0.3s ease;
 }
@@ -603,7 +603,7 @@
 
 .comparison-result h3 {
     font-size: 1.25rem;
-    color: #fff;
+    color: black;
     margin-bottom: 1rem;
 }
 

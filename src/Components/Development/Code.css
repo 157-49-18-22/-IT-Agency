@@ -493,15 +493,30 @@
   letter-spacing: 0.5px;
 }
 
-.files-header > div {
+.files-header>div {
   padding: 0 8px;
 }
 
-.header-name { flex: 2; }
-.header-branch { flex: 1; }
-.header-updated { flex: 1; }
-.header-issues { flex: 0.8; }
-.header-actions { flex: 0.5; text-align: right; }
+.header-name {
+  flex: 2;
+}
+
+.header-branch {
+  flex: 1;
+}
+
+.header-updated {
+  flex: 1;
+}
+
+.header-issues {
+  flex: 0.8;
+}
+
+.header-actions {
+  flex: 0.5;
+  text-align: right;
+}
 
 /* File Item */
 .files-list {
@@ -546,10 +561,21 @@
   flex-shrink: 0;
 }
 
-.file-icon.jsx { background-color: #61dafb; }
-.file-icon.css { background-color: #2965f1; }
-.file-icon.html { background-color: #e34c26; }
-.file-icon { background-color: #718096; }
+.file-icon.jsx {
+  background-color: #61dafb;
+}
+
+.file-icon.css {
+  background-color: #2965f1;
+}
+
+.file-icon.html {
+  background-color: #e34c26;
+}
+
+.file-icon {
+  background-color: #718096;
+}
 
 .file-details {
   min-width: 0;
@@ -747,7 +773,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
@@ -755,18 +783,18 @@
   .files-header {
     display: none;
   }
-  
+
   .file-item {
     flex-wrap: wrap;
     padding: 16px;
     position: relative;
   }
-  
+
   .file-info {
     flex: 1 1 100%;
     margin-bottom: 12px;
   }
-  
+
   .file-branch,
   .file-updated,
   .file-issues,
@@ -775,7 +803,7 @@
     padding: 8px;
     font-size: 13px;
   }
-  
+
   .file-actions {
     position: absolute;
     top: 16px;
@@ -783,7 +811,7 @@
     flex: 0 0 auto;
     padding: 0;
   }
-  
+
   .header-name,
   .header-branch,
   .header-updated,
@@ -798,28 +826,28 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-box,
   .filter-group,
   .sort-group {
     width: 100%;
   }
-  
+
   .file-branch,
   .file-updated,
   .file-issues {
     flex: 1 1 100%;
     padding: 4px 0;
   }
-  
+
   .file-updated {
     order: 3;
   }
-  
+
   .file-issues {
     order: 4;
   }
-  
+
   .file-branch {
     order: 2;
   }

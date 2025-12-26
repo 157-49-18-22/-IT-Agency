@@ -130,19 +130,20 @@ const Blockers = () => {
                         className="action-btn primary"
                         onClick={() => setShowAddModal(true)}
                         style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            height: '50px',
+                            width: '50px',
+                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 20px',
-                            background: 'linear-gradient(135deg, #dc3545, #c82333)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontWeight: '500'
+                            justifyContent: 'center',
+                            padding: 0,
+                            boxShadow: '0 4px 6px rgba(220, 53, 69, 0.2)'
                         }}
+                        title="Report New Blocker"
                     >
-                        <FaPlus /> Report Blocker
+                        <FaPlus size={20} />
                     </button>
                 </div>
             </div>

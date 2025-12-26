@@ -1,7 +1,7 @@
 /* Task Pages - Shared Styles */
 .task-page-container {
     padding: 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: white;
     min-height: 100vh;
 }
 
@@ -58,6 +58,49 @@
 }
 
 /* Filters */
+.stat-badge-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Center content horizontally */
+    gap: 20px;
+    min-width: 200px;
+    padding: 1rem 1.5rem;
+}
+
+.stat-badge-actions .stat-content {
+    text-align: left;
+}
+
+.stat-action-btn {
+    background: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc3545;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.stat-action-btn:hover {
+    background: #f8f9fa;
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.stat-action-btn svg {
+    color: #dc3545;
+    fill: #dc3545;
+    display: block;
+    /* Ensure it's not hidden */
+}
+
 .filters-bar {
     background: white;
     border-radius: 12px;

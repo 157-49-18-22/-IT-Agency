@@ -577,78 +577,269 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
       <main className="main-content">
         {/* Progress Overview Card - Only show on Dashboard */}
         {location.pathname === '/dashboard' && (
-          <div className="progress-overview">
-            <div className="progress-card">
-              <h3>Project Progress</h3>
-              <div className="progress-bar-container">
-                <div
-                  className="progress-bar"
-                  style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}
-                ></div>
+          <div className="dashboard-container">
+            {/* Welcome Banner */}
+            <div className="welcome-banner">
+              <div className="welcome-text">
+                <h1>Welcome back, {currentUser?.name || 'Developer'}! 👋</h1>
+                <p>Here's what's happening with your projects today.</p>
               </div>
-              <div className="progress-stats">
-                <span>{progressData.tasksCompleted}/{progressData.totalTasks} tasks</span>
-                <span>{Math.round((progressData.tasksCompleted / progressData.totalTasks) * 100)}% complete</span>
+              <div className="date-display">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="stats-grid">
+              <div className="stat-card blue">
+                <div className="stat-icon">
+                  <FaTasks />
+                </div>
+                <div className="stat-details">
+                  <h3>{progressData.tasksCompleted}/{progressData.totalTasks}</h3>
+                  <p>Tasks Completed</p>
+                </div>
+                <div className="stat-progress">
+                  <div className="stat-progress-bar" style={{ width: `${(progressData.tasksCompleted / progressData.totalTasks) * 100}%` }}></div>
+                </div>
               </div>
 
-              <div className="progress-chart">
-                <Line
-                  data={{
-                    labels: progressData.labels,
-                    datasets: [
-                      {
-                        label: 'Progress',
-                        data: progressData.progressHistory,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        display: false
-                      }
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                          callback: function (value) {
-                            return value + '%';
+              <div className="stat-card red">
+                <div className="stat-icon">
+                  <FaExclamationTriangle />
+                </div>
+                <div className="stat-details">
+                  <h3>{progressData.bugsFixed}/{progressData.totalBugs}</h3>
+                  <p>Bugs Fixed</p>
+                </div>
+                <div className="stat-progress">
+                  <div className="stat-progress-bar" style={{ width: `${(progressData.bugsFixed / progressData.totalBugs) * 100}%` }}></div>
+                </div>
+              </div>
+
+              <div className="stat-card purple">
+                <div className="stat-icon">
+                  <FaClock />
+                </div>
+                <div className="stat-details">
+                  <h3>{Math.round(timeLogs.reduce((total, log) => total + log.duration, 0) / 3600000)}h</h3>
+                  <p>Time Logged</p>
+                </div>
+                <div className="stat-progress">
+                  <div className="stat-progress-bar" style={{ width: '65%' }}></div>
+                </div>
+              </div>
+
+              <div className="stat-card green">
+                <div className="stat-icon">
+                  <FaVial />
+                </div>
+                <div className="stat-details">
+                  <h3>{progressData.codeCoverage}%</h3>
+                  <p>Code Coverage</p>
+                </div>
+                <div className="stat-progress">
+                  <div className="stat-progress-bar" style={{ width: `${progressData.codeCoverage}%` }}></div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* Main Dashboard Content */}
+            <div className="dashboard-content-grid">
+              {/* Left Column: Progress Chart & Tasks */}
+              <div className="main-column">
+                <div className="dashboard-card chart-card">
+                  <div className="card-header">
+                    <h3>Project Velocity</h3>
+                    <select defaultValue="week" className="chart-filter">
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                    </select>
+                  </div>
+                  <div className="chart-container">
+                    <Line
+                      data={{
+                        labels: progressData.labels,
+                        datasets: [
+                          {
+                            label: 'Productivity Trend',
+                            data: progressData.progressHistory,
+                            borderColor: '#4361ee',
+                            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#4361ee',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 14 },
+                            displayColors: false,
+                            callbacks: {
+                              label: function (context) {
+                                return `Progress: ${context.parsed.y}%`;
+                              }
+                            }
+                          }
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                              color: 'rgba(0, 0, 0, 0.05)',
+                              drawBorder: false
+                            },
+                            ticks: {
+                              padding: 10,
+                              callback: value => value + '%'
+                            }
+                          },
+                          x: {
+                            grid: { display: false }
                           }
                         }
-                      }
-                    }
-                  }}
-                />
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* New Section: Upcoming Deadlines & System Status */}
+                <div className="dashboard-bottom-grid">
+                  <div className="dashboard-card deadlines-card">
+                    <div className="card-header">
+                      <h3>Upcoming Deadlines</h3>
+                      <Link to="/calendar" className="view-more">View Calendar</Link>
+                    </div>
+                    <div className="deadlines-list">
+                      <div className="deadline-item warning">
+                        <div className="deadline-date">
+                          <span className="day">28</span>
+                          <span className="month">Dec</span>
+                        </div>
+                        <div className="deadline-info">
+                          <h4>API Integration</h4>
+                          <p>Backend Team</p>
+                        </div>
+                        <span className="deadline-tag">2 days left</span>
+                      </div>
+                      <div className="deadline-item">
+                        <div className="deadline-date">
+                          <span className="day">05</span>
+                          <span className="month">Jan</span>
+                        </div>
+                        <div className="deadline-info">
+                          <h4>Q4 Report Submission</h4>
+                          <p>Management</p>
+                        </div>
+                        <span className="deadline-tag normal">1 week left</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-card system-status-card">
+                    <div className="card-header">
+                      <h3>System Status</h3>
+                      <span className="status-badge operational">Operational</span>
+                    </div>
+                    <div className="system-grid">
+                      <div className="system-item">
+                        <span className="dot online"></span>
+                        <span>API Server</span>
+                        <span className="status-text">99.9% Uptime</span>
+                      </div>
+                      <div className="system-item">
+                        <span className="dot online"></span>
+                        <span>Database (PostgreSQL)</span>
+                        <span className="status-text">Healthy</span>
+                      </div>
+                      <div className="system-item">
+                        <span className="dot warning"></span>
+                        <span>Redis Cache</span>
+                        <span className="status-text">High Load</span>
+                      </div>
+                      <div className="system-item">
+                        <span className="dot online"></span>
+                        <span>Storage (S3)</span>
+                        <span className="status-text">Available</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="progress-metrics">
-                <div className="metric">
-                  <span className="metric-label">Code Coverage</span>
-                  <span className="metric-value">{progressData.codeCoverage}%</span>
+              {/* Right Column: Recent Activity & Checklist */}
+              <div className="side-column">
+                <div className="dashboard-card activity-card">
+                  <div className="card-header">
+                    <h3>Recent Activity</h3>
+                    <Link to="/activity" className="view-more">View All</Link>
+                  </div>
+                  <div className="activity-list">
+                    {timeLogs.slice(0, 3).map((log, index) => (
+                      <div className="activity-item" key={index}>
+                        <div className="activity-icon">
+                          <FaCode />
+                        </div>
+                        <div className="activity-details">
+                          <span className="activity-title">{log.task || 'Development'}</span>
+                          <span className="activity-time">{formatRelativeTime(log.date)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {timeLogs.length === 0 && (
+                      <div className="empty-state">
+                        <p>No recent activity recorded.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="metric">
-                  <span className="metric-label">Bugs Fixed</span>
-                  <span className="metric-value">{progressData.bugsFixed}/{progressData.totalBugs}</span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Time Logged</span>
-                  <span className="metric-value">
-                    {Math.round(timeLogs.reduce((total, log) => total + log.duration, 0) / 3600000)}h
-                  </span>
+
+                <div className="dashboard-card checklist-card">
+                  <div className="card-header">
+                    <h3>Phase Checklist</h3>
+                    <span className="checklist-count">
+                      {taskChecklist.filter(t => t.completed).length}/{taskChecklist.length}
+                    </span>
+                  </div>
+                  <div className="mini-checklist">
+                    {taskChecklist.slice(0, 4).map(item => (
+                      <div key={item.id} className={`mini-check-item ${item.completed ? 'completed' : ''}`}>
+                        <div className={`check-circle ${item.completed ? 'checked' : ''}`}>
+                          {item.completed && <FaCheckCircle />}
+                        </div>
+                        <span>{item.text}</span>
+                      </div>
+                    ))}
+                    {taskChecklist.length > 4 && (
+                      <div className="more-items">
+                        +{taskChecklist.length - 4} more items
+                      </div>
+                    )}
+                  </div>
+                  <div className="card-footer">
+                    <Link to="/deliverables/checklist" className="action-button">Go to Checklist</Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        <Outlet />
+        {location.pathname !== '/dashboard' && <Outlet />}
       </main>
     </div>
   );

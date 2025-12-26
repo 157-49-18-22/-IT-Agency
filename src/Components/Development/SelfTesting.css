@@ -1,7 +1,11 @@
 .self-testing-container {
     min-height: 100vh;
+    background-color: #0f0f23;
+    /* Fallback */
     background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
     padding: 2rem;
+    position: relative;
+    z-index: 1;
 }
 
 .self-testing-header {
@@ -60,7 +64,8 @@
     align-items: center;
     gap: 1rem;
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: #1e1e2d;
+    /* Solid dark background */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
 }
@@ -106,7 +111,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: #1e1e2d;
+    /* Solid dark */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     margin-bottom: 2rem;
@@ -180,7 +186,8 @@
 }
 
 .category-section {
-    background: rgba(255, 255, 255, 0.03);
+    background: #1a1a2e;
+    /* Solid Dark Background */
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
@@ -197,7 +204,7 @@
 }
 
 .category-header h3 {
-    color: white;
+    color: black;
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
@@ -238,22 +245,17 @@
     align-items: flex-start;
     gap: 1rem;
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: #24243e;
+    /* Solid Dark Card Background */
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.test-card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(34, 197, 94, 0.2);
-}
+/* .test-card:hover removed as per user request */
 
-.test-card.selected {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: rgba(34, 197, 94, 0.3);
-}
+/* .test-card.selected removed to prevent color change on selection */
 
 .test-card.passed {
     border-left: 3px solid #22c55e;

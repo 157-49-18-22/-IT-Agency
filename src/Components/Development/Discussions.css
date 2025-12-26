@@ -42,7 +42,7 @@
 }
 
 .header-content .subtitle {
-    color: rgba(255, 255, 255, 0.7);
+    color: black;
     font-size: 1.1rem;
 }
 
@@ -78,12 +78,12 @@
     font-size: 2.5rem;
     font-weight: 700;
     margin: 0;
-    color: #fff;
+    color: black;
 }
 
 .stat-content p {
     margin: 0.25rem 0 0 0;
-    color: rgba(255, 255, 255, 0.7);
+    color: black;
 }
 
 .discussions-list {
@@ -117,7 +117,7 @@
 
 .discussion-header h3 {
     font-size: 1.5rem;
-    color: #fff;
+    color: black;
     margin: 0;
     flex: 1;
 }
@@ -133,7 +133,7 @@
 }
 
 .excerpt {
-    color: rgba(255, 255, 255, 0.7);
+    color: black;
     margin-bottom: 1rem;
     line-height: 1.6;
 }
@@ -149,7 +149,7 @@
     padding: 0.25rem 0.75rem;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.8);
+    color: black;
     font-size: 0.875rem;
 }
 
@@ -157,7 +157,7 @@
     display: flex;
     gap: 1.5rem;
     flex-wrap: wrap;
-    color: rgba(255, 255, 255, 0.6);
+    color: black;
     font-size: 0.95rem;
 }
 
@@ -199,7 +199,7 @@
 
 .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: black;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -243,14 +243,14 @@
 
 .modal-header h2 {
     font-size: 1.75rem;
-    color: #fff;
+    color: black;
     margin: 0;
 }
 
 .modal-close {
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: #fff;
+    color: black;
     font-size: 1.5rem;
     width: 40px;
     height: 40px;
@@ -283,7 +283,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    color: #fff;
+    color: black;
     font-size: 1rem;
     transition: all 0.3s ease;
     font-family: inherit;
