@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaChartLine, FaBug, FaCheckCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
-import axios from 'axios';
+import {
+    FaChartLine, FaBug, FaCheckCircle, FaClock,
+    FaExclamationTriangle, FaVial, FaChartPie, FaCalendarAlt
+} from 'react-icons/fa';
+import { Doughnut, Bar } from 'react-chartjs-2';
+import 'chart.js/auto';
 import './TestingPages.css';
 
 const TestingDashboard = () => {
@@ -13,7 +17,8 @@ const TestingDashboard = () => {
         criticalBugs: 0,
         openBugs: 0,
         resolvedBugs: 0,
-        testingProgress: 0
+        testingProgress: 0,
+        labels: ['J', 'F', 'M', 'A', 'M', 'J', 'J'] // Mock labels
     });
     const [isLoading, setIsLoading] = useState(true);
 
@@ -25,20 +30,24 @@ const TestingDashboard = () => {
         try {
             setIsLoading(true);
             // Mock data - replace with actual API calls
-            setStats({
-                totalTestCases: 45,
-                passedTests: 32,
-                failedTests: 8,
-                pendingTests: 5,
-                totalBugs: 23,
-                criticalBugs: 3,
-                openBugs: 12,
-                resolvedBugs: 11,
-                testingProgress: 71
-            });
+            setTimeout(() => {
+                setStats({
+                    totalTestCases: 120,
+                    passedTests: 85,
+                    failedTests: 12,
+                    pendingTests: 23,
+                    totalBugs: 45,
+                    criticalBugs: 5,
+                    openBugs: 18,
+                    resolvedBugs: 22,
+                    testingProgress: 71,
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    activityData: [50, 60, 70, 65, 80, 75, 85]
+                });
+                setIsLoading(false);
+            }, 1000);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -48,187 +57,194 @@ const TestingDashboard = () => {
             <div className="testing-page-container">
                 <div className="loading-spinner">
                     <div className="spinner"></div>
-                    <p>Loading dashboard...</p>
+                    <p>Loading testing insights...</p>
                 </div>
             </div>
         );
     }
 
+    // Chart Data
+    const statusChartData = {
+        labels: ['Passed', 'Failed', 'Pending'],
+        datasets: [
+            {
+                data: [stats.passedTests, stats.failedTests, stats.pendingTests],
+                backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                borderWidth: 0,
+                hoverOffset: 4
+            },
+        ],
+    };
+
+    const bugChartData = {
+        labels: ['Critical', 'Open', 'Resolved'],
+        datasets: [
+            {
+                label: 'Bugs',
+                data: [stats.criticalBugs, stats.openBugs, stats.resolvedBugs],
+                backgroundColor: ['#ef4444', '#3b82f6', '#10b981'],
+                borderRadius: 4,
+            },
+        ],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: 'rgba(255, 255, 255, 0.7)' }
+            },
+            title: {
+                display: false,
+            },
+        },
+        cutout: '70%',
+    };
+
+    const barOptions = {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+            },
+            y: {
+                grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false },
+                ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+            }
+        }
+    };
+
     return (
         <div className="testing-page-container">
-            <div className="page-header">
-                <div className="header-content">
-                    <h1>Testing Dashboard</h1>
-                    <p>Overview of testing progress and metrics</p>
+            {/* Welcome Banner */}
+            <div className="welcome-banner">
+                <div className="welcome-text">
+                    <h1>Quality Assurance Dashboard</h1>
+                    <p>Track testing progress, bugs, and deliverables in real-time.</p>
                 </div>
-            </div>
-
-            {/* Progress Overview */}
-            <div className="progress-overview">
-                <h3>Overall Testing Progress</h3>
-                <div className="progress-bar-large">
-                    <div className="progress-fill" style={{ width: `${stats.testingProgress}%` }}>
-                        <span>{stats.testingProgress}%</span>
+                <div className="banner-stats">
+                    <div className="banner-stat">
+                        <span className="label">Total Coverage</span>
+                        <span className="value">{stats.testingProgress}%</span>
                     </div>
-                </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="stats-grid">
-                {/* Test Cases Stats */}
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-                        <FaCheckCircle size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.totalTestCases}</h3>
-                        <p>Total Test Cases</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #28a745, #20c997)' }}>
-                        <FaCheckCircle size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.passedTests}</h3>
-                        <p>Passed Tests</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #dc3545, #c82333)' }}>
-                        <FaExclamationTriangle size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.failedTests}</h3>
-                        <p>Failed Tests</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ffc107, #ff9800)' }}>
-                        <FaClock size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.pendingTests}</h3>
-                        <p>Pending Tests</p>
-                    </div>
-                </div>
-
-                {/* Bug Stats */}
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #6c757d, #495057)' }}>
-                        <FaBug size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.totalBugs}</h3>
-                        <p>Total Bugs</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #dc3545, #bd2130)' }}>
-                        <FaBug size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.criticalBugs}</h3>
-                        <p>Critical Bugs</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #17a2b8, #138496)' }}>
-                        <FaBug size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.openBugs}</h3>
-                        <p>Open Bugs</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #28a745, #218838)' }}>
-                        <FaCheckCircle size={32} />
-                    </div>
-                    <div className="stat-details">
-                        <h3>{stats.resolvedBugs}</h3>
-                        <p>Resolved Bugs</p>
+                    <div className="banner-stat">
+                        <span className="label">Total Bugs</span>
+                        <span className="value text-danger">{stats.totalBugs}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Charts Section */}
-            <div className="charts-section">
-                <div className="chart-card">
-                    <h3>Test Execution Status</h3>
-                    <div className="chart-placeholder">
-                        <div className="pie-chart">
-                            <div className="pie-segment passed" style={{ '--percentage': (stats.passedTests / stats.totalTestCases * 100) }}></div>
-                            <div className="pie-segment failed" style={{ '--percentage': (stats.failedTests / stats.totalTestCases * 100) }}></div>
-                            <div className="pie-segment pending" style={{ '--percentage': (stats.pendingTests / stats.totalTestCases * 100) }}></div>
+            {/* Main Stats Grid */}
+            <div className="dashboard-grid">
+                {/* Key Metrics */}
+                <div className="card overview-card glass-panel">
+                    <div className="card-header">
+                        <h3><FaVial className="icon-blue" /> Test Execution</h3>
+                    </div>
+                    <div className="metrics-row">
+                        <div className="metric-item">
+                            <span className="metric-value">{stats.totalTestCases}</span>
+                            <span className="metric-label">Total Tests</span>
                         </div>
-                        <div className="chart-legend">
-                            <div className="legend-item">
-                                <span className="legend-color passed"></span>
-                                <span>Passed: {stats.passedTests}</span>
-                            </div>
-                            <div className="legend-item">
-                                <span className="legend-color failed"></span>
-                                <span>Failed: {stats.failedTests}</span>
-                            </div>
-                            <div className="legend-item">
-                                <span className="legend-color pending"></span>
-                                <span>Pending: {stats.pendingTests}</span>
-                            </div>
+                        <div className="metric-separator"></div>
+                        <div className="metric-item">
+                            <span className="metric-value text-success">{stats.passedTests}</span>
+                            <span className="metric-label">Passed</span>
                         </div>
+                        <div className="metric-separator"></div>
+                        <div className="metric-item">
+                            <span className="metric-value text-danger">{stats.failedTests}</span>
+                            <span className="metric-label">Failed</span>
+                        </div>
+                    </div>
+                    <div className="progress-bar-container">
+                        <div className="progress-bar-bg">
+                            <div className="progress-bar-fill" style={{ width: `${(stats.passedTests / stats.totalTestCases) * 100}%` }}></div>
+                        </div>
+                        <span className="progress-text">{(stats.passedTests / stats.totalTestCases * 100).toFixed(1)}% Passing Rate</span>
                     </div>
                 </div>
 
-                <div className="chart-card">
-                    <h3>Bug Status Distribution</h3>
-                    <div className="chart-placeholder">
-                        <div className="bar-chart">
-                            <div className="bar-item">
-                                <div className="bar" style={{ height: `${(stats.openBugs / stats.totalBugs * 100)}%`, background: '#17a2b8' }}></div>
-                                <span>Open</span>
-                            </div>
-                            <div className="bar-item">
-                                <div className="bar" style={{ height: `${(stats.resolvedBugs / stats.totalBugs * 100)}%`, background: '#28a745' }}></div>
-                                <span>Resolved</span>
-                            </div>
-                            <div className="bar-item">
-                                <div className="bar" style={{ height: `${(stats.criticalBugs / stats.totalBugs * 100)}%`, background: '#dc3545' }}></div>
-                                <span>Critical</span>
-                            </div>
-                        </div>
+                <div className="card chart-card glass-panel">
+                    <div className="card-header">
+                        <h3><FaChartPie className="icon-purple" /> Status Distribution</h3>
+                    </div>
+                    <div className="chart-container-small">
+                        <Doughnut data={statusChartData} options={chartOptions} />
+                    </div>
+                </div>
+
+                <div className="card chart-card glass-panel">
+                    <div className="card-header">
+                        <h3><FaBug className="icon-red" /> Bug Analytics</h3>
+                    </div>
+                    <div className="chart-container-small">
+                        <Bar data={bugChartData} options={barOptions} />
                     </div>
                 </div>
             </div>
 
-            {/* Recent Activity */}
-            <div className="recent-activity">
-                <h3>Recent Activity</h3>
-                <div className="activity-list">
-                    <div className="activity-item">
-                        <FaCheckCircle className="activity-icon success" />
-                        <div className="activity-details">
-                            <p><strong>Test Case TC-045</strong> passed successfully</p>
-                            <span className="activity-time">2 hours ago</span>
+            {/* Quick Actions & Recent Activity */}
+            <div className="activity-grid">
+                <div className="card activity-card glass-panel">
+                    <div className="card-header">
+                        <h3><FaClock className="icon-yellow" /> Recent Activity</h3>
+                    </div>
+                    <div className="activity-list">
+                        <div className="activity-item">
+                            <div className="activity-icon-wrapper success">
+                                <FaCheckCircle />
+                            </div>
+                            <div className="activity-content">
+                                <span className="activity-msg">Authentication tests passed</span>
+                                <span className="activity-time">10 mins ago</span>
+                            </div>
+                        </div>
+                        <div className="activity-item">
+                            <div className="activity-icon-wrapper warning">
+                                <FaExclamationTriangle />
+                            </div>
+                            <div className="activity-content">
+                                <span className="activity-msg">New bug reported in Payment Gateway</span>
+                                <span className="activity-time">30 mins ago</span>
+                            </div>
+                        </div>
+                        <div className="activity-item">
+                            <div className="activity-icon-wrapper info">
+                                <FaChartLine />
+                            </div>
+                            <div className="activity-content">
+                                <span className="activity-msg">Performance benchmark initiated</span>
+                                <span className="activity-time">1 hour ago</span>
+                            </div>
                         </div>
                     </div>
-                    <div className="activity-item">
-                        <FaBug className="activity-icon danger" />
-                        <div className="activity-details">
-                            <p><strong>Critical Bug BUG-023</strong> reported</p>
-                            <span className="activity-time">4 hours ago</span>
-                        </div>
+                </div>
+
+                <div className="card quick-stats-card glass-panel">
+                    <div className="card-header">
+                        <h3><FaCalendarAlt className="icon-green" /> Today's Focus</h3>
                     </div>
-                    <div className="activity-item">
-                        <FaCheckCircle className="activity-icon success" />
-                        <div className="activity-details">
-                            <p><strong>Bug BUG-018</strong> resolved and verified</p>
-                            <span className="activity-time">6 hours ago</span>
+                    <div className="focus-list">
+                        <div className="focus-item">
+                            <div className="check-ring"></div>
+                            <span>Verify Login API Rate Limiting</span>
+                            <span className="priority-tag high">High</span>
+                        </div>
+                        <div className="focus-item">
+                            <div className="check-ring"></div>
+                            <span>Cross-browser testing (Safari)</span>
+                            <span className="priority-tag medium">Med</span>
+                        </div>
+                        <div className="focus-item">
+                            <div className="check-ring"></div>
+                            <span>Update regression suite</span>
+                            <span className="priority-tag low">Low</span>
                         </div>
                     </div>
                 </div>

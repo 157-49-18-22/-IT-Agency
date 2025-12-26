@@ -327,26 +327,24 @@ const Uat = () => {
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="row mb-4">
-        <div className="col-md-4 mb-2">
-          <div className="search-box">
-            <FiSearch className="search-icon" />
-            <input
-              type="text"
-              className="form-control search-input"
-              placeholder="Search test cases..."
-              value={searchTerm}
-              onChange={handleFilterChange}
-              name="searchTerm"
-            />
-          </div>
+      <div className="uat-toolbar">
+        <div className="search-box">
+          <FiSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search test cases..."
+            value={searchTerm}
+            onChange={handleFilterChange}
+            name="searchTerm"
+          />
         </div>
-        <div className="col-md-4 mb-2">
+
+        <div className="filters">
           <select
-            className="form-select"
             value={statusFilter}
             onChange={handleFilterChange}
             name="statusFilter"
+            className="form-select"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -354,13 +352,12 @@ const Uat = () => {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
-        </div>
-        <div className="col-md-4 mb-2">
+
           <select
-            className="form-select"
             value={priorityFilter}
             onChange={handleFilterChange}
             name="priorityFilter"
+            className="form-select"
           >
             <option value="all">All Priorities</option>
             <option value="low">Low</option>
@@ -527,34 +524,7 @@ const Uat = () => {
         </div>
       )}
 
-      <div className="uat-toolbar">
-        <div className="search-box">
-          <FiSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search UAT tests..."
-            value={searchTerm}
-            onChange={handleFilterChange}
-            name="searchTerm"
-            className="form-control"
-          />
-        </div>
 
-        <div className="filters">
-          <select
-            value={statusFilter}
-            onChange={handleFilterChange}
-            name="statusFilter"
-            className="form-select"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in-progress">In Progress</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-      </div>
 
       {isLoading ? (
         <div className="loading">Loading UAT tests...</div>
