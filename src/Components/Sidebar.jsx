@@ -173,60 +173,7 @@ const Sidebar = () => {
               )}
             </li>
 
-            {/* UI/UX Phase */}
-            <li className={`nav-section ${expandedSections.uiUx ? 'expanded' : ''}`}>
-              <div className="section-header" onClick={() => toggleSection('uiUx')}>
-                <FaFileAlt className="nav-icon" />
-                <span>UI/UX Design</span>
-                {expandedSections.uiUx ? <FaChevronDown /> : <FaChevronRight />}
-              </div>
-              {expandedSections.uiUx && (
-                <ul className="submenu">
-                  <li><Link to="/design/wireframes">Wireframes</Link></li>
-                  <li><Link to="/design/mockups">Mockups</Link></li>
-                  <li><Link to="/design/prototypes">Prototypes</Link></li>
-                  <li><Link to="/design/design-system">Design System</Link></li>
-                  <li><Link to="/design/client-approval">Client Approval</Link></li>
-                </ul>
-              )}
-            </li>
 
-            {/* Development Phase */}
-            <li className={`nav-section ${expandedSections.development ? 'expanded' : ''}`}>
-              <div className="section-header" onClick={() => toggleSection('development')}>
-                <FaCode className="nav-icon" />
-                <span>Development</span>
-                {expandedSections.development ? <FaChevronDown /> : <FaChevronRight />}
-              </div>
-              {expandedSections.development && (
-                <ul className="submenu">
-                  <li className={isActive('/development/backlog')}><Link to="/development/backlog">Backlog</Link></li>
-                  <li className={isActive('/development/sprints')}><Link to="/development/sprints">Sprints</Link></li>
-                  <li className={isActive('/development/code')}><Link to="/development/code">Code</Link></li>
-                  <li className={isActive('/development/deployment')}><Link to="/development/deployment">Deployment</Link></li>
-                  <li className={isActive('/development/task')}><Link to="/development/task">Tasks</Link></li>
-                  <li className={isActive('/development/version')}><Link to="/development/version">Version</Link></li>
-                </ul>
-              )}
-            </li>
-
-            {/* Testing Phase */}
-            <li className={`nav-section ${expandedSections.testing ? 'expanded' : ''}`}>
-              <div className="section-header" onClick={() => toggleSection('testing')}>
-                <FaBug className="nav-icon" />
-                <span>Testing</span>
-                {expandedSections.testing ? <FaChevronDown /> : <FaChevronRight />}
-              </div>
-              {expandedSections.testing && (
-                <ul className="submenu">
-                  <li><Link to="/testing/Cases">Test Cases</Link></li>
-                  <li><Link to="/testing/Runs">Test Runs</Link></li>
-                  <li><Link to="/testing/Bug">Bug Reports</Link></li>
-                  <li><Link to="/testing/Uat">UAT</Link></li>
-                  <li><Link to="/testing/Performance">Performance Testing</Link></li>
-                </ul>
-              )}
-            </li>
 
             {/* Team */}
             <li className={isActive('/team')}>
