@@ -86,7 +86,7 @@
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   padding: 24px;
-  min-height: 400px;
+
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
   z-index: 1;
@@ -120,21 +120,21 @@
     padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .tab {
     white-space: nowrap;
     padding: 10px 16px;
     font-size: 14px;
   }
-  
+
   .tab-icon {
     font-size: 18px;
   }
-  
+
   .design-header h1 {
     font-size: 28px;
   }
-  
+
   .design-header p {
     font-size: 15px;
   }
@@ -142,8 +142,15 @@
 
 /* Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .design-content {

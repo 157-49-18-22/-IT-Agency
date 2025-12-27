@@ -305,7 +305,8 @@ export const reportAPI = {
   getReports: (params) => api.get('/reports', { params }),
   getReport: (id) => api.get(`/reports/${id}`),
   generateReport: (data) => api.post('/reports/generate', data),
-  exportReport: (id, format) => api.get(`/reports/${id}/export/${format}`)
+  exportReport: (id, format) => api.get(`/reports/${id}/export/${format}`),
+  getCustom: () => api.get('/reports/custom')
 };
 
 // Message APIs

@@ -1,35 +1,431 @@
-.rep-container{padding:24px;max-width:1400px;margin:0 auto;background:linear-gradient(180deg,#f8fafc 0%,#f3f4f6 100%);border-radius:12px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
-.rep-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.rep-header h2{margin:0 0 6px 0;color:#111827;font-size:24px}
-.rep-header p{margin:0;color:#6b7280;font-size:14px}
-.filters{display:flex;gap:10px;align-items:center}
-.search{position:relative;min-width:260px}
-.search .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af}
-.search input{width:100%;padding:10px 12px 10px 38px;border:1px solid #e5e7eb;border-radius:8px}
-.select{position:relative;min-width:180px}
-.select select{width:100%;padding:10px 32px 10px 36px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#111827;appearance:none}
-.select .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af}
-.select .chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#9ca3af}
+/* Project Progress Report - Premium Design */
 
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.proj-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.proj-card .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.proj-card .title{font-weight:700;color:#111827}
-.proj-card .status{font-weight:700;font-size:12px;padding:4px 10px;border-radius:999px}
-.proj-card.ontrack .status{background:#dcfce7;color:#166534}
-.proj-card.atrisk .status{background:#fef3c7;color:#92400e}
-.proj-card.delayed .status{background:#fee2e2;color:#991b1b}
-.meta{display:flex;gap:12px;flex-wrap:wrap;color:#6b7280;font-size:13px;margin:8px 0}
-.meta .m{display:inline-flex;align-items:center;gap:6px}
-.progress{display:flex;align-items:center;gap:8px;margin:10px 0}
-.progress .bar{flex:1;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
-.progress .fill{height:100%;background:linear-gradient(90deg,#4f46e5,#22c55e)}
-.progress .pct{font-weight:700;color:#111827}
-.timeline{display:grid;gap:10px;margin-top:8px}
-.milestone{display:flex;gap:8px;align-items:center}
-.milestone .dot{width:10px;height:10px;border-radius:50%;background:#4f46e5;box-shadow:0 0 0 4px rgba(79,70,229,.12)}
-.ml-title{font-weight:700;color:#111827}
-.ml-date{font-size:12px;color:#6b7280}
+.rep-container {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+}
 
-@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.rep-container{padding:16px}.rep-header{flex-direction:column;align-items:flex-start;gap:12px}.cards{grid-template-columns:1fr}}
+/* Header */
+.rep-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.rep-header h2 {
+    font-size: 28px;
+    color: #2d3748;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.rep-header p {
+    color: #718096;
+    margin: 0;
+    font-size: 15px;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.search,
+.select {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search {
+    min-width: 300px;
+}
+
+.search input {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.search input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.search .icon {
+    position: absolute;
+    left: 16px;
+    color: #a0aec0;
+    font-size: 18px;
+}
+
+.select {
+    min-width: 200px;
+}
+
+.select select {
+    width: 100%;
+    padding: 12px 40px 12px 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.2s ease;
+}
+
+.select select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.select .icon {
+    position: absolute;
+    left: 16px;
+    color: #a0aec0;
+    font-size: 18px;
+}
+
+.select .chev {
+    position: absolute;
+    right: 16px;
+    color: #a0aec0;
+    font-size: 18px;
+    pointer-events: none;
+}
+
+/* Cards Grid */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+/* Project Card */
+.proj-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.proj-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    transition: all 0.3s ease;
+}
+
+.proj-card.atrisk::before {
+    background: linear-gradient(90deg, #ed8936, #dd6b20);
+}
+
+.proj-card.delayed::before,
+.proj-card.overdue::before {
+    background: linear-gradient(90deg, #f56565, #e53e3e);
+}
+
+.proj-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e0;
+}
+
+/* Card Header */
+.card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 16px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.status {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.proj-card.atrisk .status {
+    background: #feebc8;
+    color: #7c2d12;
+}
+
+.proj-card.delayed .status,
+.proj-card.overdue .status {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+/* Meta Information */
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 12px;
+}
+
+.m {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.m svg {
+    color: #a0aec0;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Progress Bar */
+.progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.bar {
+    flex: 1;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.fill {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    border-radius: 5px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.proj-card.atrisk .fill {
+    background: linear-gradient(90deg, #ed8936, #dd6b20);
+}
+
+.proj-card.delayed .fill,
+.proj-card.overdue .fill {
+    background: linear-gradient(90deg, #f56565, #e53e3e);
+}
+
+.pct {
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 14px;
+    min-width: 45px;
+    text-align: right;
+}
+
+/* Timeline / Milestones */
+.timeline {
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.milestone {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.milestone:last-child {
+    margin-bottom: 0;
+}
+
+.milestone::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 24px;
+    bottom: -16px;
+    width: 2px;
+    background: linear-gradient(180deg, #e2e8f0 0%, transparent 100%);
+}
+
+.milestone:last-child::before {
+    display: none;
+}
+
+.dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #48bb78;
+    flex-shrink: 0;
+    margin-top: 2px;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+}
+
+.proj-card.atrisk .dot {
+    border-color: #ed8936;
+    box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+}
+
+.proj-card.delayed .dot,
+.proj-card.overdue .dot {
+    border-color: #f56565;
+    box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+}
+
+.ml-body {
+    flex: 1;
+}
+
+.ml-title {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.ml-date {
+    font-size: 13px;
+    color: #718096;
+}
+
+.no-milestones {
+    text-align: center;
+    padding: 20px;
+    color: #a0aec0;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* Loading & No Data States */
+.loading,
+.no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    font-size: 16px;
+    color: #718096;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rep-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters {
+        flex-direction: column;
+    }
+
+    .search,
+    .select {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .card-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .meta {
+        padding: 12px;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.proj-card {
+    animation: fadeIn 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+.proj-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.proj-card:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.proj-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.proj-card:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.proj-card:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+.proj-card:nth-child(6) {
+    animation-delay: 0.35s;
+}
+
+.proj-card:nth-child(n+7) {
+    animation-delay: 0.4s;
+}
