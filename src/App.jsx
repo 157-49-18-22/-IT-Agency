@@ -26,6 +26,7 @@ import Mockups from './Components/UI/Mockups';
 import Prototypes from './Components/UI/Prototypes';
 import DesignDeliverables from './Components/UI/DesignDeliverables';
 import Client from './Components/UI/Client';
+import UIDashboard from './Components/UI/UIDashboard';
 
 // Import Development Components
 import Code from './Components/Development/Code';
@@ -175,7 +176,11 @@ const AppRoutes = () => {
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         {/* Common routes for all authenticated users */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={
+          isUIUX ? <UIDashboard /> :
+            isTester ? <TestingDashboard /> :
+              <Dashboard />
+        } />
         <Route path="/dashboard-enhanced" element={<EnhancedDashboard />} />
         <Route path="/notifications" element={<NotificationsCenter />} />
         <Route path="/calendar" element={<Calendar />} />
