@@ -46,6 +46,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import uiuxService from '../../services/uiuxService';
+import { projectsAPI } from '../../services/api';
 import './UIDashboard.css';
 
 const UIDashboard = () => {
@@ -77,28 +78,58 @@ const UIDashboard = () => {
     // Helper Functions
     const fetchTasks = async () => {
         try {
-            // Mocking task fetch if service fails or just to be safe as we don't have projectId prop here easily unless we fetch all user tasks
-            // Ideally we fetch tasks for ALL projects assigned to this user
-            const response = await uiuxService.getProjects(); // Just fetching projects for now
-            setUiuxProjects(response.data || []);
+            setIsLoading(true);
 
-            // For demo, let's generate some dummy tasks if API returns empty
-            const demoTasks = [
-                { id: 1, title: 'Homepage Wireframe', status: 'In Progress', priority: 'High', dueDate: '2024-01-20', assignedTo: 'Me', progress: 45, timeSpent: '4h' },
-                { id: 2, title: 'Login Flow', status: 'Completed', priority: 'Medium', dueDate: '2024-01-15', assignedTo: 'Me', progress: 100, timeSpent: '8h' },
-                { id: 3, title: 'Dashboard Mockup', status: 'To Do', priority: 'High', dueDate: '2024-01-25', assignedTo: 'Me', progress: 0, timeSpent: '0h' },
-                { id: 4, title: 'Mobile Responsive Check', status: 'In Review', priority: 'Low', dueDate: '2024-01-22', assignedTo: 'John', progress: 80, timeSpent: '2h' },
-            ];
-            setTasks(demoTasks);
-            setTotalHoursLogged(14.5);
+            // Fetch Projects - Use projectsAPI to get ALL projects, not just UI/UX specific ones
+            const projectsResponse = await projectsAPI.getProjects();
+            let fetchedProjects = [];
+
+            // Robust data extraction
+            if (projectsResponse.data) {
+                if (Array.isArray(projectsResponse.data)) {
+                    fetchedProjects = projectsResponse.data;
+                } else if (Array.isArray(projectsResponse.data.data)) {
+                    fetchedProjects = projectsResponse.data.data;
+                } else if (Array.isArray(projectsResponse.data.projects)) {
+                    fetchedProjects = projectsResponse.data.projects;
+                }
+            }
+
+            setUiuxProjects(fetchedProjects);
+
+            // Fetch User Tasks
+            let fetchedTasks = [];
+            try {
+                // Try to get user tasks if the endpoint exists
+                const tasksResponse = await uiuxService.getUserTasks();
+                fetchedTasks = Array.isArray(tasksResponse.data) ? tasksResponse.data : (tasksResponse.data?.data || []);
+            } catch (taskErr) {
+                console.warn("Could not fetch user tasks, trying project tasks...");
+            }
+
+            setTasks(fetchedTasks);
+
+            // Calculate total hours if available in task data
+            const totalHours = fetchedTasks.reduce((acc, task) => {
+                // assuming task.timeSpent is a string like "4h" or number
+                const hours = parseFloat(task.timeSpent) || 0;
+                return acc + hours;
+            }, 0);
+            setTotalHoursLogged(totalHours);
+
         } catch (err) {
-            console.error(err);
+            console.error("Error loading dashboard data:", err);
+            setError("Failed to load dashboard data");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
         fetchTasks();
     }, []);
+
+    const activeProjectsCount = uiuxProjects.filter(p => !['Completed', 'Cancelled', 'Archived'].includes(p.status)).length;
 
     return (
         <div className="ui-dashboard-container">
@@ -132,7 +163,7 @@ const UIDashboard = () => {
                     </div>
                     <div className="card-info">
                         <h3>Active Projects</h3>
-                        <span className="card-value">{uiuxProjects.length || 3}</span>
+                        <span className="card-value">{activeProjectsCount}</span>
                     </div>
                 </div>
 
@@ -169,19 +200,25 @@ const UIDashboard = () => {
                             <Link to="/tasks" className="btn-text">View All</Link>
                         </div>
                         <div className="tasks-list-modern">
-                            {tasks.map(task => (
-                                <div key={task.id} className="task-item-modern">
-                                    <div className={`status-indicator ${task.priority.toLowerCase()}`}></div>
-                                    <div className="task-main">
-                                        <h4>{task.title}</h4>
-                                        <span className="task-meta">{task.status} • Due {task.dueDate}</span>
+                            {tasks.length > 0 ? (
+                                tasks.map(task => (
+                                    <div key={task.id || Math.random()} className="task-item-modern">
+                                        <div className={`status-indicator ${task.priority?.toLowerCase() || 'medium'}`}></div>
+                                        <div className="task-main">
+                                            <h4>{task.title || task.name || 'Untitled Task'}</h4>
+                                            <span className="task-meta">{task.status || 'Pending'} • Due {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No Date'}</span>
+                                        </div>
+                                        <div className="task-progress-mini">
+                                            <span className="time">{task.timeSpent || '0h'}</span>
+                                            <LinearProgress variant="determinate" value={task.progress || 0} className="progress-bar" />
+                                        </div>
                                     </div>
-                                    <div className="task-progress-mini">
-                                        <span className="time">{task.timeSpent}</span>
-                                        <LinearProgress variant="determinate" value={task.progress} className="progress-bar" />
-                                    </div>
+                                ))
+                            ) : (
+                                <div className="no-tasks-message">
+                                    <p>No active tasks found.</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
                 </div>

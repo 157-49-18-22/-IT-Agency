@@ -312,6 +312,16 @@
     justify-content: center;
 }
 
+/* No Tasks Message */
+.no-tasks-message {
+    padding: 2rem;
+    text-align: center;
+    color: #a3aed0;
+    font-style: italic;
+    background: #f8f9fc;
+    border-radius: 12px;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
     .dashboard-content-grid {

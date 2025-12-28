@@ -187,6 +187,7 @@ const AppRoutes = () => {
         <Route path="/projects">
           <Route index element={<AllProjects />} />
           <Route path="new" element={!isDeveloper && !isUIUX && !isTester ? <NewProjects /> : <Navigate to="/projects" replace />} />
+          <Route path="edit/:projectId" element={!isDeveloper && !isUIUX && !isTester ? <NewProjects /> : <Navigate to="/projects" replace />} />
           <Route path="active" element={<Active />} />
           <Route path="completed" element={<Completed />} />
         </Route>
@@ -257,6 +258,8 @@ const AppRoutes = () => {
 
             {/* Calendar */}
             <Route path="/calendar" element={<div>Calendar</div>} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
           </>
         )}
         {/* Tester specific routes */}
@@ -273,6 +276,8 @@ const AppRoutes = () => {
             <Route path="approved" element={<TestingApprovedProjects />} />
             <Route path="deliverables" element={<TestingDeliverables />} />
             <Route path="submit" element={<SubmitDeliverables />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
         )}
 
@@ -294,6 +299,8 @@ const AppRoutes = () => {
             <Route path="/tasks" element={<TaskManagement />} />
             <Route path="/tasks/:projectId" element={<TaskManagement />} />
             <Route path="/team" element={<Team />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
           </>
         )}
 

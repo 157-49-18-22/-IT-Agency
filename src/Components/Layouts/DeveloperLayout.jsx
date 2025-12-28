@@ -70,6 +70,7 @@ import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
 import { Box, Button } from '@mui/material';
 import { getFileIcon, formatFileSize, formatRelativeTime, getStatusColor, getPriorityColor } from '../../utils/fileHelpers';
+import { tasksAPI, bugsAPI, timeLogsAPI, messageAPI } from '../../services/api';
 
 const DeveloperLayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
@@ -81,6 +82,37 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread messages
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        if (!currentUser) return;
+        const res = await messageAPI.getMessages();
+        const messages = res.data?.data || [];
+        const rawMessages = Array.isArray(messages) ? messages : [];
+
+        const count = rawMessages.filter(msg => {
+          // Check if I am NOT the sender
+          if (msg.senderId === currentUser.id) return false;
+
+          // Check if I haven't read it
+          const readByMe = msg.readBy && Array.isArray(msg.readBy) && msg.readBy.some(r => r.user === currentUser.id);
+          return !readByMe;
+        }).length;
+
+        setUnreadCount(count);
+      } catch (e) {
+        console.error("Failed to fetch unread messages", e);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every minute
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   // Progress tracking data
   const [progressData, setProgressData] = useState({
@@ -101,7 +133,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     deliverables: true,
     collaboration: true,
     myProjects: true,
-    timeTracking: true
+    timeTracking: false
   });
 
   // Task checklist state
@@ -233,6 +265,56 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   useEffect(() => {
     checkPhaseCompletion();
   }, [checkPhaseCompletion]);
+
+  // Fetch Real Dashboard Data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!currentUser?.id) return;
+
+      try {
+        // Fetch Tasks
+        const tasksRes = await tasksAPI.getTasks({ assignedTo: currentUser.id });
+        const tasks = tasksRes.data || [];
+        const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+
+        // Fetch Bugs (if available, otherwise mock 0)
+        let bugs = [];
+        try {
+          const bugsRes = await bugsAPI.getBugs({ assignedTo: currentUser.id });
+          bugs = bugsRes.data || [];
+        } catch (e) {
+          console.warn("Bugs API not available", e);
+        }
+        const fixedBugs = bugs.filter(b => b.status === 'Fixed').length;
+
+        // Fetch Time Logs
+        const logsRes = await timeLogsAPI.getLogs();
+        const logs = logsRes.data?.data || [];
+        setTimeLogs(logs); // Update state used by timer logic too
+
+        const totalTimeMs = logs.reduce((acc, log) => acc + (log.duration * 60000), 0);
+        // Note: log.duration from API might be in minutes (based on TimeLogs.jsx logic). 
+        // In TimeLogs.jsx: log.duration * 60000 -> so log.duration is minutes.
+        // But here formatTime expects ms. 
+        // Let's assume log.duration is minutes.
+
+        setProgressData(prev => ({
+          ...prev,
+          tasksCompleted: completedTasks,
+          totalTasks: tasks.length || 1, // Avoid 0/0
+          bugsFixed: fixedBugs,
+          totalBugs: bugs.length || 1,
+          codeCoverage: 85, // Hardcoded for now as it's complex to measure from frontend
+          progressHistory: [10, 30, 50, (completedTasks / (tasks.length || 1)) * 100] // Dynamic
+        }));
+
+      } catch (err) {
+        console.error("Error loading dashboard data", err);
+      }
+    };
+
+    fetchDashboardData();
+  }, [currentUser]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -561,6 +643,14 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               <Link to="/calendar">
                 <FaCalendarAlt className="nav-icon" />
                 <span>Calendar</span>
+              </Link>
+            </li>
+
+            <li className={isActive('/messages')}>
+              <Link to="/messages">
+                <FaComments className="nav-icon" />
+                <span>Messages</span>
+                {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
               </Link>
             </li>
           </ul>

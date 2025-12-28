@@ -7,8 +7,9 @@ import {
   FaFileUpload, FaChartLine, FaSignOutAlt,
   FaCheckCircle, FaExclamationTriangle, FaClock,
   FaCamera, FaDesktop, FaMobileAlt, FaUserTie, FaUpload,
-  FaFilePdf, FaFileWord, FaFileExcel, FaFileImage
+  FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaEnvelope
 } from 'react-icons/fa';
+import { messageAPI } from '../../services/api';
 
 const Testing = ({ projectId, onComplete, isClientView = false }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -17,8 +18,39 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
   const [phaseCompleted, setPhaseCompleted] = useState(false);
   const [testCases, setTestCases] = useState([]);
   const [bugs, setBugs] = useState([]);
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread messages
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        if (!currentUser) return;
+        const res = await messageAPI.getMessages();
+        const messages = res.data?.data || [];
+        const rawMessages = Array.isArray(messages) ? messages : [];
+
+        const count = rawMessages.filter(msg => {
+          // Check if I am NOT the sender
+          if (msg.senderId === currentUser.id) return false;
+
+          // Check if I haven't read it
+          const readByMe = msg.readBy && Array.isArray(msg.readBy) && msg.readBy.some(r => r.user === currentUser.id);
+          return !readByMe;
+        }).length;
+
+        setUnreadCount(count);
+      } catch (e) {
+        console.error("Failed to fetch unread messages", e);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every minute
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
   const [deliverables, setDeliverables] = useState({
     testCasesExecuted: false,
     resultsDocumented: false,
@@ -1178,6 +1210,14 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
               <Link to="/testing/uat">
                 <FaUserTie className="nav-icon" />
                 <span className="nav-text">UAT</span>
+              </Link>
+            </li>
+
+            <li className={isActive('/testing/messages')}>
+              <Link to="/testing/messages">
+                <FaEnvelope className="nav-icon" />
+                <span className="nav-text">Messages</span>
+                {unreadCount > 0 && <span className="badge sidebar-badge">{unreadCount}</span>}
               </Link>
             </li>
 

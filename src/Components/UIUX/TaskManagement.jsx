@@ -169,11 +169,11 @@ const TaskManagement = () => {
     severity: 'success'
   });
   const [openNewTaskDialog, setOpenNewTaskDialog] = useState(false);
-  
+
   // Refs
   const fileInputRef = useRef(null);
   const wsSubscriptionRef = useRef(null);
-  
+
   // Get project ID and user from context
   const { projectId } = useParams();
   const { user: currentUser } = useAuth() || {
@@ -189,14 +189,14 @@ const TaskManagement = () => {
     try {
       // Optimistic update
       const previousTasks = [...tasks];
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
           task.id === taskId ? { ...task, status: newStatus } : task
         )
       );
-      
+
       await uiuxService.updateTaskStatus(taskId, newStatus);
-      
+
     } catch (err) {
       // Revert on error
       setTasks(previousTasks);
@@ -208,22 +208,22 @@ const TaskManagement = () => {
   const handleFileUpload = async (e, taskId, onProgress) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     try {
       setFile(file);
       const response = await uiuxService.uploadAttachment(
-        taskId, 
-        file, 
+        taskId,
+        file,
         onProgress
       );
-      
+
       // The WebSocket update will handle the state update
       return { success: true, data: response };
     } catch (err) {
       console.error('Error uploading file:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to upload file' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to upload file'
       };
     }
   };
@@ -232,8 +232,8 @@ const TaskManagement = () => {
   const logHours = (taskId, hours) => {
     const hoursNum = parseFloat(hours);
     if (!isNaN(hoursNum) && hoursNum > 0) {
-      setTasks(tasks.map(task => 
-        task.id === taskId 
+      setTasks(tasks.map(task =>
+        task.id === taskId
           ? { ...task, hoursLogged: (task.hoursLogged || 0) + hoursNum }
           : task
       ));
@@ -245,7 +245,7 @@ const TaskManagement = () => {
   const toggleChecklistItem = (taskId, itemId) => {
     setTasks(tasks.map(task => {
       if (task.id === taskId) {
-        const updatedChecklist = task.checklist.map(item => 
+        const updatedChecklist = task.checklist.map(item =>
           item.id === itemId ? { ...item, completed: !item.completed } : item
         );
         return { ...task, checklist: updatedChecklist };
@@ -257,7 +257,7 @@ const TaskManagement = () => {
   // Add comment to task
   const addComment = (taskId) => {
     if (!newComment.trim()) return;
-    
+
     const comment = {
       id: Date.now(),
       text: newComment,
@@ -266,8 +266,8 @@ const TaskManagement = () => {
       isAdmin: currentUser?.role === 'admin'
     };
 
-    setTasks(tasks.map(task => 
-      task.id === taskId 
+    setTasks(tasks.map(task =>
+      task.id === taskId
         ? { ...task, comments: [...(task.comments || []), comment] }
         : task
     ));
@@ -293,13 +293,13 @@ const TaskManagement = () => {
         uiuxService.getUsers(),
         uiuxService.getProjectTeam(projectId)
       ]);
-      
+
       setTasks(tasksData);
       setUsers(usersData);
-      
+
       // Set up WebSocket for real-time updates
       setupWebSocket();
-      
+
     } catch (err) {
       setError('Failed to load data. Please try again.');
       console.error('Error fetching data:', err);
@@ -312,54 +312,54 @@ const TaskManagement = () => {
   const setupWebSocket = useCallback(() => {
     // Initialize WebSocket connection
     const wsService = uiuxService.initWebSocket();
-    
+
     // Subscribe to task updates
     wsSubscriptionRef.current = wsService.subscribe('TASK_UPDATED', (updatedTask) => {
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
           task.id === updatedTask.id ? { ...task, ...updatedTask } : task
         )
       );
-      
+
       // Update selected task if it's the one being updated
       if (selectedTask && selectedTask.id === updatedTask.id) {
         setSelectedTask(prev => ({ ...prev, ...updatedTask }));
       }
     });
-    
+
     // Subscribe to new task creation
     wsService.subscribe('TASK_CREATED', (newTask) => {
       setTasks(prevTasks => [newTask, ...prevTasks]);
     });
-    
+
     // Subscribe to comment updates
     wsService.subscribe('COMMENT_ADDED', ({ taskId, comment }) => {
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId 
-            ? { 
-                ...task, 
-                comments: [...(task.comments || []), comment] 
-              } 
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId
+            ? {
+              ...task,
+              comments: [...(task.comments || []), comment]
+            }
             : task
         )
       );
     });
-    
+
     // Subscribe to attachment updates
     wsService.subscribe('ATTACHMENT_ADDED', ({ taskId, attachment }) => {
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId 
-            ? { 
-                ...task, 
-                attachments: [...(task.attachments || []), attachment] 
-              } 
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId
+            ? {
+              ...task,
+              attachments: [...(task.attachments || []), attachment]
+            }
             : task
         )
       );
     });
-    
+
     // Cleanup function will be called on component unmount
     return () => {
       if (wsSubscriptionRef.current) {
@@ -371,7 +371,7 @@ const TaskManagement = () => {
   // Fetch data on component mount
   useEffect(() => {
     fetchInitialData();
-    
+
     // Cleanup WebSocket on unmount
     return () => {
       if (wsSubscriptionRef.current) {
@@ -379,7 +379,7 @@ const TaskManagement = () => {
       }
     };
   }, [fetchInitialData]);
-  
+
   // Handle filter changes
   useEffect(() => {
     const fetchFilteredTasks = async () => {
@@ -403,7 +403,7 @@ const TaskManagement = () => {
         setLoading(false);
       }
     };
-    
+
     fetchFilteredTasks();
   }, [filters, projectId]);
 
@@ -413,12 +413,12 @@ const TaskManagement = () => {
     if (filters.status !== 'all' && task.status !== filters.status) {
       return false;
     }
-    
+
     // Apply priority filter
     if (filters.priority !== 'all' && task.priority !== filters.priority) {
       return false;
     }
-    
+
     // Apply assignedTo filter
     if (filters.assignedTo !== 'all') {
       if (filters.assignedTo === 'me' && task.assignedTo !== 'me') {
@@ -428,7 +428,7 @@ const TaskManagement = () => {
         return false;
       }
     }
-    
+
     // Apply search
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
@@ -437,7 +437,7 @@ const TaskManagement = () => {
         task.description.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return true;
   });
 
@@ -450,14 +450,14 @@ const TaskManagement = () => {
         userId: currentUser.id, // Assuming you have currentUser in context
         date: new Date().toISOString()
       });
-      
+
       // The WebSocket update will handle the state update
       return { success: true, data: response };
     } catch (err) {
       console.error('Error logging work time:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to log work time' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to log work time'
       };
     }
   };
@@ -466,23 +466,23 @@ const TaskManagement = () => {
   const handleAddComment = async (taskId, content, attachments = []) => {
     try {
       const response = await uiuxService.addComment(
-        taskId, 
-        content, 
+        taskId,
+        content,
         null, // parentId for replies
         attachments
       );
-      
+
       // The WebSocket update will handle the state update
       return { success: true, data: response };
     } catch (err) {
       console.error('Error adding comment:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to add comment' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to add comment'
       };
     }
   };
-  
+
   // Handle user assignment
   const handleAssignUser = async (taskId, userId) => {
     try {
@@ -491,13 +491,13 @@ const TaskManagement = () => {
       return { success: true };
     } catch (err) {
       console.error('Error assigning user:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to assign user' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to assign user'
       };
     }
   };
-  
+
   // Handle adding team member
   const handleAddTeamMember = async (userId, role = 'member') => {
     try {
@@ -506,13 +506,13 @@ const TaskManagement = () => {
       return { success: true, data: response };
     } catch (err) {
       console.error('Error adding team member:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to add team member' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to add team member'
       };
     }
   };
-  
+
   // Handle removing team member
   const handleRemoveTeamMember = async (userId) => {
     try {
@@ -521,82 +521,43 @@ const TaskManagement = () => {
       return { success: true };
     } catch (err) {
       console.error('Error removing team member:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to remove team member' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to remove team member'
       };
     }
   };
-  
+
   // Handle updating team member role
   const handleUpdateTeamMemberRole = async (userId, role) => {
     try {
       const response = await uiuxService.updateTeamMemberRole(projectId, userId, role);
-      setTeamMembers(prev => 
-        prev.map(member => 
+      setTeamMembers(prev =>
+        prev.map(member =>
           member.id === userId ? { ...member, role } : member
         )
       );
       return { success: true, data: response };
     } catch (err) {
       console.error('Error updating team member role:', err);
-      return { 
-        success: false, 
-        error: err.response?.data?.message || 'Failed to update role' 
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to update role'
       };
     }
   };
-const EnhancedTaskManagement = () => {
-  const [tasks, setTasks] = useState(initialTasks);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openNewTaskDialog, setOpenNewTaskDialog] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [hoursWorked, setHoursWorked] = useState('');
-  const [file, setFile] = useState(null);
-  const [filter, setFilter] = useState('all');
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    status: TASK_STATUS.NOT_STARTED,
-    dueDate: null,
-    checklist: [
-      { id: 1, text: 'Research', completed: false },
-      { id: 2, text: 'Wireframe', completed: false },
-      { id: 3, text: 'Prototype', completed: false }
-    ]
-  });
-
-  const { user } = useAuth();
-  const { projectId } = useParams();
-
-  // Filter tasks based on status
-  const filteredTasks = filter === 'all' 
-    ? tasks 
-    : tasks.filter(task => task.status === filter);
-
-  // Handle task creation
-  const handleCreateTask = () => {
-    if (!newTask.title.trim()) {
-      showSnackbar('Task title is required', 'error');
-      return;
-    }
-
-    const task = {
-      ...newTask,
-      id: Date.now(),
-      files: [],
-      comments: [],
-      hoursLogged: 0,
-      createdAt: new Date().toISOString(),
-      createdBy: user?.id || 'system'
-    };
-
-    setTasks([...tasks, task]);
-    setOpenNewTaskDialog(false);
-    setNewTask({
+  const EnhancedTaskManagement = () => {
+    const [tasks, setTasks] = useState(initialTasks);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [openNewTaskDialog, setOpenNewTaskDialog] = useState(false);
+    const [newComment, setNewComment] = useState('');
+    const [hoursWorked, setHoursWorked] = useState('');
+    const [file, setFile] = useState(null);
+    const [filter, setFilter] = useState('all');
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [newTask, setNewTask] = useState({
       title: '',
       description: '',
       status: TASK_STATUS.NOT_STARTED,
@@ -607,327 +568,366 @@ const EnhancedTaskManagement = () => {
         { id: 3, text: 'Prototype', completed: false }
       ]
     });
-    showSnackbar('Task created successfully', 'success');
-  };
 
-  // Handle task deletion
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
-    setAnchorEl(null);
-    showSnackbar('Task deleted', 'info');
-  };
+    const { user } = useAuth();
+    const { projectId } = useParams();
 
-  // Show snackbar notification
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
+    // Filter tasks based on status
+    const filteredTasks = filter === 'all'
+      ? tasks
+      : tasks.filter(task => task.status === filter);
 
-  // Close snackbar
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+    // Handle task creation
+    const handleCreateTask = () => {
+      if (!newTask.title.trim()) {
+        showSnackbar('Task title is required', 'error');
+        return;
+      }
 
-  // ... (keep existing handler functions)
+      const task = {
+        ...newTask,
+        id: Date.now(),
+        files: [],
+        comments: [],
+        hoursLogged: 0,
+        createdAt: new Date().toISOString(),
+        createdBy: user?.id || 'system'
+      };
 
-  // Add this to your existing code
-  const renderNewTaskDialog = () => (
-    <Dialog 
-      open={openNewTaskDialog} 
-      onClose={() => setOpenNewTaskDialog(false)}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>Create New Task</DialogTitle>
-      <DialogContent dividers>
-        <TextField
-          fullWidth
-          label="Task Title"
-          value={newTask.title}
-          onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-          margin="normal"
-          required
-        />
-        <TextField
-          fullWidth
-          multiline
-          rows={3}
-          label="Description"
-          value={newTask.description}
-          onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-          margin="normal"
-        />
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <DatePicker
-            label="Due Date"
-            value={newTask.dueDate}
-            onChange={(date) => setNewTask({...newTask, dueDate: date})}
-            renderInput={(params) => (
-              <TextField 
-                {...params} 
-                fullWidth 
-                margin="normal" 
-              />
-            )}
+      setTasks([...tasks, task]);
+      setOpenNewTaskDialog(false);
+      setNewTask({
+        title: '',
+        description: '',
+        status: TASK_STATUS.NOT_STARTED,
+        dueDate: null,
+        checklist: [
+          { id: 1, text: 'Research', completed: false },
+          { id: 2, text: 'Wireframe', completed: false },
+          { id: 3, text: 'Prototype', completed: false }
+        ]
+      });
+      showSnackbar('Task created successfully', 'success');
+    };
+
+    // Handle task deletion
+    const handleDeleteTask = (taskId) => {
+      setTasks(tasks.filter(task => task.id !== taskId));
+      setAnchorEl(null);
+      showSnackbar('Task deleted', 'info');
+    };
+
+    // Show snackbar notification
+    const showSnackbar = (message, severity = 'success') => {
+      setSnackbar({ open: true, message, severity });
+    };
+
+    // Close snackbar
+    const handleCloseSnackbar = () => {
+      setSnackbar({ ...snackbar, open: false });
+    };
+
+    // ... (keep existing handler functions)
+
+    // Add this to your existing code
+    const renderNewTaskDialog = () => (
+      <Dialog
+        open={openNewTaskDialog}
+        onClose={() => setOpenNewTaskDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create New Task</DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            fullWidth
+            label="Task Title"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            margin="normal"
+            required
           />
-        </LocalizationProvider>
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={newTask.status}
-            label="Status"
-            onChange={(e) => setNewTask({...newTask, status: e.target.value})}
-          >
-            {Object.values(TASK_STATUS).map(status => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-          Checklist
-        </Typography>
-        <FormGroup>
-          {newTask.checklist.map((item) => (
-            <FormControlLabel
-              key={item.id}
-              control={
-                <Checkbox
-                  checked={item.completed}
-                  onChange={(e) => {
-                    const updatedChecklist = newTask.checklist.map(i => 
-                      i.id === item.id ? {...i, completed: e.target.checked} : i
-                    );
-                    setNewTask({...newTask, checklist: updatedChecklist});
-                  }}
-                />
-              }
-              label={
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            margin="normal"
+          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Due Date"
+              value={newTask.dueDate}
+              onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
+              renderInput={(params) => (
                 <TextField
-                  value={item.text}
-                  onChange={(e) => {
-                    const updatedChecklist = newTask.checklist.map(i => 
-                      i.id === item.id ? {...i, text: e.target.value} : i
-                    );
-                    setNewTask({...newTask, checklist: updatedChecklist});
-                  }}
-                  variant="standard"
+                  {...params}
                   fullWidth
+                  margin="normal"
                 />
-              }
+              )}
             />
-          ))}
-        </FormGroup>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenNewTaskDialog(false)}>Cancel</Button>
-        <Button onClick={handleCreateTask} variant="contained">
-          Create Task
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-
-  // Update the filter chips in the return statement
-  <Box display="flex" gap={1} mb={2} flexWrap="wrap">
-    <Chip
-      label="All"
-      color={filter === 'all' ? 'primary' : 'default'}
-      variant={filter === 'all' ? 'filled' : 'outlined'}
-      onClick={() => setFilter('all')}
-    />
-    {Object.values(TASK_STATUS).map(status => (
-      <Chip
-        key={status}
-        label={status}
-        color={filter === status ? 'primary' : 'default'}
-        variant={filter === status ? 'filled' : 'outlined'}
-        onClick={() => setFilter(status)}
-      />
-    ))}
-  </Box>
-
-  // Add task menu
-  const renderTaskMenu = (task) => (
-    <>
-      <IconButton
-        size="small"
-        onClick={(e) => {
-          setSelectedTask(task);
-          setAnchorEl(e.currentTarget);
-        }}
-      >
-        <FaEllipsisV />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl && selectedTask?.id === task.id)}
-        onClose={() => setAnchorEl(null)}
-      >
-        <MuiMenuItem onClick={() => {
-          setNewTask({
-            ...task,
-            dueDate: task.dueDate ? new Date(task.dueDate) : null
-          });
-          setOpenNewTaskDialog(true);
-          setAnchorEl(null);
-        }}>
-          <ListItemIcon>
-            <FaEdit fontSize="small" />
-          </ListItemIcon>
-          Edit
-        </MuiMenuItem>
-        <MuiMenuItem onClick={() => {
-          if (window.confirm('Are you sure you want to delete this task?')) {
-            handleDeleteTask(task.id);
-          }
-        }}>
-          <ListItemIcon>
-            <FaTrash fontSize="small" color="error" />
-          </ListItemIcon>
-          <Typography color="error">Delete</Typography>
-        </MuiMenuItem>
-      </Menu>
-    </>
-  );
-
-  // Update the task item to include the menu
-  const renderTaskItem = (task) => {
-    const progress = calculateProgress(task);
-    
-    return (
-      <Paper key={task.id} sx={{ mb: 2, p: 2, position: 'relative' }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box flexGrow={1} mr={1}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">{task.title}</Typography>
-              {renderStatusChip(task.status)}
-            </Box>
-            
-            <Typography variant="body2" color="text.secondary" mb={2}>
-              {task.description}
-            </Typography>
-            
-            {/* Progress and other details */}
-            {/* ... existing progress and details code ... */}
-          </Box>
-          
-          {renderTaskMenu(task)}
-        </Box>
-        
-        {/* Rest of the task item */}
-        {/* ... existing task item code ... */}
-      </Paper>
+          </LocalizationProvider>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={newTask.status}
+              label="Status"
+              onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+            >
+              {Object.values(TASK_STATUS).map(status => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+            Checklist
+          </Typography>
+          <FormGroup>
+            {newTask.checklist.map((item) => (
+              <FormControlLabel
+                key={item.id}
+                control={
+                  <Checkbox
+                    checked={item.completed}
+                    onChange={(e) => {
+                      const updatedChecklist = newTask.checklist.map(i =>
+                        i.id === item.id ? { ...i, completed: e.target.checked } : i
+                      );
+                      setNewTask({ ...newTask, checklist: updatedChecklist });
+                    }}
+                  />
+                }
+                label={
+                  <TextField
+                    value={item.text}
+                    onChange={(e) => {
+                      const updatedChecklist = newTask.checklist.map(i =>
+                        i.id === item.id ? { ...i, text: e.target.value } : i
+                      );
+                      setNewTask({ ...newTask, checklist: updatedChecklist });
+                    }}
+                    variant="standard"
+                    fullWidth
+                  />
+                }
+              />
+            ))}
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenNewTaskDialog(false)}>Cancel</Button>
+          <Button onClick={handleCreateTask} variant="contained">
+            Create Task
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
-  };
 
-  return (
-    <Box sx={{ p: 3 }}>
-      {/* Header and filter section */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Task Management</Typography>
-        <Button
-          variant="contained"
-          startIcon={<FaPlus />}
+    // Update the filter chips in the return statement
+    <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+      <Chip
+        label="All"
+        color={filter === 'all' ? 'primary' : 'default'}
+        variant={filter === 'all' ? 'filled' : 'outlined'}
+        onClick={() => setFilter('all')}
+      />
+      {Object.values(TASK_STATUS).map(status => (
+        <Chip
+          key={status}
+          label={status}
+          color={filter === status ? 'primary' : 'default'}
+          variant={filter === status ? 'filled' : 'outlined'}
+          onClick={() => setFilter(status)}
+        />
+      ))}
+    </Box>
+
+    // Add task menu
+    const renderTaskMenu = (task) => (
+      <>
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            setSelectedTask(task);
+            setAnchorEl(e.currentTarget);
+          }}
+        >
+          <FaEllipsisV />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl && selectedTask?.id === task.id)}
+          onClose={() => setAnchorEl(null)}
+        >
+          <MuiMenuItem onClick={() => {
+            setNewTask({
+              ...task,
+              dueDate: task.dueDate ? new Date(task.dueDate) : null
+            });
+            setOpenNewTaskDialog(true);
+            setAnchorEl(null);
+          }}>
+            <ListItemIcon>
+              <FaEdit fontSize="small" />
+            </ListItemIcon>
+            Edit
+          </MuiMenuItem>
+          <MuiMenuItem onClick={() => {
+            if (window.confirm('Are you sure you want to delete this task?')) {
+              handleDeleteTask(task.id);
+            }
+          }}>
+            <ListItemIcon>
+              <FaTrash fontSize="small" color="error" />
+            </ListItemIcon>
+            <Typography color="error">Delete</Typography>
+          </MuiMenuItem>
+        </Menu>
+      </>
+    );
+
+    // Update the task item to include the menu
+    const renderTaskItem = (task) => {
+      const progress = calculateProgress(task);
+
+      return (
+        <Paper key={task.id} sx={{ mb: 2, p: 2, position: 'relative' }}>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+            <Box flexGrow={1} mr={1}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6">{task.title}</Typography>
+                {renderStatusChip(task.status)}
+              </Box>
+
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                {task.description}
+              </Typography>
+
+              {/* Progress and other details */}
+              {/* ... existing progress and details code ... */}
+            </Box>
+
+            {renderTaskMenu(task)}
+          </Box>
+
+          {/* Rest of the task item */}
+          {/* ... existing task item code ... */}
+        </Paper>
+      );
+    };
+
+    return (
+      <Box sx={{ p: 3 }}>
+        {/* Header and filter section */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h5">Task Management</Typography>
+          <Button
+            variant="contained"
+            startIcon={<FaPlus />}
+            onClick={() => setOpenNewTaskDialog(true)}
+          >
+            New Task
+          </Button>
+        </Box>
+
+        {/* Filter chips */}
+        <Box mb={3}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Filter Tasks
+            </Typography>
+            <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+              <Chip
+                label="All"
+                color={filter === 'all' ? 'primary' : 'default'}
+                variant={filter === 'all' ? 'filled' : 'outlined'}
+                onClick={() => setFilter('all')}
+              />
+              {Object.values(TASK_STATUS).map(status => (
+                <Chip
+                  key={status}
+                  label={status}
+                  color={filters.status === status ? 'primary' : 'default'}
+                  variant={filters.status === status ? 'filled' : 'outlined'}
+                  onClick={() => setFilters(prev => ({ ...prev, status }))}
+                  sx={{ mr: 1, mb: 1 }}
+                />
+              ))}
+              <Chip
+                label="Clear Filter"
+                variant="outlined"
+                onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+                sx={{ mb: 1 }}
+              />
+            </Box>
+          </Paper>
+        </Box>
+
+        {/* Task list */}
+        <Box>
+          {filteredTasks.length > 0 ? (
+            <List>
+              {filteredTasks.map(task => renderTaskItem(task))}
+            </List>
+          ) : (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary">
+                No tasks found{filters.status !== 'all' ? ` with status "${filters.status}"` : ''}.
+                {filters.status !== 'all' && (
+                  <Button
+                    color="primary"
+                    onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+                    sx={{ ml: 1 }}
+                  >
+                    Show all tasks
+                  </Button>
+                )}
+              </Typography>
+            </Paper>
+          )}
+        </Box>
+
+        {/* Dialogs */}
+        {renderTaskDialog()}
+        {renderNewTaskDialog()}
+
+        {/* FAB for new task */}
+        <Fab
+          color="primary"
+          aria-label="add"
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24
+          }}
           onClick={() => setOpenNewTaskDialog(true)}
         >
-          New Task
-        </Button>
-      </Box>
-      
-      {/* Filter chips */}
-      <Box mb={3}>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Filter Tasks
-          </Typography>
-          <Box display="flex" gap={1} mb={2} flexWrap="wrap">
-            <Chip
-              label="All"
-              color={filter === 'all' ? 'primary' : 'default'}
-              variant={filter === 'all' ? 'filled' : 'outlined'}
-              onClick={() => setFilter('all')}
-            />
-            {Object.values(TASK_STATUS).map(status => (
-              <Chip
-                key={status}
-                label={status}
-                color={filters.status === status ? 'primary' : 'default'}
-                variant={filters.status === status ? 'filled' : 'outlined'}
-                onClick={() => setFilters(prev => ({ ...prev, status }))}
-                sx={{ mr: 1, mb: 1 }}
-              />
-            ))}
-            <Chip
-              label="Clear Filter"
-              variant="outlined"
-              onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
-              sx={{ mb: 1 }}
-            />
-          </Box>
-        </Paper>
-      </Box>
-      
-      {/* Task list */}
-      <Box>
-        {filteredTasks.length > 0 ? (
-          <List>
-            {filteredTasks.map(task => renderTaskItem(task))}
-          </List>
-        ) : (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="body1" color="text.secondary">
-              No tasks found{filters.status !== 'all' ? ` with status "${filters.status}"` : ''}. 
-              {filters.status !== 'all' && (
-                <Button 
-                  color="primary" 
-                  onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
-                  sx={{ ml: 1 }}
-                >
-                  Show all tasks
-                </Button>
-              )}
-            </Typography>
-          </Paper>
-        )}
-      </Box>
-      
-      {/* Dialogs */}
-      {renderTaskDialog()}
-      {renderNewTaskDialog()}
-      
-      {/* FAB for new task */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24
-        }}
-        onClick={() => setOpenNewTaskDialog(true)}
-      >
-        <FaPlus />
-      </Fab>
-      
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          <FaPlus />
+        </Fab>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
-  );
-};
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    );
+  };
 
   // Handle snackbar close
   const handleCloseSnackbar = () => {
@@ -957,9 +957,9 @@ const EnhancedTaskManagement = () => {
       return (
         <Box my={4} textAlign="center">
           <Typography color="error">{error}</Typography>
-          <Button 
-            variant="outlined" 
-            color="primary" 
+          <Button
+            variant="outlined"
+            color="primary"
             onClick={() => window.location.reload()}
             startIcon={<FaRedo />}
           >
@@ -977,8 +977,8 @@ const EnhancedTaskManagement = () => {
             No tasks found
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            {Object.values(filters).some(f => f !== 'all' && f !== '') 
-              ? 'Try adjusting your filters' 
+            {Object.values(filters).some(f => f !== 'all' && f !== '')
+              ? 'Try adjusting your filters'
               : 'Create a new task to get started'}
           </Typography>
         </Box>
@@ -989,8 +989,8 @@ const EnhancedTaskManagement = () => {
       <List>
         {filteredTasks.map((task) => (
           <React.Fragment key={task.id}>
-            <ListItem 
-              button 
+            <ListItem
+              button
               onClick={() => setSelectedTask(task)}
               className="task-list-item"
             >
@@ -998,9 +998,9 @@ const EnhancedTaskManagement = () => {
                 <Checkbox
                   edge="start"
                   checked={task.status === 'completed'}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     handleStatusChange(
-                      task.id, 
+                      task.id,
                       e.target.checked ? 'completed' : 'in_progress'
                     )
                   }
@@ -1010,9 +1010,9 @@ const EnhancedTaskManagement = () => {
               </ListItemIcon>
               <ListItemText
                 primary={
-                  <Typography 
-                    variant="subtitle1" 
-                    style={{ 
+                  <Typography
+                    variant="subtitle1"
+                    style={{
                       textDecoration: task.status === 'completed' ? 'line-through' : 'none',
                       color: task.status === 'completed' ? 'text.secondary' : 'text.primary'
                     }}
@@ -1030,17 +1030,17 @@ const EnhancedTaskManagement = () => {
                       Due: {new Date(task.dueDate).toLocaleDateString()}
                     </Typography>
                     {task.priority && (
-                      <Chip 
-                        label={task.priority} 
-                        size="small" 
-                        style={{ 
+                      <Chip
+                        label={task.priority}
+                        size="small"
+                        style={{
                           marginLeft: 8,
-                          backgroundColor: 
-                            task.priority === 'high' ? '#ffebee' : 
-                            task.priority === 'medium' ? '#fff8e1' : '#e8f5e9',
-                          color: 
-                            task.priority === 'high' ? '#c62828' : 
-                            task.priority === 'medium' ? '#f57f17' : '#2e7d32'
+                          backgroundColor:
+                            task.priority === 'high' ? '#ffebee' :
+                              task.priority === 'medium' ? '#fff8e1' : '#e8f5e9',
+                          color:
+                            task.priority === 'high' ? '#c62828' :
+                              task.priority === 'medium' ? '#f57f17' : '#2e7d32'
                         }}
                       />
                     )}
@@ -1049,8 +1049,8 @@ const EnhancedTaskManagement = () => {
               />
               <Box display="flex" alignItems="center">
                 {task.assignedToUser && (
-                  <Avatar 
-                    src={task.assignedToUser.avatar} 
+                  <Avatar
+                    src={task.assignedToUser.avatar}
                     alt={task.assignedToUser.name}
                     sx={{ width: 32, height: 32, marginRight: 1 }}
                   />
@@ -1070,8 +1070,8 @@ const EnhancedTaskManagement = () => {
     if (!selectedTask) return null;
 
     return (
-      <Dialog 
-        open={!!selectedTask} 
+      <Dialog
+        open={!!selectedTask}
         onClose={() => setSelectedTask(null)}
         maxWidth="md"
         fullWidth
@@ -1103,7 +1103,7 @@ const EnhancedTaskManagement = () => {
                       control={
                         <Checkbox
                           checked={item.completed}
-                          onChange={() => {}}
+                          onChange={() => { }}
                           name={item.text}
                         />
                       }
@@ -1119,8 +1119,8 @@ const EnhancedTaskManagement = () => {
                   {(selectedTask.comments || []).map((comment) => (
                     <Box key={comment.id} mb={2}>
                       <Box display="flex" alignItems="center" mb={1}>
-                        <Avatar 
-                          src={comment.user?.avatar} 
+                        <Avatar
+                          src={comment.user?.avatar}
                           alt={comment.user?.name}
                           sx={{ width: 32, height: 32, marginRight: 1 }}
                         />
@@ -1148,8 +1148,8 @@ const EnhancedTaskManagement = () => {
                     multiline
                     rows={2}
                   />
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="primary"
                     style={{ marginLeft: 8, alignSelf: 'flex-end' }}
                   >
@@ -1158,60 +1158,60 @@ const EnhancedTaskManagement = () => {
                 </Box>
               </Box>
             </Grid>
-            
+
             <Grid item xs={12} md={4}>
               <Box mb={3}>
                 <Typography variant="subtitle1" gutterBottom>Details</Typography>
                 <List>
                   <ListItem>
                     <ListItemIcon><FaRegCalendarAlt /></ListItemIcon>
-                    <ListItemText 
-                      primary="Due Date" 
-                      secondary={new Date(selectedTask.dueDate).toLocaleDateString()} 
+                    <ListItemText
+                      primary="Due Date"
+                      secondary={new Date(selectedTask.dueDate).toLocaleDateString()}
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon><FaUserTie /></ListItemIcon>
-                    <ListItemText 
-                      primary="Assigned To" 
+                    <ListItemText
+                      primary="Assigned To"
                       secondary={
                         selectedTask.assignedToUser ? (
                           <Box display="flex" alignItems="center">
-                            <Avatar 
-                              src={selectedTask.assignedToUser.avatar} 
+                            <Avatar
+                              src={selectedTask.assignedToUser.avatar}
                               alt={selectedTask.assignedToUser.name}
                               sx={{ width: 24, height: 24, marginRight: 1 }}
                             />
                             {selectedTask.assignedToUser.name}
                           </Box>
                         ) : 'Unassigned'
-                      } 
+                      }
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon><FaRegClock /></ListItemIcon>
-                    <ListItemText 
-                      primary="Time Spent" 
-                      secondary={`${selectedTask.timeSpent || 0} hours`} 
+                    <ListItemText
+                      primary="Time Spent"
+                      secondary={`${selectedTask.timeSpent || 0} hours`}
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon><FaRegChartBar /></ListItemIcon>
-                    <ListItemText 
-                      primary="Progress" 
+                    <ListItemText
+                      primary="Progress"
                       secondary={
                         <Box width="100%" display="flex" alignItems="center">
                           <Box width="100%" mr={1}>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={selectedTask.progress || 0} 
+                            <LinearProgress
+                              variant="determinate"
+                              value={selectedTask.progress || 0}
                             />
                           </Box>
                           <Typography variant="body2" color="textSecondary">
                             {selectedTask.progress || 0}%
                           </Typography>
                         </Box>
-                      } 
+                      }
                     />
                   </ListItem>
                 </List>
@@ -1231,12 +1231,12 @@ const EnhancedTaskManagement = () => {
                           <FaRegFile />
                         )}
                       </ListItemIcon>
-                      <ListItemText 
-                        primary={file.name} 
-                        secondary={`${(file.size / 1024).toFixed(1)} KB`} 
+                      <ListItemText
+                        primary={file.name}
+                        secondary={`${(file.size / 1024).toFixed(1)} KB`}
                       />
-                      <IconButton 
-                        edge="end" 
+                      <IconButton
+                        edge="end"
                         aria-label="download"
                         href={file.url}
                         download
@@ -1288,8 +1288,8 @@ const EnhancedTaskManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSelectedTask(null)}>Close</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             onClick={() => {
               // Handle task completion
@@ -1308,7 +1308,7 @@ const EnhancedTaskManagement = () => {
   // Reusing existing state variables:
   // - showAddMemberDialog
   // - userSearch
-  
+
   // Render main content based on active tab
   const renderTabContent = () => {
     switch (activeTab) {
@@ -1358,8 +1358,8 @@ const EnhancedTaskManagement = () => {
     <Box sx={{ width: '100%' }}>
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h4" component="h1">UI/UX Task Management</Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           color="primary"
           startIcon={<FaPlus />}
           onClick={() => {
@@ -1377,7 +1377,7 @@ const EnhancedTaskManagement = () => {
               <InputLabel>Status</InputLabel>
               <Select
                 value={filters.status}
-                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 label="Status"
               >
                 <MenuItem value="all">All Statuses</MenuItem>
@@ -1393,7 +1393,7 @@ const EnhancedTaskManagement = () => {
               <InputLabel>Priority</InputLabel>
               <Select
                 value={filters.priority}
-                onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
                 label="Priority"
               >
                 <MenuItem value="all">All Priorities</MenuItem>
@@ -1408,7 +1408,7 @@ const EnhancedTaskManagement = () => {
               <InputLabel>Assigned To</InputLabel>
               <Select
                 value={filters.assignedTo}
-                onChange={(e) => setFilters({...filters, assignedTo: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, assignedTo: e.target.value })}
                 label="Assigned To"
               >
                 <MenuItem value="all">Everyone</MenuItem>
@@ -1424,7 +1424,7 @@ const EnhancedTaskManagement = () => {
               variant="outlined"
               placeholder="Search tasks..."
               value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               InputProps={{
                 startAdornment: <FaSearch style={{ marginRight: 8, color: 'rgba(0, 0, 0, 0.54)' }} />
               }}
@@ -1442,49 +1442,49 @@ const EnhancedTaskManagement = () => {
             variant="scrollable"
             scrollButtons="auto"
           >
-            <Tab 
+            <Tab
               label={
                 <Box display="flex" alignItems="center">
                   <FaTasks style={{ marginRight: 8 }} />
                   <span>Tasks</span>
                 </Box>
-              } 
-              value="tasks" 
-              {...a11yProps(0)} 
+              }
+              value="tasks"
+              {...a11yProps(0)}
             />
-            <Tab 
+            <Tab
               label={
                 <Box display="flex" alignItems="center">
                   <FaClipboardCheck style={{ marginRight: 8 }} />
                   <span>Deliverables</span>
                 </Box>
-              } 
-              value="deliverables" 
-              {...a11yProps(1)} 
+              }
+              value="deliverables"
+              {...a11yProps(1)}
             />
-            <Tab 
+            <Tab
               label={
                 <Box display="flex" alignItems="center">
                   <FaRegClock style={{ marginRight: 8 }} />
                   <span>Time Tracking</span>
                 </Box>
-              } 
-              value="time" 
-              {...a11yProps(2)} 
+              }
+              value="time"
+              {...a11yProps(2)}
             />
-            <Tab 
+            <Tab
               label={
                 <Box display="flex" alignItems="center">
                   <FaUsers style={{ marginRight: 8 }} />
                   <span>Team</span>
                 </Box>
-              } 
-              value="team" 
-              {...a11yProps(3)} 
+              }
+              value="team"
+              {...a11yProps(3)}
             />
           </StyledTabs>
         </Box>
-        
+
         {renderTabContent()}
       </Paper>
 

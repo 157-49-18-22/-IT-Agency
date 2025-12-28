@@ -1,12 +1,14 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FaUpload, FaCalendarAlt, FaUserTie, FaUsers, FaFileAlt, FaArrowLeft, FaCheck } from 'react-icons/fa';
 import { ProjectContext } from '../context/ProjectContext';
-import { teamAPI } from '../services/api';
+import { teamAPI, projectsAPI } from '../services/api';
 import './NewProjects.css';
 
 const NewProjects = () => {
   const navigate = useNavigate();
+  const { projectId } = useParams();
+  const isEditMode = !!projectId;
   const { addProject } = useContext(ProjectContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -49,6 +51,29 @@ const NewProjects = () => {
           console.log('Clients data:', clientsData);
           setClients(Array.isArray(clientsData) ? clientsData : []);
         }
+
+        // if edit mode, fetch project details
+        if (isEditMode) {
+          const projectResponse = await projectsAPI.getProject(projectId);
+          const projectData = projectResponse.data?.data || projectResponse.data;
+
+          if (projectData) {
+            setFormData({
+              projectName: projectData.name || '',
+              clientId: typeof projectData.client === 'object' ? projectData.client.id : projectData.client || '',
+              projectType: projectData.type || 'web',
+              startDate: projectData.startDate ? new Date(projectData.startDate).toISOString().split('T')[0] : '',
+              endDate: projectData.endDate ? new Date(projectData.endDate).toISOString().split('T')[0] : '',
+              budget: projectData.budget || '',
+              teamMembers: projectData.team ? projectData.team.map(m => m.id || m) : [], // Ensure we handle object or ID
+              description: projectData.description || '',
+              status: projectData.status || 'planning',
+              priority: projectData.priority || 'medium',
+              attachments: [] // Attachments are complex to handle in edit, leaving empty for now or populate if API returns them
+            });
+          }
+        }
+
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load data');
@@ -58,7 +83,7 @@ const NewProjects = () => {
     };
 
     fetchData();
-  }, []);
+  }, [projectId, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,10 +151,27 @@ const NewProjects = () => {
       };
 
       console.log('NewProjects - formData:', formData);
-      console.log('NewProjects - newProject being sent:', newProject);
+      console.log('NewProjects - project data being sent:', newProject);
 
-      // Save to database via API (now async)
-      await addProject(newProject);
+      if (isEditMode) {
+        // Update existing project
+        const projectData = {
+          name: newProject.projectName,
+          description: newProject.description,
+          clientId: parseInt(newProject.clientId),
+          status: newProject.status,
+          priority: newProject.priority,
+          startDate: newProject.startDate,
+          endDate: newProject.endDate,
+          budget: parseFloat(newProject.budget),
+          teamMemberIds: newProject.teamMembers.map(m => m.id)
+        };
+
+        await projectsAPI.updateProject(projectId, projectData);
+      } else {
+        // Save to database via API (using context)
+        await addProject(newProject);
+      }
 
       // Show success state
       setSubmitSuccess(true);
@@ -161,7 +203,7 @@ const NewProjects = () => {
         <button className="back-button" onClick={() => navigate(-1)}>
           <FaArrowLeft /> Back
         </button>
-        <h1>Create New Project</h1>
+        <h1>{isEditMode ? 'Edit Project' : 'Create New Project'}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="project-form">
@@ -395,9 +437,9 @@ const NewProjects = () => {
                 <FaCheck /> Success!
               </>
             ) : isSubmitting ? (
-              'Creating...'
+              'Processing...'
             ) : (
-              'Create Project'
+              isEditMode ? 'Update Project' : 'Create Project'
             )}
           </button>
         </div>

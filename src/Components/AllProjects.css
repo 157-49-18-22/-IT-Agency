@@ -406,6 +406,11 @@
   transition: all 0.2s;
   font-size: 0.9rem;
   text-align: center;
+  /* Ensure Links don't have underline */
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .action-btn.view {

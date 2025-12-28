@@ -290,8 +290,8 @@ const AllProjects = () => {
               </div>
 
               <div className="project-actions-hover">
-                <button className="action-btn view">View</button>
-                <button className="action-btn edit">Edit</button>
+                <Link to={`/stage-transition/${project.id}`} className="action-btn view">View</Link>
+                <Link to={`/projects/edit/${project.id}`} className="action-btn edit">Edit</Link>
               </div>
             </div>
           ))

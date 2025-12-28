@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import { timeLogsAPI } from '../../services/api';
 import { toast } from 'react-toastify';
-import './Code.css';
+import './TimeLogs.css';
 
 const TimeLogs = () => {
     const { currentUser } = useAuth();
@@ -50,18 +50,18 @@ const TimeLogs = () => {
     // Load time logs
     useEffect(() => {
         fetchTimeLogs();
-    }, [currentUser]); // Fetch logs when user loads
+    }, [currentUser]);
 
     const fetchTimeLogs = async () => {
         try {
             setIsLoading(true);
-            const response = await timeLogsAPI.getLogs(); // Assuming this fetches user's logs
+            const response = await timeLogsAPI.getLogs();
             if (response.data.success) {
                 setTimeLogs(response.data.data);
             }
         } catch (error) {
             console.error("Error fetching time logs", error);
-            toast.error("Failed to load time logs");
+            // toast.error("Failed to load time logs"); // Suppress initial load error if no logs exist yet
         } finally {
             setIsLoading(false);
         }
@@ -88,7 +88,6 @@ const TimeLogs = () => {
         clearInterval(timerInterval);
         setIsTimerRunning(false);
         if (elapsedTime > 0) {
-            // Set hours and minutes from elapsed time for the modal
             const totalSeconds = Math.floor(elapsedTime / 1000);
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -113,17 +112,14 @@ const TimeLogs = () => {
             return;
         }
 
-        // Calculate times
         const startTimeDate = new Date();
-        // If manual entry, we assume it just finished or happened today. 
-        // Backend expects startTime and endTime for duration
         const durationMinutes = (parseInt(newLog.hours) * 60) + parseInt(newLog.minutes);
         const endTimeDate = new Date(startTimeDate.getTime());
         const startTimeCalculated = new Date(endTimeDate.getTime() - durationMinutes * 60000);
 
         const logData = {
             projectId: selectedProject?.id || newLog.projectId,
-            description: newLog.taskName + (newLog.description ? `: ${newLog.description}` : ''), // Combine or separate based on backend model
+            description: newLog.taskName + (newLog.description ? `: ${newLog.description}` : ''),
             startTime: startTimeCalculated.toISOString(),
             endTime: endTimeDate.toISOString(),
             isBillable: true
@@ -168,175 +164,96 @@ const TimeLogs = () => {
     const totalHours = filteredLogs.reduce((sum, log) => sum + (log.duration * 60000), 0) / 3600000;
 
     return (
-        <div className="code-container">
-            <div className="code-header">
+        <div className="time-tracking-container">
+            {/* Header */}
+            <div className="time-header">
                 <div>
                     <h2>Time Tracking</h2>
-                    <p>Track your working hours and productivity</p>
+                    <p>Track your working hours and boost productivity</p>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="header-actions">
                     {myProjects.length > 0 && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 16px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            borderRadius: '8px',
-                            color: 'white'
-                        }}>
-                            <FiClock size={18} />
+                        <div className="project-selector-wrapper">
+                            <FiClock size={16} />
                             <select
+                                className="project-selector"
                                 value={selectedProject?.id || ''}
                                 onChange={(e) => {
                                     const project = myProjects.find(p => p.id === parseInt(e.target.value));
                                     setSelectedProject(project);
                                 }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
-                                    outline: 'none',
-                                    padding: '4px 8px'
-                                }}
                             >
                                 {myProjects.map(project => (
-                                    <option key={project.id} value={project.id} style={{ background: '#1f2937', color: 'white' }}>
-                                        {project.projectName || `Project ${project.id}`}
+                                    <option key={project.id} value={project.id}>
+                                        {project.projectName || project.name || `Project ${project.id}`}
                                     </option>
                                 ))}
                             </select>
                         </div>
                     )}
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => setShowAddModal(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
+                    <button className="btn-premium btn-primary" onClick={() => setShowAddModal(true)}>
                         <FiPlus /> Add Manual Log
                     </button>
                 </div>
             </div>
 
             {/* Timer Widget */}
-            <div style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
-                color: 'white'
-            }}>
-                <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Active Timer</h3>
-                <div style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '16px', fontFamily: 'monospace' }}>
+            <div className="timer-widget">
+                <div className="timer-title">Active Session Timer</div>
+                <div className="timer-display">
                     {formatTime(elapsedTime)}
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="timer-controls">
                     {!isTimerRunning ? (
-                        <button
-                            onClick={startTimer}
-                            style={{
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: 'rgba(255,255,255,0.2)',
-                                color: 'white',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontWeight: '500'
-                            }}
-                        >
+                        <button className="timer-btn start" onClick={startTimer}>
                             <FiPlay /> Start
                         </button>
                     ) : (
-                        <button
-                            onClick={pauseTimer}
-                            style={{
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: 'rgba(255,255,255,0.2)',
-                                color: 'white',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontWeight: '500'
-                            }}
-                        >
+                        <button className="timer-btn pause" onClick={pauseTimer}>
                             <FiPause /> Pause
                         </button>
                     )}
-                    <button
-                        onClick={stopTimer}
-                        style={{
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: 'rgba(255,255,255,0.2)',
-                            color: 'white',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontWeight: '500'
-                        }}
-                    >
+                    <button className="timer-btn stop" onClick={stopTimer}>
                         <FiSquare /> Stop & Save
                     </button>
                 </div>
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px' }}>
-                    <div style={{ color: '#6c757d', fontSize: '14px', marginBottom: '8px' }}>Total Hours</div>
-                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#667eea' }}>{totalHours.toFixed(1)}h</div>
+            <div className="stats-grid">
+                <div className="stat-card">
+                    <span className="stat-label">Total Hours Recorded</span>
+                    <span className="stat-value highlight-blue">
+                        {totalHours.toFixed(1)}<span style={{ fontSize: '1rem', marginLeft: '4px' }}>h</span>
+                    </span>
                 </div>
-                <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px' }}>
-                    <div style={{ color: '#6c757d', fontSize: '14px', marginBottom: '8px' }}>Total Logs</div>
-                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#764ba2' }}>{filteredLogs.length}</div>
+                <div className="stat-card">
+                    <span className="stat-label">Total Logs</span>
+                    <span className="stat-value highlight-purple">{filteredLogs.length}</span>
                 </div>
-                <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px' }}>
-                    <div style={{ color: '#6c757d', fontSize: '14px', marginBottom: '8px' }}>Avg per Day</div>
-                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#10b981' }}>
-                        {/* Simple logic for avg per day based on unique dates in logs */}
-                        {filteredLogs.length > 0 ? (totalHours / Math.max(1, new Set(filteredLogs.map(l => l.startTime ? l.startTime.split('T')[0] : '')).size)).toFixed(1) : 0}h
-                    </div>
+                <div className="stat-card">
+                    <span className="stat-label">Avg. Per Day</span>
+                    <span className="stat-value highlight-green">
+                        {filteredLogs.length > 0
+                            ? (totalHours / Math.max(1, new Set(filteredLogs.map(l => l.startTime ? l.startTime.split('T')[0] : '')).size)).toFixed(1)
+                            : 0}
+                        <span style={{ fontSize: '1rem', marginLeft: '4px' }}>h</span>
+                    </span>
                 </div>
             </div>
 
             {/* Filter */}
-            <div className="code-toolbar" style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FiFilter />
-                    <label>Filter by Date:</label>
+            <div className="tool-bar">
+                <div className="filter-wrapper">
+                    <FiFilter color="#a3aed0" />
                     <input
                         type="date"
+                        className="filter-input"
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
-                        style={{
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #e5e7eb',
-                            fontSize: '14px'
-                        }}
                     />
                     {filterDate && (
-                        <button
-                            onClick={() => setFilterDate('')}
-                            style={{
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #e5e7eb',
-                                background: 'white',
-                                cursor: 'pointer'
-                            }}
-                        >
+                        <button className="btn-clear" onClick={() => setFilterDate('')}>
                             Clear
                         </button>
                     )}
@@ -344,68 +261,51 @@ const TimeLogs = () => {
             </div>
 
             {/* Time Logs List */}
-            <div>
-                <h3 style={{ marginBottom: '16px' }}>Time Logs</h3>
+            <div className="logs-section">
+                <h3>Recent Activity</h3>
                 {isLoading ? (
-                    <div className="loading-spinner">Loading...</div>
+                    <div className="loading-spinner">Loading logs...</div>
                 ) : filteredLogs.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#6c757d' }}>
-                        <FiClock size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <div className="empty-state">
+                        <FiClock size={48} />
                         <p>No time logs found. Start tracking your time!</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="logs-list">
                         {filteredLogs.map(log => (
-                            <div
-                                key={log.id}
-                                style={{
-                                    background: 'white',
-                                    border: '1px solid #e5e7eb',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr auto auto', // added auto for delete btn
-                                    gap: '16px',
-                                    alignItems: 'start'
-                                }}
-                            >
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>{log.description || 'No Description'}</h4>
+                            <div key={log.id} className="log-item">
+                                <div className="log-details">
+                                    <div className="log-meta-row" style={{ marginBottom: '0.5rem' }}>
+                                        <h4>{log.description || 'No Description'}</h4>
                                         {log.project && (
-                                            <span style={{
-                                                padding: '4px 12px',
-                                                borderRadius: '12px',
-                                                background: '#e0e7ff',
-                                                color: '#667eea',
-                                                fontSize: '12px',
-                                                fontWeight: '500'
-                                            }}>
-                                                {log.project.name}
+                                            <span className="project-badge">
+                                                {log.project.name || log.project.projectName}
                                             </span>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#6c757d' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <div className="log-meta-row">
+                                        <div className="meta-item">
                                             <FiCalendar size={14} />
-                                            {new Date(log.startTime).toLocaleDateString()}
-                                        </span>
-                                        <span>{log.user?.name || currentUser?.name}</span>
+                                            {log.startTime ? new Date(log.startTime).toLocaleDateString() : 'N/A'}
+                                        </div>
+                                        {log.startTime && log.endTime && (
+                                            <div className="meta-item">
+                                                | {new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
+                                                {new Date(log.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        )}
+                                        <div className="meta-item">
+                                            • {log.user?.name || currentUser?.name}
+                                        </div>
                                     </div>
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 'bold',
-                                    color: '#667eea',
-                                    fontFamily: 'monospace'
-                                }}>
+
+                                <div className="log-duration">
                                     {formatTime(log.duration * 60000)}
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteLog(log.id)}
-                                    style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', marginTop: '5px' }}
-                                >
-                                    <FiTrash />
+
+                                <button className="btn-delete" onClick={() => handleDeleteLog(log.id)} title="Delete Log">
+                                    <FiTrash size={16} />
                                 </button>
                             </div>
                         ))}
@@ -425,6 +325,7 @@ const TimeLogs = () => {
                             <div className="form-group">
                                 <label>Project *</label>
                                 <select
+                                    className="form-control"
                                     value={selectedProject ? selectedProject.id : newLog.projectId}
                                     onChange={(e) => {
                                         const pid = e.target.value;
@@ -432,11 +333,10 @@ const TimeLogs = () => {
                                         setSelectedProject(myProjects.find(p => p.id == pid));
                                     }}
                                     required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 >
                                     <option value="">Select Project</option>
                                     {myProjects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.projectName}</option>
+                                        <option key={p.id} value={p.id}>{p.projectName || p.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -445,50 +345,34 @@ const TimeLogs = () => {
                                 <label>Task Name / Title *</label>
                                 <input
                                     type="text"
+                                    className="form-control"
                                     value={newLog.taskName}
                                     onChange={(e) => setNewLog({ ...newLog, taskName: e.target.value })}
                                     placeholder="What did you work on?"
                                     required
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        borderRadius: '6px',
-                                        border: '1px solid #e5e7eb',
-                                        fontSize: '14px'
-                                    }}
                                 />
                             </div>
+
                             <div className="form-group">
                                 <label>Description</label>
                                 <textarea
+                                    className="form-control"
                                     value={newLog.description}
                                     onChange={(e) => setNewLog({ ...newLog, description: e.target.value })}
                                     placeholder="Brief description of the work done"
                                     rows="3"
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        borderRadius: '6px',
-                                        border: '1px solid #e5e7eb',
-                                        fontSize: '14px'
-                                    }}
                                 />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+                            <div className="time-grid-inputs">
                                 <div className="form-group">
                                     <label>Hours</label>
                                     <input
                                         type="number"
                                         min="0"
+                                        className="form-control"
                                         value={newLog.hours}
                                         onChange={(e) => setNewLog({ ...newLog, hours: e.target.value })}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px',
-                                            borderRadius: '6px',
-                                            border: '1px solid #e5e7eb',
-                                            fontSize: '14px'
-                                        }}
                                     />
                                 </div>
                                 <div className="form-group">
@@ -497,29 +381,33 @@ const TimeLogs = () => {
                                         type="number"
                                         min="0"
                                         max="59"
+                                        className="form-control"
                                         value={newLog.minutes}
                                         onChange={(e) => setNewLog({ ...newLog, minutes: e.target.value })}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px',
-                                            borderRadius: '6px',
-                                            border: '1px solid #e5e7eb',
-                                            fontSize: '14px'
-                                        }}
                                     />
                                 </div>
                             </div>
+
                             {elapsedTime > 0 && (
-                                <div style={{ padding: '12px', background: '#e0e7ff', borderRadius: '8px', marginTop: '12px' }}>
-                                    <strong>Timer Duration:</strong> {formatTime(elapsedTime)}
+                                <div style={{
+                                    padding: '1rem',
+                                    background: '#f4f7fe',
+                                    borderRadius: '12px',
+                                    marginTop: '1rem',
+                                    color: '#4318ff',
+                                    fontWeight: '500',
+                                    textAlign: 'center'
+                                }}>
+                                    Timer Duration Captured: {formatTime(elapsedTime)}
                                 </div>
                             )}
-                            <div className="form-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+
+                            <div className="modal-footer">
+                                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Save Log
+                                <button type="submit" className="btn-save">
+                                    Save Activity
                                 </button>
                             </div>
                         </form>

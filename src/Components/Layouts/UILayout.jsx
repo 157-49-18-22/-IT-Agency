@@ -246,6 +246,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import uiuxService from '../../services/uiuxService';
+import { projectsAPI, messageAPI } from '../../services/api';
 import './UILayout.css';
 
 // Status options for tasks
@@ -262,6 +263,42 @@ const UILayout = ({ projectId, onComplete }) => {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread messages
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        if (!currentUser) return;
+        const res = await messageAPI.getMessages();
+        const messages = res.data?.data || [];
+        const rawMessages = Array.isArray(messages) ? messages : [];
+
+        const count = rawMessages.filter(msg => {
+          // Check if I am NOT the sender
+          if (msg.senderId === currentUser.id) return false;
+
+          // Check if I haven't read it
+          const readByMe = msg.readBy && Array.isArray(msg.readBy) && msg.readBy.some(r => r.user === currentUser.id);
+          return !readByMe;
+        }).length;
+
+        setUnreadCount(count);
+      } catch (e) {
+        console.error("Failed to fetch unread messages", e);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every minute
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  const handleMessageClick = () => {
+    navigate('/messages');
+  };
 
   // State for projects, tasks and comments
   const [uiuxProjects, setUiuxProjects] = useState([]);
@@ -300,8 +337,21 @@ const UILayout = ({ projectId, onComplete }) => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await uiuxService.getProjects();
-        setUiuxProjects(response.data || []);
+        const response = await projectsAPI.getProjects();
+
+        let fetchedProjects = [];
+        // Robust data extraction
+        if (response.data) {
+          if (Array.isArray(response.data)) {
+            fetchedProjects = response.data;
+          } else if (Array.isArray(response.data.data)) {
+            fetchedProjects = response.data.data;
+          } else if (Array.isArray(response.data.projects)) {
+            fetchedProjects = response.data.projects;
+          }
+        }
+
+        setUiuxProjects(fetchedProjects);
       } catch (err) {
         console.error('Error fetching projects:', err);
         setUiuxProjects([]);
@@ -824,13 +874,13 @@ const UILayout = ({ projectId, onComplete }) => {
               <FaPalette className="role-icon" /> UI/UX Team
             </span>
             <div className="user-actions">
-              <button className="icon-btn" title="Notifications">
+              <button className="icon-btn" title="Notifications" onClick={() => navigate('/notifications')}>
                 <FaBell />
                 <span className="notification-badge">3</span>
               </button>
-              <button className="icon-btn" title="Messages">
+              <button className="icon-btn" title="Messages" onClick={handleMessageClick}>
                 <FaEnvelope />
-                <span className="notification-badge">2</span>
+                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
               </button>
             </div>
           </div>
@@ -851,13 +901,13 @@ const UILayout = ({ projectId, onComplete }) => {
                 <span className="badge">{uiuxProjects.length}</span>
               </Link>
             </li>
-            <li className={isActive('/tasks')}>
+            {/* <li className={isActive('/tasks')}>
               <Link to="/tasks">
                 <FaTasks className="nav-icon" />
                 <span>My Tasks</span>
                 <span className="badge">5</span>
               </Link>
-            </li>
+            </li> */}
 
             {/* Design Section */}
             <li className="nav-section-header">
@@ -906,6 +956,13 @@ const UILayout = ({ projectId, onComplete }) => {
               <Link to="/calendar">
                 <FaCalendarAlt className="nav-icon" />
                 <span>Calendar</span>
+              </Link>
+            </li>
+            <li className={isActive('/messages')}>
+              <Link to="/messages">
+                <FaEnvelope className="nav-icon" />
+                <span>Messages</span>
+                {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
               </Link>
             </li>
             <li className={isActive('/task-management')}>
