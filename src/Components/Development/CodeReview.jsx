@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { codeReviewAPI } from '../../services/api';
 import './CodeReview.css';
 
 const CodeReview = () => {
@@ -16,64 +17,19 @@ const CodeReview = () => {
         files: []
     });
 
-    // Mock data - Replace with actual API calls
-    const mockReviews = [
-        {
-            id: 1,
-            title: 'Authentication Module Review',
-            description: 'Review authentication and authorization implementation',
-            author: 'John Doe',
-            reviewer: 'Jane Smith',
-            status: 'pending',
-            priority: 'high',
-            branch: 'feature/auth-module',
-            codeUrl: 'https://github.com/project/pull/123',
-            filesChanged: 12,
-            linesAdded: 450,
-            linesRemoved: 120,
-            comments: 5,
-            createdAt: '2024-12-20',
-            updatedAt: '2024-12-23'
-        },
-        {
-            id: 2,
-            title: 'API Endpoint Optimization',
-            description: 'Performance improvements for user data endpoints',
-            author: 'Mike Johnson',
-            reviewer: currentUser?.name || 'You',
-            status: 'approved',
-            priority: 'medium',
-            branch: 'feature/api-optimization',
-            codeUrl: 'https://github.com/project/pull/122',
-            filesChanged: 8,
-            linesAdded: 230,
-            linesRemoved: 180,
-            comments: 12,
-            createdAt: '2024-12-18',
-            updatedAt: '2024-12-22'
-        },
-        {
-            id: 3,
-            title: 'Database Schema Updates',
-            description: 'Added new tables for project management',
-            author: 'Sarah Williams',
-            reviewer: 'John Doe',
-            status: 'rejected',
-            priority: 'high',
-            branch: 'feature/db-schema',
-            codeUrl: 'https://github.com/project/pull/121',
-            filesChanged: 5,
-            linesAdded: 320,
-            linesRemoved: 45,
-            comments: 8,
-            createdAt: '2024-12-15',
-            updatedAt: '2024-12-21'
+    const fetchReviews = async () => {
+        try {
+            const response = await codeReviewAPI.getAll();
+            if (response.data && response.data.success) {
+                setReviews(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch reviews:', error);
         }
-    ];
+    };
 
     useEffect(() => {
-        // Load reviews from API
-        setReviews(mockReviews);
+        fetchReviews();
     }, []);
 
     const filteredReviews = reviews.filter(review => {
@@ -81,17 +37,35 @@ const CodeReview = () => {
         return review.status === filter;
     });
 
-    const handleSubmitReview = (e) => {
+    const handleSubmitReview = async (e) => {
         e.preventDefault();
-        // API call to submit new review
-        console.log('Submitting review:', newReview);
-        setShowNewReviewModal(false);
-        setNewReview({ title: '', description: '', codeUrl: '', branch: '', files: [] });
+        try {
+            const response = await codeReviewAPI.create({
+                ...newReview,
+                author: currentUser?.name || 'Current User'
+            });
+            if (response.data && response.data.success) {
+                setShowNewReviewModal(false);
+                setNewReview({ title: '', description: '', codeUrl: '', branch: '', files: [] });
+                fetchReviews(); // Refresh list
+            }
+        } catch (error) {
+            console.error('Failed to create review:', error);
+            alert('Failed to create review request');
+        }
     };
 
-    const handleReviewAction = (reviewId, action) => {
-        // API call to approve/reject review
-        console.log(`Review ${reviewId} ${action}`);
+    const handleReviewAction = async (reviewId, action) => {
+        try {
+            const status = action === 'approve' ? 'approved' : 'rejected';
+            const response = await codeReviewAPI.updateStatus(reviewId, status);
+            if (response.data && response.data.success) {
+                fetchReviews(); // Refresh list
+            }
+        } catch (error) {
+            console.error('Failed to update review status:', error);
+            alert('Failed to update review status');
+        }
     };
 
     const getStatusBadge = (status) => {

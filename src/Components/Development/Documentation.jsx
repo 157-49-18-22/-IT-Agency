@@ -1,56 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { documentationAPI } from '../../services/api';
 import './Documentation.css';
 
 const Documentation = () => {
     const { currentUser } = useAuth();
-    const [docs, setDocs] = useState([
-        {
-            id: 1,
-            title: 'API Documentation',
-            category: 'Backend',
-            description: 'Complete API reference with endpoints, request/response formats, and authentication',
-            lastUpdated: '2024-12-20',
-            author: 'John Doe',
-            status: 'published',
-            views: 245,
-            sections: 12
-        },
-        {
-            id: 2,
-            title: 'Component Library',
-            category: 'Frontend',
-            description: 'Reusable React components with props, examples, and best practices',
-            lastUpdated: '2024-12-22',
-            author: 'Sarah Williams',
-            status: 'published',
-            views: 189,
-            sections: 8
-        },
-        {
-            id: 3,
-            title: 'Database Schema',
-            category: 'Database',
-            description: 'Database structure, relationships, and migration guides',
-            lastUpdated: '2024-12-18',
-            author: 'Mike Johnson',
-            status: 'draft',
-            views: 67,
-            sections: 5
-        },
-        {
-            id: 4,
-            title: 'Deployment Guide',
-            category: 'DevOps',
-            description: 'Step-by-step deployment process for staging and production environments',
-            lastUpdated: '2024-12-15',
-            author: 'Alex Chen',
-            status: 'published',
-            views: 312,
-            sections: 10
-        }
-    ]);
-
+    const [docs, setDocs] = useState([]);
     const [showNewDoc, setShowNewDoc] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [newDoc, setNewDoc] = useState({
@@ -60,26 +15,44 @@ const Documentation = () => {
         content: ''
     });
 
+    const fetchDocs = async () => {
+        try {
+            const response = await documentationAPI.getAll();
+            if (response.data && response.data.success) {
+                setDocs(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch documentation:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchDocs();
+    }, []);
+
     const categories = ['all', 'Frontend', 'Backend', 'Database', 'DevOps', 'General'];
 
     const filteredDocs = selectedCategory === 'all'
         ? docs
         : docs.filter(doc => doc.category === selectedCategory);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const doc = {
-            id: docs.length + 1,
-            ...newDoc,
-            lastUpdated: new Date().toISOString().split('T')[0],
-            author: currentUser?.name || 'You',
-            status: 'draft',
-            views: 0,
-            sections: 1
-        };
-        setDocs([doc, ...docs]);
-        setShowNewDoc(false);
-        setNewDoc({ title: '', category: 'General', description: '', content: '' });
+        try {
+            const response = await documentationAPI.create({
+                ...newDoc,
+                author: currentUser?.name || 'Current User'
+            });
+
+            if (response.data && response.data.success) {
+                setShowNewDoc(false);
+                setNewDoc({ title: '', category: 'General', description: '', content: '' });
+                fetchDocs(); // Refresh list to get the new document
+            }
+        } catch (error) {
+            console.error('Failed to create document:', error);
+            alert('Failed to creating document');
+        }
     };
 
     const getStatusBadge = (status) => {

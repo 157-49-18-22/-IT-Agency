@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { projectsAPI } from '../../services/api';
+import { projectsAPI, performanceAPI } from '../../services/api'; // Import performanceAPI
 import {
     FiClock,
     FiTrendingUp,
@@ -37,42 +37,44 @@ const PerformanceTesting = () => {
 
     const fetchProjects = async () => {
         try {
-            const response = await projectsAPI.getProjects().catch(() => ({ data: [] }));
-            setProjects(response.data?.data || response.data || []);
+            setLoading(true);
+            const response = await projectsAPI.getProjects();
+
+            if (response.data && response.data.success) {
+                const projectList = response.data.data || [];
+                if (projectList.length > 0) {
+                    setProjects(projectList);
+                } else {
+                    toast.warn('No projects found in DB. Loading debug data.');
+                    setProjects([{ id: 999, name: 'Debug Project (DB Empty)' }]);
+                }
+            } else {
+                throw new Error('API Success False');
+            }
         } catch (err) {
             console.error('Error fetching projects:', err);
+            toast.error(`Failed to load projects: ${err.message}. Using debug data.`);
+            setProjects([{ id: 999, name: 'Debug Project (API Fail)' }]);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const loadTestResults = () => {
-        // Mock data - replace with actual API call
-        const mockResults = [
-            {
-                id: 1,
-                projectName: 'E-commerce Platform',
-                testType: 'Load Test',
-                avgResponseTime: 1850,
-                maxResponseTime: 3200,
-                minResponseTime: 450,
-                throughput: 150,
-                errorRate: 0.5,
-                status: 'passed',
-                testedAt: new Date().toISOString()
-            },
-            {
-                id: 2,
-                projectName: 'Mobile App Backend',
-                testType: 'Stress Test',
-                avgResponseTime: 2500,
-                maxResponseTime: 5000,
-                minResponseTime: 800,
-                throughput: 95,
-                errorRate: 2.3,
-                status: 'warning',
-                testedAt: new Date(Date.now() - 86400000).toISOString()
+    const loadTestResults = async () => {
+        try {
+            const response = await performanceAPI.getAll();
+            if (response.data.success) {
+                const results = response.data.data.map(test => ({
+                    ...test,
+                    projectName: test.project ? test.project.name : 'Unknown Project',
+                    testedAt: test.created_at || test.createdAt
+                }));
+                setTestResults(results);
             }
-        ];
-        setTestResults(mockResults);
+        } catch (error) {
+            console.error('Error fetching performance tests:', error);
+            // toast.error('Failed to load performance tests'); // Optional: show error
+        }
     };
 
     const handleRunTest = async (e) => {
@@ -80,37 +82,34 @@ const PerformanceTesting = () => {
         setLoading(true);
 
         try {
-            // Simulate test execution
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            // Simulate delay for "running" feeling if desired, or let backend do it
+            // For now, we trust the backend to respond relatively quickly with the "result"
 
-            const result = {
-                id: Date.now(),
-                projectName: projects.find(p => p.id === parseInt(newTest.projectId))?.name || 'Unknown',
-                testType: newTest.testType === 'load' ? 'Load Test' : 'Stress Test',
-                avgResponseTime: Math.floor(Math.random() * 2000) + 500,
-                maxResponseTime: Math.floor(Math.random() * 3000) + 2000,
-                minResponseTime: Math.floor(Math.random() * 500) + 200,
-                throughput: Math.floor(Math.random() * 100) + 50,
-                errorRate: (Math.random() * 3).toFixed(1),
-                status: Math.random() > 0.3 ? 'passed' : 'warning',
-                testedAt: new Date().toISOString()
-            };
+            const response = await performanceAPI.runTest(newTest);
 
-            setTestResults([result, ...testResults]);
-            setShowNewTestModal(false);
-            setNewTest({
-                projectId: '',
-                testName: '',
-                url: '',
-                testType: 'load',
-                duration: 60,
-                concurrentUsers: 10,
-                targetResponseTime: 2000
-            });
+            if (response.data.success) {
+                const newResult = {
+                    ...response.data.data,
+                    projectName: projects.find(p => p.id === parseInt(newTest.projectId))?.name || 'Unknown',
+                    testedAt: response.data.data.created_at || new Date().toISOString()
+                };
 
-            toast.success('Performance test completed successfully!');
+                setTestResults([newResult, ...testResults]);
+                setShowNewTestModal(false);
+                setNewTest({
+                    projectId: '',
+                    testName: '',
+                    url: '',
+                    testType: 'load',
+                    duration: 60,
+                    concurrentUsers: 10,
+                    targetResponseTime: 2000
+                });
+                toast.success('Performance test completed successfully!');
+            }
         } catch (err) {
-            toast.error('Failed to run performance test');
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Failed to run performance test');
         } finally {
             setLoading(false);
         }

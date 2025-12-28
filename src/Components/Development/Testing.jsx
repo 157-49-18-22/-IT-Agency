@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaVial,
     FaCheckCircle,
@@ -12,12 +12,28 @@ import {
     FaChevronDown,
     FaChevronRight
 } from 'react-icons/fa';
+import { testingAPI } from '../../services/api';
 import './Testing.css';
 
 const Testing = () => {
     const [expandedTest, setExpandedTest] = useState(null);
     const [copiedItem, setCopiedItem] = useState(null);
-    const [activeTab, setActiveTab] = useState('unit');
+    const [activeTab, setActiveTab] = useState('integration'); // Default to integration since we put DB tests there
+    const [realTestSuites, setRealTestSuites] = useState(null);
+
+    useEffect(() => {
+        const fetchSuites = async () => {
+            try {
+                const response = await testingAPI.getSuites();
+                if (response.data && response.data.success) {
+                    setRealTestSuites(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch test suites:', error);
+            }
+        };
+        fetchSuites();
+    }, []);
 
     const testCategories = [
         { id: 'unit', name: 'Unit Testing', icon: <FaCode /> },
@@ -26,7 +42,7 @@ const Testing = () => {
         { id: 'performance', name: 'Performance Testing', icon: <FaChartLine /> }
     ];
 
-    const testSuites = {
+    const staticTestSuites = {
         unit: [
             {
                 id: 'auth-tests',
@@ -211,9 +227,10 @@ const Testing = () => {
     };
 
     const getStatusColor = (status) => {
-        return status === 'passed' ? '#10b981' : '#ef4444';
+        return status === 'passed' ? '#10b981' : (status === 'failed' ? '#ef4444' : '#f59e0b');
     };
 
+    const testSuites = realTestSuites || staticTestSuites;
     const currentSuites = testSuites[activeTab] || [];
     const totalTests = currentSuites.reduce((sum, suite) => sum + suite.totalTests, 0);
     const totalPassed = currentSuites.reduce((sum, suite) => sum + suite.passed, 0);

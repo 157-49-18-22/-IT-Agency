@@ -326,11 +326,11 @@ export const notificationAPI = {
 
 // Calendar APIs
 export const calendarAPI = {
-  getEvents: (params) => api.get('/calendar/events', { params }),
-  getEvent: (id) => api.get(`/calendar/events/${id}`),
-  createEvent: (data) => api.post('/calendar/events', data),
-  updateEvent: (id, data) => api.put(`/calendar/events/${id}`, data),
-  deleteEvent: (id) => api.delete(`/calendar/events/${id}`)
+  getEvents: (params) => api.get('/calendar', { params }),
+  getEvent: (id) => api.get(`/calendar/${id}`),
+  createEvent: (data) => api.post('/calendar', data),
+  updateEvent: (id, data) => api.put(`/calendar/${id}`, data),
+  deleteEvent: (id) => api.delete(`/calendar/${id}`)
 };
 
 // Approval APIs (legacy)
@@ -404,6 +404,73 @@ export const timeLogsAPI = {
   stopTimer: (id) => api.put(`/time-tracking/${id}/stop`),
   updateLog: (id, data) => api.put(`/time-tracking/${id}`, data),
   deleteLog: (id) => api.delete(`/time-tracking/${id}`)
+};
+
+// Environment APIs
+export const environmentAPI = {
+  getEnvironmentInfo: () => api.get('/environment')
+};
+
+// Coding Standards APIs
+export const codingAPI = {
+  getStats: () => api.get('/coding-standards/stats')
+};
+
+// Endpoints APIs
+export const endpointsAPI = {
+  getAll: () => api.get('/endpoints')
+};
+
+// Database APIs
+export const databaseAPI = {
+  getSchema: () => api.get('/database/schema')
+};
+
+// Integrations APIs
+export const integrationsAPI = {
+  getStatus: () => api.get('/integrations/status')
+};
+
+// Testing APIs
+export const testingAPI = {
+  getSuites: () => api.get('/testing/suites'),
+  getDashboardStats: () => api.get('/testing/dashboard-stats')
+};
+
+// Self Testing APIs
+export const selfTestingAPI = {
+  getChecklist: () => api.get('/selftesting/checklist')
+};
+
+// Performance Testing APIs
+export const performanceAPI = {
+  getAll: (params) => api.get('/performance', { params }),
+  runTest: (data) => api.post('/performance/run', data),
+  getTest: (id) => api.get(`/performance/${id}`)
+};
+
+// Code Review APIs
+export const codeReviewAPI = {
+  getAll: () => api.get('/codereview'),
+  create: (data) => api.post('/codereview', data),
+  updateStatus: (id, status) => api.put(`/codereview/${id}/status`, { status })
+};
+
+// Version History APIs
+export const versionHistoryAPI = {
+  getAll: () => api.get('/version-history')
+};
+
+// Discussions APIs
+export const discussionsAPI = {
+  getAll: () => api.get('/discussions'),
+  create: (data) => api.post('/discussions', data)
+};
+
+// Documentation APIs
+export const documentationAPI = {
+  getAll: () => api.get('/documentation'),
+  create: (data) => api.post('/documentation', data)
 };
 
 // End of APIs

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaBook,
     FaCheckCircle,
@@ -9,8 +9,12 @@ import {
     FaSearch,
     FaCopy,
     FaChevronDown,
-    FaChevronRight
+    FaChevronRight,
+    FaHeartbeat,
+    FaChartLine,
+    FaShieldAlt
 } from 'react-icons/fa';
+import { codingAPI } from '../../services/api';
 import './CodingStandards.css';
 
 const CodingStandards = () => {
@@ -18,6 +22,22 @@ const CodingStandards = () => {
     const [expandedSections, setExpandedSections] = useState({});
     const [searchTerm, setSearchTerm] = useState('');
     const [copiedCode, setCopiedCode] = useState(null);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await codingAPI.getStats();
+                setStats(response.data);
+            } catch (error) {
+                console.error('Failed to fetch coding stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
 
     const categories = [
         { id: 'naming', name: 'Naming Conventions', icon: <FaFileCode /> },
@@ -343,6 +363,65 @@ const CodingStandards = () => {
                     />
                 </div>
             </div>
+
+            {/* Project Health Dashboard */}
+            {stats && (
+                <div className="project-health-dashboard">
+                    <div className="health-card">
+                        <div className="health-icon warning">
+                            <FaHeartbeat />
+                        </div>
+                        <div className="health-info">
+                            <h3>Project Health</h3>
+                            <div className="health-score">
+                                <span className="score-value">{stats.healthScore}%</span>
+                                <span className="score-label">Compliance</span>
+                            </div>
+                            <div className="progress-bar-small">
+                                <div className="fill" style={{ width: `${stats.healthScore}%`, background: stats.healthScore > 80 ? '#4ade80' : '#fbbf24' }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="health-card">
+                        <div className="health-icon info">
+                            <FaChartLine />
+                        </div>
+                        <div className="health-info">
+                            <h3>Code Statistics</h3>
+                            <div className="stats-grid">
+                                <div className="stat-item">
+                                    <span className="stat-val">{stats.stats.linesOfCode.toLocaleString()}</span>
+                                    <span className="stat-lbl">Lines</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-val">{stats.stats.components}</span>
+                                    <span className="stat-lbl">Components</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-val">{stats.stats.totalFiles}</span>
+                                    <span className="stat-lbl">Files</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="health-card">
+                        <div className="health-icon success">
+                            <FaShieldAlt />
+                        </div>
+                        <div className="health-info">
+                            <h3>Active Rules</h3>
+                            <div className="active-rules-list">
+                                {stats.config.eslint && <span className="rule-badge">ESLint</span>}
+                                {stats.config.activeRules.includes('no-unused-vars') && <span className="rule-badge">No Unused Vars</span>}
+                                {stats.config.activeRules.includes('react-hooks/rules-of-hooks') && <span className="rule-badge">React Hooks</span>}
+                                <span className="rule-badge">Strict Mode</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="standards-content">
                 <div className="categories-sidebar">

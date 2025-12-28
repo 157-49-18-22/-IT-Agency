@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaPlug,
     FaGithub,
@@ -19,20 +19,39 @@ import {
     FaChevronRight
 } from 'react-icons/fa';
 import { SiVercel, SiNetlify, SiHeroku, SiFirebase, SiMongodb, SiPostgresql, SiStripe } from 'react-icons/si';
+import { integrationsAPI } from '../../services/api';
 import './Integrations.css';
 
 const Integrations = () => {
     const [activeCategory, setActiveCategory] = useState('all');
     const [expandedIntegration, setExpandedIntegration] = useState(null);
     const [copiedItem, setCopiedItem] = useState(null);
+    const [integrationStatuses, setIntegrationStatuses] = useState({});
 
-    const integrations = [
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const response = await integrationsAPI.getStatus();
+                if (response.data && response.data.success) {
+                    const statusMap = {};
+                    response.data.data.forEach(item => {
+                        statusMap[item.id] = item.status;
+                    });
+                    setIntegrationStatuses(statusMap);
+                }
+            } catch (error) {
+                console.error('Failed to fetch integration status:', error);
+            }
+        };
+        fetchStatus();
+    }, []);
+
+    const baseIntegrations = [
         {
             id: 'github',
             name: 'GitHub',
             category: 'Version Control',
             icon: <FaGithub />,
-            status: 'active',
             description: 'Version control and code repository management',
             features: [
                 'Automatic code commits tracking',
@@ -58,7 +77,6 @@ const Integrations = () => {
             name: 'Slack',
             category: 'Communication',
             icon: <FaSlack />,
-            status: 'active',
             description: 'Team communication and notifications',
             features: [
                 'Real-time project updates',
@@ -84,7 +102,6 @@ const Integrations = () => {
             name: 'Jira',
             category: 'Project Management',
             icon: <FaJira />,
-            status: 'configured',
             description: 'Issue tracking and project management',
             features: [
                 'Sync tasks with Jira issues',
@@ -112,7 +129,6 @@ const Integrations = () => {
             name: 'AWS S3',
             category: 'Cloud Storage',
             icon: <FaAws />,
-            status: 'active',
             description: 'Cloud storage for files and assets',
             features: [
                 'Secure file uploads',
@@ -140,7 +156,6 @@ const Integrations = () => {
             name: 'Vercel',
             category: 'Deployment',
             icon: <SiVercel />,
-            status: 'active',
             description: 'Automatic deployment and hosting',
             features: [
                 'Automatic deployments from Git',
@@ -167,7 +182,6 @@ const Integrations = () => {
             name: 'Firebase',
             category: 'Backend Services',
             icon: <SiFirebase />,
-            status: 'configured',
             description: 'Authentication and real-time database',
             features: [
                 'User authentication',
@@ -195,7 +209,6 @@ const Integrations = () => {
             name: 'Stripe',
             category: 'Payment',
             icon: <SiStripe />,
-            status: 'inactive',
             description: 'Payment processing and billing',
             features: [
                 'Secure payment processing',
@@ -222,7 +235,6 @@ const Integrations = () => {
             name: 'Docker',
             category: 'DevOps',
             icon: <FaDocker />,
-            status: 'active',
             description: 'Containerization and deployment',
             features: [
                 'Container orchestration',
@@ -249,7 +261,6 @@ const Integrations = () => {
             name: 'PostgreSQL',
             category: 'Database',
             icon: <SiPostgresql />,
-            status: 'active',
             description: 'Primary database system',
             features: [
                 'Relational database',
@@ -273,6 +284,11 @@ const Integrations = () => {
             documentation: 'https://www.postgresql.org/docs/'
         }
     ];
+
+    const integrations = baseIntegrations.map(integration => ({
+        ...integration,
+        status: integrationStatuses[integration.id] || 'inactive'
+    }));
 
     const categories = ['all', ...new Set(integrations.map(i => i.category))];
 

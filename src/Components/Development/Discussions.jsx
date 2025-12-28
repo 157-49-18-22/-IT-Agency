@@ -1,45 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { discussionsAPI } from '../../services/api';
 import './Discussions.css';
 
 const Discussions = () => {
     const { currentUser } = useAuth();
-    const [discussions, setDiscussions] = useState([
-        {
-            id: 1,
-            title: 'Best practices for React state management',
-            author: 'John Doe',
-            category: 'React',
-            replies: 12,
-            views: 145,
-            lastActivity: '2 hours ago',
-            tags: ['React', 'State Management', 'Redux'],
-            excerpt: 'What are your thoughts on using Context API vs Redux for medium-sized applications?'
-        },
-        {
-            id: 2,
-            title: 'Database indexing strategies',
-            author: 'Sarah Williams',
-            category: 'Database',
-            replies: 8,
-            views: 89,
-            lastActivity: '5 hours ago',
-            tags: ['Database', 'Performance', 'PostgreSQL'],
-            excerpt: 'Looking for advice on optimizing database queries with proper indexing...'
-        },
-        {
-            id: 3,
-            title: 'API versioning approaches',
-            author: 'Mike Johnson',
-            category: 'Backend',
-            replies: 15,
-            views: 203,
-            lastActivity: '1 day ago',
-            tags: ['API', 'Versioning', 'Best Practices'],
-            excerpt: 'How do you handle API versioning in production applications?'
-        }
-    ]);
-
+    const [discussions, setDiscussions] = useState([]);
     const [showNewDiscussion, setShowNewDiscussion] = useState(false);
     const [newDiscussion, setNewDiscussion] = useState({
         title: '',
@@ -48,22 +14,39 @@ const Discussions = () => {
         tags: ''
     });
 
-    const handleSubmit = (e) => {
+    const fetchDiscussions = async () => {
+        try {
+            const response = await discussionsAPI.getAll();
+            if (response.data && response.data.success) {
+                setDiscussions(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch discussions:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchDiscussions();
+    }, []);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const discussion = {
-            id: discussions.length + 1,
-            title: newDiscussion.title,
-            author: currentUser?.name || 'You',
-            category: newDiscussion.category,
-            replies: 0,
-            views: 0,
-            lastActivity: 'Just now',
-            tags: newDiscussion.tags.split(',').map(t => t.trim()),
-            excerpt: newDiscussion.content.substring(0, 100) + '...'
-        };
-        setDiscussions([discussion, ...discussions]);
-        setShowNewDiscussion(false);
-        setNewDiscussion({ title: '', category: 'General', content: '', tags: '' });
+        try {
+            const response = await discussionsAPI.create({
+                ...newDiscussion,
+                tags: newDiscussion.tags.split(',').map(t => t.trim()),
+                author: currentUser?.name || 'Current User'
+            });
+
+            if (response.data && response.data.success) {
+                setShowNewDiscussion(false);
+                setNewDiscussion({ title: '', category: 'General', content: '', tags: '' });
+                fetchDiscussions(); // Refresh list to get the new discussion with server-generated metadata
+            }
+        } catch (error) {
+            console.error('Failed to create discussion:', error);
+            alert('Failed to post discussion');
+        }
     };
 
     return (

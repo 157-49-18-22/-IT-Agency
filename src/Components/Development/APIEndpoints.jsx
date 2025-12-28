@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaCodeBranch,
     FaSearch,
@@ -15,16 +15,37 @@ import {
 } from 'react-icons/fa';
 import './APIEndpoints.css';
 
+import { endpointsAPI } from '../../services/api';
+
 const APIEndpoints = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMethod, setSelectedMethod] = useState('all');
     const [expandedEndpoint, setExpandedEndpoint] = useState(null);
     const [copiedItem, setCopiedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('endpoints');
+    const [realEndpoints, setRealEndpoints] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.example.com';
 
-    const endpoints = [
+    useEffect(() => {
+        const fetchEndpoints = async () => {
+            try {
+                const response = await endpointsAPI.getAll();
+                if (response.data && response.data.success) {
+                    setRealEndpoints(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch endpoints:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEndpoints();
+    }, []);
+
+    // Fallback/Rich static data to merge descriptions if needed
+    const staticEndpoints = [
         {
             id: 'auth-login',
             category: 'Authentication',
@@ -50,227 +71,13 @@ const APIEndpoints = () => {
                 { code: 400, message: 'Invalid credentials' },
                 { code: 429, message: 'Too many login attempts' }
             ]
-        },
-        {
-            id: 'auth-register',
-            category: 'Authentication',
-            method: 'POST',
-            path: '/api/auth/register',
-            description: 'Register a new user account',
-            authentication: 'None',
-            requestBody: {
-                name: 'string (required)',
-                email: 'string (required)',
-                password: 'string (required, min 8 characters)',
-                role: 'string (optional)'
-            },
-            responseExample: {
-                success: true,
-                message: 'User registered successfully',
-                userId: 123
-            },
-            errorCodes: [
-                { code: 400, message: 'Validation error' },
-                { code: 409, message: 'Email already exists' }
-            ]
-        },
-        {
-            id: 'projects-list',
-            category: 'Projects',
-            method: 'GET',
-            path: '/api/projects',
-            description: 'Get list of all projects',
-            authentication: 'Bearer Token',
-            queryParams: {
-                status: 'string (optional) - Filter by status',
-                page: 'number (optional) - Page number',
-                limit: 'number (optional) - Items per page'
-            },
-            responseExample: {
-                success: true,
-                data: [
-                    {
-                        id: 1,
-                        projectName: 'E-commerce Platform',
-                        status: 'in-progress',
-                        startDate: '2024-01-15',
-                        clientName: 'ABC Corp'
-                    }
-                ],
-                pagination: {
-                    currentPage: 1,
-                    totalPages: 5,
-                    totalItems: 48
-                }
-            },
-            errorCodes: [
-                { code: 401, message: 'Unauthorized' },
-                { code: 403, message: 'Insufficient permissions' }
-            ]
-        },
-        {
-            id: 'projects-create',
-            category: 'Projects',
-            method: 'POST',
-            path: '/api/projects',
-            description: 'Create a new project',
-            authentication: 'Bearer Token (Admin only)',
-            requestBody: {
-                projectName: 'string (required)',
-                description: 'string (required)',
-                clientName: 'string (required)',
-                budget: 'number (required)',
-                startDate: 'date (required)',
-                deadline: 'date (required)',
-                technologies: 'array (optional)'
-            },
-            responseExample: {
-                success: true,
-                message: 'Project created successfully',
-                projectId: 456
-            },
-            errorCodes: [
-                { code: 400, message: 'Validation error' },
-                { code: 401, message: 'Unauthorized' },
-                { code: 403, message: 'Admin access required' }
-            ]
-        },
-        {
-            id: 'projects-detail',
-            category: 'Projects',
-            method: 'GET',
-            path: '/api/projects/:id',
-            description: 'Get detailed information about a specific project',
-            authentication: 'Bearer Token',
-            pathParams: {
-                id: 'number (required) - Project ID'
-            },
-            responseExample: {
-                success: true,
-                data: {
-                    id: 1,
-                    projectName: 'E-commerce Platform',
-                    description: 'Full-featured online shopping platform',
-                    status: 'in-progress',
-                    progress: 65,
-                    team: [
-                        { id: 1, name: 'John Doe', role: 'developer' },
-                        { id: 2, name: 'Jane Smith', role: 'designer' }
-                    ]
-                }
-            },
-            errorCodes: [
-                { code: 401, message: 'Unauthorized' },
-                { code: 404, message: 'Project not found' }
-            ]
-        },
-        {
-            id: 'tasks-list',
-            category: 'Tasks',
-            method: 'GET',
-            path: '/api/tasks',
-            description: 'Get list of tasks assigned to current user',
-            authentication: 'Bearer Token',
-            queryParams: {
-                projectId: 'number (optional) - Filter by project',
-                status: 'string (optional) - Filter by status',
-                priority: 'string (optional) - Filter by priority'
-            },
-            responseExample: {
-                success: true,
-                data: [
-                    {
-                        id: 1,
-                        title: 'Implement user authentication',
-                        description: 'Add JWT-based authentication',
-                        status: 'in-progress',
-                        priority: 'high',
-                        dueDate: '2024-12-30'
-                    }
-                ]
-            },
-            errorCodes: [
-                { code: 401, message: 'Unauthorized' }
-            ]
-        },
-        {
-            id: 'tasks-update',
-            category: 'Tasks',
-            method: 'PUT',
-            path: '/api/tasks/:id',
-            description: 'Update task status or details',
-            authentication: 'Bearer Token',
-            pathParams: {
-                id: 'number (required) - Task ID'
-            },
-            requestBody: {
-                status: 'string (optional)',
-                progress: 'number (optional)',
-                notes: 'string (optional)'
-            },
-            responseExample: {
-                success: true,
-                message: 'Task updated successfully'
-            },
-            errorCodes: [
-                { code: 400, message: 'Validation error' },
-                { code: 401, message: 'Unauthorized' },
-                { code: 404, message: 'Task not found' }
-            ]
-        },
-        {
-            id: 'code-submit',
-            category: 'Code',
-            method: 'POST',
-            path: '/api/code/submit',
-            description: 'Submit code for review',
-            authentication: 'Bearer Token',
-            requestBody: {
-                projectId: 'number (required)',
-                taskId: 'number (required)',
-                code: 'string (required)',
-                language: 'string (required)',
-                description: 'string (required)',
-                files: 'array (optional)'
-            },
-            responseExample: {
-                success: true,
-                message: 'Code submitted for review',
-                submissionId: 789
-            },
-            errorCodes: [
-                { code: 400, message: 'Validation error' },
-                { code: 401, message: 'Unauthorized' }
-            ]
-        },
-        {
-            id: 'testcases-list',
-            category: 'Testing',
-            method: 'GET',
-            path: '/api/testcases/:projectId',
-            description: 'Get test cases for a project',
-            authentication: 'Bearer Token',
-            pathParams: {
-                projectId: 'number (required) - Project ID'
-            },
-            responseExample: {
-                success: true,
-                data: [
-                    {
-                        id: 1,
-                        title: 'Login functionality test',
-                        status: 'passed',
-                        priority: 'high',
-                        lastRun: '2024-12-24T10:30:00Z'
-                    }
-                ]
-            },
-            errorCodes: [
-                { code: 401, message: 'Unauthorized' },
-                { code: 404, message: 'Project not found' }
-            ]
         }
+        // ... more static data can be kept if desired for merging in future
     ];
+
+    // Use real endpoints if available, otherwise static (or empty)
+    const endpoints = realEndpoints.length > 0 ? realEndpoints : staticEndpoints;
+
 
     const categories = [...new Set(endpoints.map(e => e.category))];
     const methods = ['all', 'GET', 'POST', 'PUT', 'DELETE'];

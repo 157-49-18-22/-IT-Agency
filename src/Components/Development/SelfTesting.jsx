@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaCheckCircle,
     FaPlay,
@@ -11,14 +11,32 @@ import {
     FaFileAlt,
     FaUpload
 } from 'react-icons/fa';
+import { selfTestingAPI } from '../../services/api';
 import './SelfTesting.css';
 
 const SelfTesting = () => {
     const [testResults, setTestResults] = useState([]);
     const [isRunning, setIsRunning] = useState(false);
     const [selectedTests, setSelectedTests] = useState([]);
+    const [realTestCases, setRealTestCases] = useState([]);
 
-    const testCases = [
+    useEffect(() => {
+        const fetchChecklist = async () => {
+            try {
+                const response = await selfTestingAPI.getChecklist();
+                if (response.data && response.data.success) {
+                    // Add 'status: pending' to each item as UI expects it
+                    const items = response.data.data.map(item => ({ ...item, status: 'pending' }));
+                    setRealTestCases(items);
+                }
+            } catch (error) {
+                console.error('Failed to fetch checklist:', error);
+            }
+        };
+        fetchChecklist();
+    }, []);
+
+    const staticTestCases = [
         {
             id: 'func-1',
             category: 'Functionality',
@@ -104,6 +122,8 @@ const SelfTesting = () => {
             status: 'pending'
         }
     ];
+
+    const testCases = realTestCases.length > 0 ? realTestCases : staticTestCases;
 
     const categories = [...new Set(testCases.map(t => t.category))];
 

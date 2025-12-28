@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { versionHistoryAPI } from '../../services/api';
 import './VersionHistory.css';
 
 const VersionHistory = () => {
@@ -10,128 +11,18 @@ const VersionHistory = () => {
     const [compareVersions, setCompareVersions] = useState({ v1: null, v2: null });
     const [filter, setFilter] = useState('all'); // all, major, minor, patch
 
-    // Mock data
-    const mockVersions = [
-        {
-            id: 1,
-            version: '2.1.0',
-            type: 'minor',
-            title: 'Enhanced User Dashboard',
-            description: 'Added new analytics widgets and improved performance',
-            author: 'John Doe',
-            date: '2024-12-23',
-            time: '14:30',
-            branch: 'release/2.1.0',
-            commitHash: 'a3f2b1c',
-            filesChanged: 24,
-            additions: 1250,
-            deletions: 340,
-            changes: [
-                'Added real-time analytics dashboard',
-                'Implemented data caching for better performance',
-                'Fixed memory leak in chart rendering',
-                'Updated dependencies to latest versions'
-            ],
-            status: 'deployed',
-            deployedTo: 'production'
-        },
-        {
-            id: 2,
-            version: '2.0.0',
-            type: 'major',
-            title: 'Major Platform Upgrade',
-            description: 'Complete redesign with new architecture and features',
-            author: 'Sarah Williams',
-            date: '2024-12-15',
-            time: '10:00',
-            branch: 'release/2.0.0',
-            commitHash: 'b7e4d2a',
-            filesChanged: 156,
-            additions: 8500,
-            deletions: 3200,
-            changes: [
-                'Migrated to React 18',
-                'Implemented new design system',
-                'Added dark mode support',
-                'Refactored authentication system',
-                'Improved mobile responsiveness'
-            ],
-            status: 'deployed',
-            deployedTo: 'production'
-        },
-        {
-            id: 3,
-            version: '1.9.2',
-            type: 'patch',
-            title: 'Bug Fixes and Security Updates',
-            description: 'Critical security patches and bug fixes',
-            author: 'Mike Johnson',
-            date: '2024-12-10',
-            time: '16:45',
-            branch: 'hotfix/1.9.2',
-            commitHash: 'c9a1f3e',
-            filesChanged: 8,
-            additions: 120,
-            deletions: 85,
-            changes: [
-                'Fixed XSS vulnerability in user input',
-                'Resolved database connection timeout',
-                'Fixed pagination bug in project list',
-                'Updated security dependencies'
-            ],
-            status: 'deployed',
-            deployedTo: 'production'
-        },
-        {
-            id: 4,
-            version: '1.9.1',
-            type: 'patch',
-            title: 'Performance Improvements',
-            description: 'Optimized database queries and API responses',
-            author: 'Alex Chen',
-            date: '2024-12-05',
-            time: '11:20',
-            branch: 'hotfix/1.9.1',
-            commitHash: 'd2b5e7f',
-            filesChanged: 15,
-            additions: 280,
-            deletions: 190,
-            changes: [
-                'Optimized database indexes',
-                'Implemented query caching',
-                'Reduced API response time by 40%',
-                'Fixed slow loading on dashboard'
-            ],
-            status: 'deployed',
-            deployedTo: 'production'
-        },
-        {
-            id: 5,
-            version: '1.9.0',
-            type: 'minor',
-            title: 'New Reporting Features',
-            description: 'Added advanced reporting and export capabilities',
-            author: 'Emily Davis',
-            date: '2024-11-28',
-            time: '09:15',
-            branch: 'release/1.9.0',
-            commitHash: 'e8c3a1b',
-            filesChanged: 42,
-            additions: 2100,
-            deletions: 450,
-            changes: [
-                'Added custom report builder',
-                'Implemented PDF export functionality',
-                'Added scheduled reports feature',
-                'Created new analytics charts'
-            ],
-            status: 'deployed',
-            deployedTo: 'production'
-        }
-    ];
-
     useEffect(() => {
-        setVersions(mockVersions);
+        const fetchVersions = async () => {
+            try {
+                const response = await versionHistoryAPI.getAll();
+                if (response.data && response.data.success) {
+                    setVersions(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch version history:', error);
+            }
+        };
+        fetchVersions();
     }, []);
 
     const filteredVersions = versions.filter(version => {

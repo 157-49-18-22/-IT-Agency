@@ -7,6 +7,8 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import './TestingPages.css';
 
+import { testingAPI } from '../../services/api';
+
 const TestingDashboard = () => {
     const [stats, setStats] = useState({
         totalTestCases: 0,
@@ -18,7 +20,8 @@ const TestingDashboard = () => {
         openBugs: 0,
         resolvedBugs: 0,
         testingProgress: 0,
-        labels: ['J', 'F', 'M', 'A', 'M', 'J', 'J'] // Mock labels
+        labels: ['J', 'F', 'M', 'A', 'M', 'J', 'J'], // Keep mock for now or calculate dynamic
+        recentActivity: []
     });
     const [isLoading, setIsLoading] = useState(true);
 
@@ -29,25 +32,16 @@ const TestingDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             setIsLoading(true);
-            // Mock data - replace with actual API calls
-            setTimeout(() => {
-                setStats({
-                    totalTestCases: 120,
-                    passedTests: 85,
-                    failedTests: 12,
-                    pendingTests: 23,
-                    totalBugs: 45,
-                    criticalBugs: 5,
-                    openBugs: 18,
-                    resolvedBugs: 22,
-                    testingProgress: 71,
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    activityData: [50, 60, 70, 65, 80, 75, 85]
-                });
-                setIsLoading(false);
-            }, 1000);
+            const response = await testingAPI.getDashboardStats();
+            if (response.data.success) {
+                setStats(prev => ({
+                    ...prev,
+                    ...response.data.data
+                }));
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
+        } finally {
             setIsLoading(false);
         }
     };
@@ -196,33 +190,23 @@ const TestingDashboard = () => {
                         <h3><FaClock className="icon-yellow" /> Recent Activity</h3>
                     </div>
                     <div className="activity-list">
-                        <div className="activity-item">
-                            <div className="activity-icon-wrapper success">
-                                <FaCheckCircle />
+                        {stats.recentActivity && stats.recentActivity.length > 0 ? (
+                            stats.recentActivity.map((activity, index) => (
+                                <div className="activity-item" key={index}>
+                                    <div className={`activity-icon-wrapper ${activity.type === 'bug' ? 'warning' : 'success'}`}>
+                                        {activity.type === 'bug' ? <FaExclamationTriangle /> : <FaCheckCircle />}
+                                    </div>
+                                    <div className="activity-content">
+                                        <span className="activity-msg">{activity.msg}</span>
+                                        <span className="activity-time">{new Date(activity.time).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="activity-item">
+                                <span className="activity-msg">No recent activity</span>
                             </div>
-                            <div className="activity-content">
-                                <span className="activity-msg">Authentication tests passed</span>
-                                <span className="activity-time">10 mins ago</span>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <div className="activity-icon-wrapper warning">
-                                <FaExclamationTriangle />
-                            </div>
-                            <div className="activity-content">
-                                <span className="activity-msg">New bug reported in Payment Gateway</span>
-                                <span className="activity-time">30 mins ago</span>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <div className="activity-icon-wrapper info">
-                                <FaChartLine />
-                            </div>
-                            <div className="activity-content">
-                                <span className="activity-msg">Performance benchmark initiated</span>
-                                <span className="activity-time">1 hour ago</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

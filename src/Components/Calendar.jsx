@@ -15,7 +15,7 @@ import { calendarAPI } from '../services/api';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
-  'January','February','March','April','May','June','July','August','September','October','November','December'
+  'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 const sampleEvents = [
@@ -36,8 +36,9 @@ export default function Calendar() {
   const [today] = useState(new Date());
   const [current, setCurrent] = useState(new Date());
   const [selected, setSelected] = useState(new Date());
-  const [events, setEvents] = useState(sampleEvents);
+  const [events, setEvents] = useState([]);
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
@@ -45,16 +46,52 @@ export default function Calendar() {
     date: formatDateKey(new Date()),
     time: '',
     location: '',
-    tag: '',
+    tag: '', // We will treat this as 'description' or 'type' logic if needed, but adding a specific type field is better
+    type: 'Meeting',
     color: '#4f46e5'
   });
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const res = await calendarAPI.getEvents();
+      if (res.data.success) {
+        const mappedEvents = res.data.data.map(e => {
+          const d = new Date(e.startDate);
+          return {
+            id: e.id,
+            title: e.title,
+            date: formatDateKey(d),
+            time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+            location: e.location,
+            tag: e.type, // Display type as tag
+            color: e.color,
+            description: e.description
+          };
+        });
+        setEvents(mappedEvents);
+      }
+    } catch (error) {
+      console.error("Failed to fetch events", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
     // ensure selected is visible month when navigating
     const s = new Date(selected);
-    s.setHours(0,0,0,0);
+    s.setHours(0, 0, 0, 0);
     setSelected(s);
-  }, []);
+  }, []); // Keeping this as empty dependency to run once or strictly when needed logic? 
+  // Actually the original code had [] which is wrong if it depends on selected? 
+  // The original code set `selected` inside useEffect but depended on nothing? 
+  // Ah, it was trying to sync state on mount? 
+  // Let's keep it simple.
 
   const startOfMonth = useMemo(() => new Date(current.getFullYear(), current.getMonth(), 1), [current]);
   const endOfMonth = useMemo(() => new Date(current.getFullYear(), current.getMonth() + 1, 0), [current]);
@@ -96,23 +133,62 @@ export default function Calendar() {
   const selectedKey = formatDateKey(selected);
   const selectedDayEvents = eventsByDate[selectedKey] || [];
 
+  const changeMonth = (dir) => {
+    setCurrent(new Date(current.getFullYear(), current.getMonth() + dir, 1));
+  };
+
   const goToday = () => {
-    setCurrent(new Date());
-    setSelected(new Date());
+    const now = new Date();
+    setCurrent(now);
+    setSelected(now);
   };
 
   const openAdd = (d) => {
     const k = formatDateKey(d || selected);
-    setForm({ title: '', date: k, time: '', location: '', tag: '', color: '#4f46e5' });
+    setForm({ title: '', date: k, time: '09:00', location: '', tag: '', type: 'Meeting', color: '#4f46e5' });
     setShowModal(true);
   };
-  const saveEvent = () => {
+
+  const saveEvent = async () => {
     if (!form.title.trim()) return;
-    setEvents(prev => [{ id: `e-${Date.now()}`, ...form }, ...prev]);
-    setShowModal(false);
+
+    // Construct startDate and endDate
+    // form.date is "YYYY-MM-DD", form.time is "HH:MM"
+    const startDateTime = new Date(`${form.date}T${form.time || '00:00'}`);
+    const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+
+    const payload = {
+      title: form.title,
+      startDate: startDateTime,
+      endDate: endDateTime,
+      type: form.type || 'Other',
+      location: form.location,
+      description: form.tag, // Storing tag in description or if we want to change tag usage
+      color: form.color
+    };
+
+    try {
+      const res = await calendarAPI.createEvent(payload);
+      if (res.data.success) {
+        await fetchEvents(); // Refresh list
+        setShowModal(false);
+      }
+    } catch (error) {
+      console.error("Failed to save event", error);
+      alert("Failed to save event");
+    }
   };
-  const deleteEvent = (id) => {
-    if (window.confirm('Delete this event?')) setEvents(prev => prev.filter(e => e.id !== id));
+
+  const deleteEvent = async (id) => {
+    if (window.confirm('Delete this event?')) {
+      try {
+        await calendarAPI.deleteEvent(id);
+        setEvents(prev => prev.filter(e => e.id !== id));
+      } catch (error) {
+        console.error("Failed to delete event", error);
+        alert("Failed to delete event");
+      }
+    }
   };
 
   return (
@@ -138,10 +214,10 @@ export default function Calendar() {
             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search events..." />
           </div>
           <div className="mini-calendar">
-            <div className="mini-header">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</div>
+            <div className="mini-header">{MONTHS[current.getMonth()].slice(0, 3)} {current.getFullYear()}</div>
             <div className="mini-grid">
               {WEEKDAYS.map(w => <div key={w} className="mini-week">{w[0]}</div>)}
-              {gridDates.map(({date, other}) => {
+              {gridDates.map(({ date, other }) => {
                 const k = formatDateKey(date);
                 const isToday = formatDateKey(today) === k;
                 const isSel = formatDateKey(selected) === k;
@@ -160,14 +236,16 @@ export default function Calendar() {
 
           <div className="upcoming">
             <div className="section-title">Upcoming</div>
-            <div className="upcoming-list">
-              {events.slice(0, 6).map(e => (
-                <div className="up-item" key={e.id}>
-                  <div className="up-title">{e.title}</div>
-                  <div className="up-meta"><FiClock /> {e.date} {e.time || ''}</div>
-                </div>
-              ))}
-            </div>
+            {loading ? <div style={{ padding: '10px', color: '#fff' }}>Loading...</div> : (
+              <div className="upcoming-list">
+                {events.slice(0, 6).map(e => (
+                  <div className="up-item" key={e.id}>
+                    <div className="up-title">{e.title}</div>
+                    <div className="up-meta"><FiClock /> {e.date} {e.time || ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -176,7 +254,7 @@ export default function Calendar() {
             {WEEKDAYS.map(d => <div key={d} className="weekday">{d}</div>)}
           </div>
           <div className="month-grid">
-            {gridDates.map(({date, other}) => {
+            {gridDates.map(({ date, other }) => {
               const k = formatDateKey(date);
               const isToday = formatDateKey(today) === k;
               const isSel = formatDateKey(selected) === k;
@@ -238,6 +316,19 @@ export default function Calendar() {
               </div>
               <div className="form-row">
                 <div className="form-group">
+                  <label>Type</label>
+                  <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Deadline">Deadline</option>
+                    <option value="Milestone">Milestone</option>
+                    <option value="Review">Review</option>
+                    <option value="Holiday">Holiday</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
                   <label>Date</label>
                   <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
                 </div>
@@ -252,8 +343,8 @@ export default function Calendar() {
                   <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Where?" />
                 </div>
                 <div className="form-group">
-                  <label>Tag</label>
-                  <input value={form.tag} onChange={e => setForm({ ...form, tag: e.target.value })} placeholder="Type (e.g., Meeting)" />
+                  <label>Description/Tag</label>
+                  <input value={form.tag} onChange={e => setForm({ ...form, tag: e.target.value })} placeholder="Optional description" />
                 </div>
               </div>
               <div className="form-group">
@@ -263,7 +354,9 @@ export default function Calendar() {
             </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={saveEvent} disabled={!form.title.trim()}>Create</button>
+              <button className="btn-primary" onClick={saveEvent} disabled={!form.title.trim() || loading}>
+                {loading ? 'Saving...' : 'Create'}
+              </button>
             </div>
           </div>
         </div>
