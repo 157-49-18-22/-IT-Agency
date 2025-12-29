@@ -43,6 +43,10 @@
   background: #fee2e2;
 }
 
+.stat-badge.completed {
+  background: #dbeafe;
+}
+
 .stat-badge .count {
   font-size: 24px;
   font-weight: 700;
@@ -58,6 +62,10 @@
 
 .stat-badge.rejected .count {
   color: #ef4444;
+}
+
+.stat-badge.completed .count {
+  color: #3b82f6;
 }
 
 .stat-badge .label {
@@ -122,6 +130,10 @@
   border-left: 4px solid #ef4444;
 }
 
+.approval-card.completed {
+  border-left: 4px solid #3b82f6;
+}
+
 .approval-header-row {
   display: flex;
   justify-content: space-between;
@@ -182,6 +194,11 @@
 .status-badge.rejected {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.status-badge.completed {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .approval-id {

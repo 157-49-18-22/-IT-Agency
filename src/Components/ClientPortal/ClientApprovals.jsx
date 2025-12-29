@@ -96,9 +96,15 @@ export default function ClientApprovals() {
       if (approval.source === 'deliverable') {
         const category = getCategory(approval);
 
+        // Determine the new status based on category
+        let newStatus = 'Approved';
+        if (category === 'Testing') {
+          newStatus = 'Completed';
+        }
+
         // Use Deliverables API
         await deliverablesAPI.updateDeliverable(id, {
-          status: 'Approved',
+          status: newStatus,
           approvals: [...(approval.approvals || []), {
             by: 'Client',
             date: new Date(),
@@ -106,8 +112,26 @@ export default function ClientApprovals() {
           }]
         });
 
+        // If Testing deliverable is approved, mark as Completed
+        if (category === 'Testing' && approval.projectId) {
+          try {
+            await projectsAPI.update(approval.projectId, {
+              phase: 'Completed',
+              status: 'Completed',
+              completedAt: new Date().toISOString()
+            });
+            // Update local state to show as Completed
+            setApprovals(prev => prev.map(app =>
+              app.id === id ? { ...app, status: 'Completed' } : app
+            ));
+            alert('✅ Testing approved! Project marked as Completed.');
+          } catch (err) {
+            console.error('Failed to update project to completed:', err);
+            alert('✅ Testing approved, but failed to mark Project as Completed.');
+          }
+        }
         // If Development deliverable is approved, move Project to Testing phase
-        if (category === 'Development' && approval.projectId) {
+        else if (category === 'Development' && approval.projectId) {
           try {
             await projectsAPI.update(approval.projectId, { phase: 'Testing', status: 'Testing' });
             alert('✅ Deliverable approved! Project moved to Testing phase.');
@@ -119,13 +143,37 @@ export default function ClientApprovals() {
           alert('✅ Deliverable approved successfully!');
         }
       } else {
-        // Use Legacy Approval API
+        // Use Legacy Approval API (for Stage Transitions and Design approvals)
+        const category = getCategory(approval);
+
+        // Determine status based on category
+        let newStatus = 'Approved';
+        if (category === 'Testing') {
+          newStatus = 'Completed';
+        }
+
         await approvalAPI.approve(id, {
-          status: 'Approved',
+          status: newStatus,
           approvedAt: new Date().toISOString(),
           feedback: feedback || 'Approved by client'
         });
-        alert('✅ Design approved successfully! Developers have been notified.');
+
+        // If Testing stage transition is approved, mark project as Completed
+        if (category === 'Testing' && approval.projectId) {
+          try {
+            await projectsAPI.update(approval.projectId, {
+              phase: 'Completed',
+              status: 'Completed',
+              completedAt: new Date().toISOString()
+            });
+            alert('✅ Testing completed! Project marked as Completed.');
+          } catch (err) {
+            console.error('Failed to update project to completed:', err);
+            alert('✅ Testing approved, but failed to mark Project as Completed.');
+          }
+        } else {
+          alert('✅ Design approved successfully! Developers have been notified.');
+        }
       }
 
       // Refresh both lists logic is in fetchApprovals, so verify triggering re-fetch?
@@ -136,6 +184,9 @@ export default function ClientApprovals() {
       setApprovals(prev => prev.map(app =>
         app.id === id ? { ...app, status: 'Approved' } : app
       ));
+
+      // Reload page to refresh data from database
+      window.location.reload();
 
     } catch (error) {
       console.error('Approval error:', error);
@@ -172,15 +223,19 @@ export default function ClientApprovals() {
 
 
   const filteredApprovals = approvals.filter(app => {
-    const statusMatch = filter === 'All' || app.status.includes(filter) || (filter === 'Pending' && app.status === 'Pending Approval');
+    const statusMatch = filter === 'All' ||
+      app.status.includes(filter) ||
+      (filter === 'Pending' && app.status === 'Pending Approval') ||
+      (filter === 'Completed' && app.status === 'Completed');
     const categoryMatch = categoryFilter === 'All' || getCategory(app) === categoryFilter;
     return statusMatch && categoryMatch;
   });
 
   const counts = {
     Pending: approvals.filter(a => a.status.includes('Pending')).length,
-    Approved: approvals.filter(a => a.status.includes('Approved')).length,
-    Rejected: approvals.filter(a => a.status.includes('Rejected')).length
+    Approved: approvals.filter(a => a.status.includes('Approved') && a.status !== 'Completed').length,
+    Rejected: approvals.filter(a => a.status.includes('Rejected')).length,
+    Completed: approvals.filter(a => a.status === 'Completed').length
   };
 
   return (
@@ -219,11 +274,15 @@ export default function ClientApprovals() {
           <span className="count">{counts.Rejected}</span>
           <span className="label">Total Rejected</span>
         </div>
+        <div className="stat-badge completed">
+          <span className="count">{counts.Completed}</span>
+          <span className="label">Total Completed</span>
+        </div>
       </div>
 
       {/* Status Filters */}
       <div className="approval-filters">
-        {['Pending', 'Approved', 'Rejected', 'All'].map(f => (
+        {['Pending', 'Approved', 'Rejected', 'Completed', 'All'].map(f => (
           <button
             key={f}
             className={`filter-btn ${filter === f ? 'active' : ''}`}

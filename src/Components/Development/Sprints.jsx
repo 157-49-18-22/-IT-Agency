@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { FiPlay, FiPause, FiCheckCircle, FiClock, FiTrendingUp, FiCalendar, FiPlus, FiX, FiCode } from 'react-icons/fi';
+import axios from 'axios';
 import './Sprints.css';
 import { sprintAPI } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -28,34 +29,66 @@ export default function Sprints() {
     projectId: 1 // Will be updated from selected project
   });
 
-  // Load approved projects
+  // Load approved projects from database (matching "Approved Projects" page)
   useEffect(() => {
-    if (currentUser?.id) {
-      const allProjects = getProjectsByUser(currentUser.id);
-      const approvedProjects = allProjects.filter(project => {
-        const isApproved = project.currentStage === 'development' ||
-          project.currentStage === 'testing' ||
-          project.status === 'approved' ||
-          project.uiuxApproved === true;
-        return isApproved;
-      });
+    const fetchApprovedProjects = async () => {
+      if (!currentUser?.id) return;
 
-      if (approvedProjects.length > 0) {
-        setMyProjects(approvedProjects);
-        setSelectedProject(approvedProjects[0]);
-        setFormData(prev => ({ ...prev, projectId: approvedProjects[0].id }));
-      } else {
-        // Mock data for testing
-        const mockProjects = [
-          { id: 1, projectName: 'Web Development (Approved)', status: 'approved', currentStage: 'development' },
-          { id: 2, projectName: 'Mobile App (Approved)', status: 'approved', currentStage: 'development' }
-        ];
-        setMyProjects(mockProjects);
-        setSelectedProject(mockProjects[0]);
-        setFormData(prev => ({ ...prev, projectId: mockProjects[0].id }));
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        };
+
+        // Fetch approved approvals from database (same as ApprovedProjects.jsx)
+        const response = await axios.get('/api/approvals?status=Approved', config);
+        const approvedApprovals = response.data?.data || response.data || [];
+
+        console.log('Approved approvals from database:', approvedApprovals);
+
+        // Group by project
+        const projectMap = new Map();
+        approvedApprovals.forEach(approval => {
+          if (approval.projectId) {
+            if (!projectMap.has(approval.projectId)) {
+              projectMap.set(approval.projectId, {
+                id: approval.projectId,
+                projectName: approval.project?.name || `Project ${approval.projectId}`,
+                uiuxApproved: true,
+                approvedDate: approval.approvedAt
+              });
+            }
+          }
+        });
+
+        const approvedProjects = Array.from(projectMap.values());
+        console.log('Approved projects for Sprint dropdown:', approvedProjects);
+
+        if (approvedProjects.length > 0) {
+          setMyProjects(approvedProjects);
+          setSelectedProject(approvedProjects[0]);
+          setFormData(prev => ({ ...prev, projectId: approvedProjects[0].id }));
+        } else {
+          setMyProjects([]);
+          setSelectedProject(null);
+          toast.info('No approved projects found. Please get your designs approved first.');
+        }
+      } catch (error) {
+        console.error('Error fetching approved projects:', error);
+        toast.error('Failed to load approved projects');
+        setMyProjects([]);
+        setSelectedProject(null);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [currentUser, getProjectsByUser]);
+    };
+
+    fetchApprovedProjects();
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchSprints = async () => {
