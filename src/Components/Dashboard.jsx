@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
-import { 
-  FaUsers, 
+import {
+  FaUsers,
   FaProjectDiagram,
   FaChartLine,
   FaRegClock,
@@ -29,36 +29,42 @@ const stringToColor = (str) => {
 };
 
 const Dashboard = () => {
-  const { projects, getActiveProjects, getCompletedProjects, getProjectsByUser } = useContext(ProjectContext);
+  const { projects, getActiveProjects, getCompletedProjects, getProjectsByUser, isLoading: projectsLoading } = useContext(ProjectContext);
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  
+
+  // Ensure projects is always an array
+  const safeProjects = Array.isArray(projects) ? projects : [];
+
   // Get projects for the current user if they're a developer
-  const userProjects = currentUser?.role === 'developer' 
-    ? getProjectsByUser(currentUser.id) 
-    : projects;
-    
+  const userProjects = currentUser?.role === 'developer'
+    ? getProjectsByUser(currentUser.id)
+    : safeProjects;
+
+  // Ensure userProjects is always an array
+  const safeUserProjects = Array.isArray(userProjects) ? userProjects : [];
+
   const activeProjects = currentUser?.role === 'developer'
-    ? userProjects.filter(project => project.status === 'in-progress')
+    ? safeUserProjects.filter(project => project.status === 'in-progress')
     : getActiveProjects();
-    
+
   const completedProjects = currentUser?.role === 'developer'
-    ? userProjects.filter(project => project.status === 'completed')
+    ? safeUserProjects.filter(project => project.status === 'completed')
     : getCompletedProjects();
-    
-  const totalProjects = userProjects.length;
-  const totalClients = [...new Set(userProjects.map(p => p.clientName))].length;
-  
+
+  const totalProjects = safeUserProjects.length;
+  const totalClients = [...new Set(safeUserProjects.map(p => p.clientName))].length;
+
   // Get recent activities (last 5 projects created)
-  const recentActivities = [...userProjects]
+  const recentActivities = [...safeUserProjects]
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     .slice(0, 5);
-  
+
   // Get unique team members from all projects
   // Get team members from user's projects
   const allTeamMembers = [
     ...new Map(
-      userProjects
+      safeUserProjects
         .flatMap(project =>
           project.teamMembers?.map(member => ({
             id: member?.id || Math.random().toString(36).substr(2, 9),
@@ -72,32 +78,32 @@ const Dashboard = () => {
 
   // Dashboard stats
   const stats = [
-    { 
-      title: 'Total Projects', 
-      value: totalProjects, 
-      icon: <FaProjectDiagram className="stat-icon" />, 
+    {
+      title: 'Total Projects',
+      value: totalProjects,
+      icon: <FaProjectDiagram className="stat-icon" />,
       color: '#3498db'
     },
-    { 
-      title: 'Active', 
-      value: activeProjects.length, 
-      icon: <FaChartLine className="stat-icon" />, 
+    {
+      title: 'Active',
+      value: activeProjects.length,
+      icon: <FaChartLine className="stat-icon" />,
       color: '#2ecc71'
     },
-    { 
-      title: 'Completed', 
-      value: completedProjects.length, 
-      icon: <FaRegCheckCircle className="stat-icon" />, 
+    {
+      title: 'Completed',
+      value: completedProjects.length,
+      icon: <FaRegCheckCircle className="stat-icon" />,
       color: '#9b59b6'
     },
-    { 
-      title: 'Clients', 
-      value: totalClients, 
-      icon: <FaUsers className="stat-icon" />, 
+    {
+      title: 'Clients',
+      value: totalClients,
+      icon: <FaUsers className="stat-icon" />,
       color: '#e74c3c'
     }
   ];
-  
+
   // Get status color
   const getStatusColor = (status) => {
     switch (status) {
@@ -107,7 +113,7 @@ const Dashboard = () => {
       default: return '#95a5a6';
     }
   };
-  
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -115,7 +121,8 @@ const Dashboard = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  if (userProjects.length === 0) {
+  // Show loading state while projects are being fetched
+  if (projectsLoading) {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
@@ -149,7 +156,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Stats Cards */}
       <div className="stats-grid">
         {stats.map((stat, index) => (
@@ -174,7 +181,7 @@ const Dashboard = () => {
               View All <FaArrowRight size={12} />
             </Link>
           </div>
-          
+
           <div className="projects-grid">
             {activeProjects.length > 0 ? (
               activeProjects.map(project => (
@@ -190,11 +197,11 @@ const Dashboard = () => {
                       <FaEllipsisV />
                     </button>
                   </div>
-                  
+
                   <p className="project-client">
                     <FaUserTie size={14} /> {project.clientName || 'No Client'}
                   </p>
-                  
+
                   <div className="project-dates">
                     <span className="date">
                       <FaRegClock size={12} /> {formatDate(project.startDate)} - {formatDate(project.endDate)}
@@ -203,14 +210,14 @@ const Dashboard = () => {
                       <span className="budget">${parseInt(project.budget, 10).toLocaleString()}</span>
                     )}
                   </div>
-                  
+
                   {project.teamMembers?.length > 0 && (
                     <div className="project-team">
                       <div className="team-avatars">
                         {project.teamMembers.slice(0, 3).map((member, idx) => (
-                          <div 
-                            key={member.id || idx} 
-                            className="team-avatar" 
+                          <div
+                            key={member.id || idx}
+                            className="team-avatar"
                             title={member.name}
                             style={{ backgroundColor: stringToColor(member.name) }}
                           >
@@ -246,7 +253,7 @@ const Dashboard = () => {
             <div className="team-list">
               {allTeamMembers.map((member, index) => (
                 <div key={member.id || index} className="team-member">
-                  <div 
+                  <div
                     className="member-avatar"
                     style={{ backgroundColor: stringToColor(member.name) }}
                   >
@@ -274,8 +281,8 @@ const Dashboard = () => {
               {recentActivities.length > 0 ? (
                 recentActivities.map((project) => (
                   <li key={project.id} className="activity-item">
-                    <div 
-                      className="activity-icon" 
+                    <div
+                      className="activity-icon"
                       style={{ backgroundColor: getStatusColor(project.status) }}
                     >
                       <FaProjectDiagram size={14} />

@@ -182,6 +182,7 @@ export const tasksAPI = {
 
 // Projects APIs
 export const projectsAPI = {
+  getAllProjects: () => api.get('/projects'),
   getProjects: (params) => api.get('/projects', { params }),
   getProject: (id) => api.get(`/projects/${id}`),
   createProject: (data) => api.post('/projects', data),
