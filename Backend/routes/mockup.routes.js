@@ -15,7 +15,8 @@ const {
 } = require('../controllers/mockup.controller');
 
 // Ensure uploads directory exists
-const UPLOAD_DIR = path.join(__dirname, '../../uploads/mockups');
+// Ensure uploads directory exists
+const UPLOAD_DIR = path.join(__dirname, '../uploads/mockups');
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }

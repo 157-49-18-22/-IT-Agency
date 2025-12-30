@@ -66,7 +66,12 @@ export default function ClientApprovals() {
           stage: d.phase,
           requestedDate: d.createdAt,
           source: 'deliverable', // Flag to use correct API for actions
-          attachments: d.fileUrl ? [{ name: d.fileName, url: d.fileUrl, type: d.fileType }] : []
+          attachments: d.fileUrl ? [{
+            name: d.fileName,
+            url: d.fileUrl,
+            type: d.fileType,
+            size: d.fileSize || d.file_size // Map file size
+          }] : []
         })) : [];
 
         const merged = [...(Array.isArray(legacyData) ? legacyData : []), ...normalizedDeliverables];
@@ -337,20 +342,69 @@ export default function ClientApprovals() {
             {approval.attachments && approval.attachments.length > 0 && (
               <div className="approval-files">
                 <div className="files-label">Attachments ({approval.attachments.length}):</div>
-                {approval.attachments.map((file, idx) => (
-                  <div key={idx} className="file-item">
-                    <span className="type-badge">{file.type}</span>
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-size">{file.size || '0 KB'}</span>
-                    <button
-                      className="file-download"
-                      onClick={() => file.url && window.open(file.url, '_blank')}
-                      title="View/Download"
-                    >
-                      <FiDownload />
-                    </button>
-                  </div>
-                ))}
+                <div className="files-grid">
+                  {approval.attachments.map((file, idx) => {
+                    // Sanitize URL: remove spaces and ensure clean path
+                    const rawUrl = (file.url || '').trim();
+                    let fullUrl = rawUrl;
+
+                    // Handle different URL types
+                    if (!rawUrl || rawUrl === '#' || rawUrl === '#repository') {
+                      fullUrl = null;
+                    } else if (rawUrl.startsWith('http')) {
+                      fullUrl = rawUrl;
+                    } else if (rawUrl.startsWith('/') || file.type === 'Wireframe' || file.type === 'Mockup' || file.type === 'Prototype') {
+                      // It's a local file path
+                      fullUrl = `http://localhost:5000${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+                    } else {
+                      // It might be an external link without http (e.g. github.com/...)
+                      fullUrl = `https://${rawUrl}`;
+                    }
+
+                    const isImage = file.type === 'Wireframe' || file.type === 'Mockup' || file.type === 'Prototype' || file.type === 'Image';
+                    const isInvalidLink = !fullUrl;
+
+                    return (
+                      <div key={idx} className="file-item-card">
+                        {isImage && fullUrl ? (
+                          <div className="file-preview">
+                            <img
+                              src={`${fullUrl}?t=${new Date().getTime()}`}
+                              alt={file.name}
+                              crossOrigin="anonymous"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://via.placeholder.com/150?text=No+Preview';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="file-icon-placeholder">
+                            {file.type === 'Code' || file.type === 'Repository' ? '💻' : '📄'}
+                          </div>
+                        )}
+                        <div className="file-info">
+                          <span className="type-badge">{file.type}</span>
+                          <span className="file-name" title={file.name}>{file.name}</span>
+                          <span className="file-size">{file.size || '0 KB'}</span>
+                        </div>
+                        <button
+                          className={`file-download-btn ${isInvalidLink ? 'disabled' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isInvalidLink) {
+                              window.open(fullUrl, '_blank');
+                            }
+                          }}
+                          disabled={isInvalidLink}
+                          title={isInvalidLink ? "No preview or download available" : "View or Download"}
+                        >
+                          {isInvalidLink ? 'No Link Available' : <><FiDownload /> View / Download</>}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

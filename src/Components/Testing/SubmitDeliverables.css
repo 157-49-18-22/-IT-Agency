@@ -347,6 +347,240 @@
     margin: 0;
 }
 
+/* Clickable Checklist Items */
+.checklist-item.clickable {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.checklist-item.clickable:hover {
+    transform: translateX(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.checklist-item .view-icon {
+    margin-left: auto;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.checklist-item.clickable:hover .view-icon {
+    opacity: 1;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 2px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: #64748b;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Data Table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.data-table thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.data-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+.data-table tbody tr {
+    transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Badge Styles */
+.badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-block;
+}
+
+.badge-passed,
+.badge-resolved {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.badge-failed {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.badge-pending,
+.badge-in.progress {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-critical {
+    background: #fee2e2;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.badge-high {
+    background: #fed7aa;
+    color: #ea580c;
+}
+
+.badge-medium {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-low {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.badge-open {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-completed {
+    background: #d1fae5;
+    color: #059669;
+}
+
+/* Security Info */
+.security-info {
+    padding: 24px;
+    background: #f0fdf4;
+    border-radius: 12px;
+    border: 2px solid #d1fae5;
+}
+
+.security-info p {
+    margin: 8px 0;
+    color: #065f46;
+    font-size: 1rem;
+}
+
+.info-note {
+    font-style: italic;
+    opacity: 0.9;
+}
+
 @media (max-width: 768px) {
     .project-header {
         flex-direction: column;
@@ -365,5 +599,20 @@
     .btn-submit {
         width: 100%;
         justify-content: center;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 95vh;
+        margin: 10px;
+    }
+
+    .data-table {
+        font-size: 0.85rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
     }
 }

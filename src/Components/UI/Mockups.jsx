@@ -26,6 +26,8 @@ const Mockups = () => {
     image: null
   });
   const [uploading, setUploading] = useState(false);
+  const [viewDetailsModal, setViewDetailsModal] = useState(false);
+  const [selectedMockup, setSelectedMockup] = useState(null);
 
   // Function to fetch mockups with improved error handling and response processing
   const fetchMockups = React.useCallback(async () => {
@@ -146,6 +148,11 @@ const Mockups = () => {
   };
 
   // Mockup card click handlers
+  const handleViewDetails = useCallback((mockup) => {
+    setSelectedMockup(mockup);
+    setViewDetailsModal(true);
+  }, []);
+
   const handleViewMockup = useCallback((id) => {
     navigate(`/mockups/${id}`);
   }, [navigate]);
@@ -299,7 +306,12 @@ const Mockups = () => {
       ) : (
         <div className="mockups-grid">
           {filteredMockups.map((mockup) => (
-            <div key={mockup.id} className="mockup-card">
+            <div
+              key={mockup.id}
+              className="mockup-card"
+              onClick={() => handleViewDetails(mockup)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="mockup-header">
                 <div className="mockup-thumbnail">
                   {mockup.image_url ? (
@@ -319,9 +331,9 @@ const Mockups = () => {
                   )}
                 </div>
                 <div className="mockup-actions">
-                  <button className="btn-icon" onClick={() => handleViewMockup(mockup.id)}>👁️</button>
-                  <button className="btn-icon" onClick={() => handleEditMockup(mockup.id)}>✏️</button>
-                  <button className="btn-icon danger" onClick={() => handleDelete(mockup.id)}>🗑️</button>
+                  <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleViewMockup(mockup.id); }}>👁️</button>
+                  <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEditMockup(mockup.id); }}>✏️</button>
+                  <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); handleDelete(mockup.id); }}>🗑️</button>
                 </div>
               </div>
               <div className="mockup-body">
@@ -516,6 +528,71 @@ const Mockups = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {viewDetailsModal && selectedMockup && (
+        <div className="modal-overlay" onClick={() => setViewDetailsModal(false)}>
+          <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', padding: '0' }}>
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0 }}>Mockup Details</h3>
+              <button className="close-btn" onClick={() => setViewDetailsModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#718096' }}>&times;</button>
+            </div>
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <div className="details-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {selectedMockup.image_url && (
+                  <div className="details-image-section" style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', overflow: 'hidden' }}>
+                    <img src={`http://localhost:5000${selectedMockup.image_url}`} alt={selectedMockup.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                  </div>
+                )}
+                <div className="details-info-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Title</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.title}</div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Description</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.description || 'No description provided'}</div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Category</label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.category}</div>
+                    </div>
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Status</label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span className={`status-badge ${getStatusClass(selectedMockup.status)}`} style={{ position: 'static', display: 'inline-block' }}>{selectedMockup.status || 'draft'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Project</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{projects.find(p => p.id === selectedMockup.projectId)?.name || 'N/A'}</div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Created At</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedMockup.createdAt)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Last Updated</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedMockup.updatedAt)}</div>
+                  </div>
+                  {selectedMockup.creator && (
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Created By</label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.creator.name || 'Unknown'}</div>
+                    </div>
+                  )}
+                </div>
+                <div className="details-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+                  <button className="btn-secondary" onClick={() => { setViewDetailsModal(false); handleEditMockup(selectedMockup.id); }} style={{ padding: '10px 20px', borderRadius: '8px', background: '#f7fafc', border: '1px solid #e2e8f0', cursor: 'pointer' }}>✏️ Edit Mockup</button>
+                  <button className="btn-primary" onClick={() => setViewDetailsModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', background: '#4299e1', color: 'white', border: 'none', cursor: 'pointer' }}>Close</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

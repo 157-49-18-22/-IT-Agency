@@ -23,6 +23,8 @@ const Prototypes = () => {
   });
   const [preview, setPreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewDetailsModal, setViewDetailsModal] = useState(false);
+  const [selectedPrototype, setSelectedPrototype] = useState(null);
 
   // Fetch prototypes from API
   const fetchPrototypes = async () => {
@@ -178,6 +180,12 @@ const Prototypes = () => {
     }
   };
 
+  // Handle view prototype details
+  const handleViewDetails = (prototype) => {
+    setSelectedPrototype(prototype);
+    setViewDetailsModal(true);
+  };
+
   // Handle edit prototype
   const handleEdit = (prototype) => {
     setCurrentPrototype({
@@ -282,7 +290,12 @@ const Prototypes = () => {
       <div className="prototypes-grid">
         {filteredPrototypes.length > 0 ? (
           filteredPrototypes.map((prototype) => (
-            <div key={prototype.id} className="prototype-card">
+            <div
+              key={prototype.id}
+              className="prototype-card"
+              onClick={() => handleViewDetails(prototype)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="prototype-image">
                 {prototype.imageUrl ? (
                   <img src={prototype.imageUrl} alt={prototype.title} />
@@ -518,6 +531,94 @@ const Prototypes = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {viewDetailsModal && selectedPrototype && (
+        <div className="modal-overlay" onClick={() => setViewDetailsModal(false)}>
+          <div className="modal view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h3>Prototype Details</h3>
+              <button className="btn-icon close-btn" onClick={() => setViewDetailsModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="details-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {selectedPrototype.imageUrl && (
+                  <div className="details-image-section" style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', overflow: 'hidden', background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={selectedPrototype.imageUrl} alt={selectedPrototype.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                  </div>
+                )}
+                <div className="details-info-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <FaImage style={{ color: '#4299e1' }} /> Title
+                    </label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedPrototype.title}</div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Description</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedPrototype.description || 'No description provided'}</div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Version</label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span style={{ display: 'inline-block', background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)', color: 'white', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '600' }}>v{selectedPrototype.version || '1.0'}</span>
+                      </div>
+                    </div>
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Status</label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span className={`status-badge ${getStatusClass(selectedPrototype.status)}`} style={{ position: 'static', display: 'inline-block' }}>{selectedPrototype.status?.replace('_', ' ')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Category</label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedPrototype.category || 'Web'}</div>
+                  </div>
+                  {selectedPrototype.link && (
+                    <div className="detail-row">
+                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FaLink style={{ color: '#4299e1' }} /> Prototype Link
+                      </label>
+                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <a href={selectedPrototype.link} target="_blank" rel="noopener noreferrer" style={{ color: '#4299e1', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {selectedPrototype.link} <FaLink />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <FaCalendarAlt style={{ color: '#4299e1' }} /> Created At
+                    </label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedPrototype.createdAt)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <FaCalendarAlt style={{ color: '#4299e1' }} /> Last Updated
+                    </label>
+                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedPrototype.updatedAt)}</div>
+                  </div>
+                </div>
+                <div className="details-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+                  <button className="btn btn-secondary" onClick={() => { setViewDetailsModal(false); handleEdit(selectedPrototype); }} style={{ padding: '10px 20px', borderRadius: '8px', background: '#f7fafc', border: '1px solid #e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaEdit /> Edit Prototype
+                  </button>
+                  {selectedPrototype.link && (
+                    <a href={selectedPrototype.link} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ padding: '10px 20px', borderRadius: '8px', background: '#f7fafc', border: '1px solid #e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#4a5568' }}>
+                      <FaLink /> Open Prototype
+                    </a>
+                  )}
+                  <button className="btn btn-primary" onClick={() => setViewDetailsModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', background: '#4299e1', color: 'white', border: 'none', cursor: 'pointer' }}>Close</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

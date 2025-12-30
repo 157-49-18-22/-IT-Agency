@@ -25,6 +25,8 @@ const Wireframes = () => {
     projectId: ''
   });
   const [preview, setPreview] = useState('');
+  const [viewDetailsModal, setViewDetailsModal] = useState(false);
+  const [selectedWireframe, setSelectedWireframe] = useState(null);
 
   // Fetch wireframes from API
   const fetchWireframes = async () => {
@@ -278,6 +280,12 @@ const Wireframes = () => {
     }
   };
 
+  // Handle view wireframe details
+  const handleViewDetails = (wireframe) => {
+    setSelectedWireframe(wireframe);
+    setViewDetailsModal(true);
+  };
+
   // Handle edit wireframe
   const handleEdit = (wireframe) => {
     setCurrentWireframe({
@@ -393,7 +401,12 @@ const Wireframes = () => {
         <div className="wireframes-grid">
           {filteredWireframes.length > 0 ? (
             filteredWireframes.map((wireframe) => (
-              <div key={wireframe.id} className="wireframe-card">
+              <div
+                key={wireframe.id}
+                className="wireframe-card"
+                onClick={() => handleViewDetails(wireframe)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="wireframe-thumbnail">
                   {wireframe.imageUrl ? (
                     <img
@@ -410,14 +423,20 @@ const Wireframes = () => {
                   <div className="card-actions">
                     <button
                       className="btn-icon"
-                      onClick={() => handleEdit(wireframe)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(wireframe);
+                      }}
                       title="Edit"
                     >
                       <FaEdit />
                     </button>
                     <button
                       className="btn-icon danger"
-                      onClick={() => handleDelete(wireframe.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(wireframe.id);
+                      }}
                       title="Delete"
                     >
                       <FaTrash />
@@ -620,6 +639,147 @@ const Wireframes = () => {
                     onClick={handleSubmit}
                   >
                     {currentWireframe.id ? 'Update' : 'Save'} Wireframe
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {viewDetailsModal && selectedWireframe && (
+        <div className="modal-overlay" onClick={() => setViewDetailsModal(false)}>
+          <div className="modal view-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Wireframe Details</h3>
+              <button
+                className="btn-icon close-btn"
+                onClick={() => setViewDetailsModal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="details-container">
+                {/* Wireframe Image */}
+                {selectedWireframe.imageUrl && (
+                  <div className="details-image-section">
+                    <img
+                      src={selectedWireframe.imageUrl}
+                      alt={selectedWireframe.title}
+                      className="details-image"
+                    />
+                  </div>
+                )}
+
+                {/* Wireframe Information */}
+                <div className="details-info-section">
+                  <div className="detail-row">
+                    <label className="detail-label">
+                      <FaImage className="detail-icon" />
+                      Title
+                    </label>
+                    <div className="detail-value">{selectedWireframe.title}</div>
+                  </div>
+
+                  <div className="detail-row">
+                    <label className="detail-label">Description</label>
+                    <div className="detail-value">
+                      {selectedWireframe.description || 'No description provided'}
+                    </div>
+                  </div>
+
+                  <div className="detail-row-group">
+                    <div className="detail-row">
+                      <label className="detail-label">Version</label>
+                      <div className="detail-value">
+                        <span className="version-badge">v{selectedWireframe.version || '1.0'}</span>
+                      </div>
+                    </div>
+
+                    <div className="detail-row">
+                      <label className="detail-label">Status</label>
+                      <div className="detail-value">
+                        <span className={`status-badge ${getStatusClass(selectedWireframe.status)}`}>
+                          {selectedWireframe.status?.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="detail-row-group">
+                    <div className="detail-row">
+                      <label className="detail-label">Category</label>
+                      <div className="detail-value">
+                        {selectedWireframe.category || 'Web'}
+                      </div>
+                    </div>
+
+                    <div className="detail-row">
+                      <label className="detail-label">Project</label>
+                      <div className="detail-value">
+                        {projects.find(p => p.id === selectedWireframe.projectId)?.name || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="detail-row">
+                    <label className="detail-label">
+                      <FaCalendarAlt className="detail-icon" />
+                      Created At
+                    </label>
+                    <div className="detail-value">
+                      {formatDate(selectedWireframe.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="detail-row">
+                    <label className="detail-label">
+                      <FaCalendarAlt className="detail-icon" />
+                      Last Updated
+                    </label>
+                    <div className="detail-value">
+                      {formatDate(selectedWireframe.updatedAt)}
+                    </div>
+                  </div>
+
+                  <div className="detail-row">
+                    <label className="detail-label">
+                      <FaUser className="detail-icon" />
+                      Created By
+                    </label>
+                    <div className="detail-value">
+                      {selectedWireframe.updatedBy || selectedWireframe.createdBy || 'System'}
+                    </div>
+                  </div>
+
+                  {selectedWireframe.fileSize && (
+                    <div className="detail-row">
+                      <label className="detail-label">File Size</label>
+                      <div className="detail-value">
+                        {(selectedWireframe.fileSize / 1024).toFixed(2)} KB
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="details-actions">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setViewDetailsModal(false);
+                      handleEdit(selectedWireframe);
+                    }}
+                  >
+                    <FaEdit /> Edit Wireframe
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setViewDetailsModal(false)}
+                  >
+                    Close
                   </button>
                 </div>
               </div>

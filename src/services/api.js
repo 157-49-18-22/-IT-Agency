@@ -438,6 +438,16 @@ export const testingAPI = {
   getDashboardStats: () => api.get('/testing/dashboard-stats')
 };
 
+// Test Cases APIs
+export const testCasesAPI = {
+  getTestCases: (params) => api.get('/test-cases', { params }),
+  getTestCase: (id) => api.get(`/test-cases/${id}`),
+  createTestCase: (data) => api.post('/test-cases', data),
+  updateTestCase: (id, data) => api.put(`/test-cases/${id}`, data),
+  deleteTestCase: (id) => api.delete(`/test-cases/${id}`),
+  getTestResults: (testCaseId) => api.get(`/test-cases/${testCaseId}/results`)
+};
+
 // Self Testing APIs
 export const selfTestingAPI = {
   getChecklist: () => api.get('/selftesting/checklist')
