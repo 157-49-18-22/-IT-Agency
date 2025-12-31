@@ -294,11 +294,13 @@ export const sprintAPI = {
 
 // UAT APIs
 export const uatAPI = {
+  getAll: (params) => api.get('/uat', { params }), // Alias for consistency
   getUATs: (params) => api.get('/uat', { params }),
   getUAT: (id) => api.get(`/uat/${id}`),
   createUAT: (data) => api.post('/uat', data),
   updateUAT: (id, data) => api.put(`/uat/${id}`, data),
-  deleteUAT: (id) => api.delete(`/uat/${id}`)
+  deleteUAT: (id) => api.delete(`/uat/${id}`),
+  updateStatus: (id, status) => api.patch(`/uat/${id}/status`, { status })
 };
 
 // Report APIs

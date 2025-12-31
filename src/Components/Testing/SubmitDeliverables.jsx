@@ -129,6 +129,26 @@ const SubmitDeliverables = () => {
             return;
         }
 
+        // If testing is incomplete, show confirmation dialog
+        if (!isReadyForSubmission) {
+            const incompleteItems = [];
+            if (testingData.testCases.failed > 0) {
+                incompleteItems.push(`${testingData.testCases.failed} test case(s) failed`);
+            }
+            if (testingData.bugs.open > 0) {
+                incompleteItems.push(`${testingData.bugs.open} bug(s) still open (${testingData.bugs.critical} critical)`);
+            }
+            if (testingData.uat.failed > 0) {
+                incompleteItems.push(`${testingData.uat.failed} UAT(s) failed`);
+            }
+
+            const confirmMessage = `⚠️ WARNING: Testing is INCOMPLETE!\n\nIncomplete items:\n${incompleteItems.map(item => `• ${item}`).join('\n')}\n\nAre you sure you want to submit to the client with incomplete testing?`;
+
+            if (!window.confirm(confirmMessage)) {
+                return;
+            }
+        }
+
         setSubmitting(true);
         try {
             // Update project to Client Review phase
@@ -137,7 +157,8 @@ const SubmitDeliverables = () => {
                 status: 'In Progress',
                 currentPhase: 'Testing', // Set to 'Testing' so approval appears in Testing tab (valid ENUM)
                 testingCompletedAt: new Date().toISOString(),
-                testingNotes: notes
+                testingNotes: notes,
+                testingComplete: isReadyForSubmission // Track if testing was complete
             });
 
             // Create approval request
@@ -158,14 +179,22 @@ const SubmitDeliverables = () => {
 
                 console.log(`Creating approval for Project: ${selectedProject.name}, Target User ID: ${targetUserId}`);
 
+                const approvalTitle = isReadyForSubmission
+                    ? `Testing Completed - ${selectedProject.name}`
+                    : `⚠️ Testing Incomplete - ${selectedProject.name}`;
+
+                const approvalDescription = isReadyForSubmission
+                    ? `Project is ready for client review.\n\nNotes: ${notes}`
+                    : `⚠️ WARNING: Project submitted with INCOMPLETE testing.\n\nNotes: ${notes}`;
+
                 await approvalAPI.createApproval({
-                    title: `Testing Completed - ${selectedProject.name}`,
-                    description: `Project is ready for client review.\n\nNotes: ${notes}`,
+                    title: approvalTitle,
+                    description: approvalDescription,
                     projectId: selectedProject.id,
                     requestedToId: targetUserId,
                     type: 'Stage Transition',
                     status: 'Pending',
-                    priority: 'High'
+                    priority: isReadyForSubmission ? 'High' : 'Critical'
                 });
 
                 toast.success('Approval request created successfully');
@@ -175,7 +204,11 @@ const SubmitDeliverables = () => {
                 toast.warning('Project submitted, but failed to create approval notification.');
             }
 
-            toast.success(`✅ ${selectedProject.name} submitted to client successfully!`);
+            if (isReadyForSubmission) {
+                toast.success(`✅ ${selectedProject.name} submitted to client successfully!`);
+            } else {
+                toast.warning(`⚠️ ${selectedProject.name} submitted with incomplete testing!`);
+            }
 
             // Reset form
             setSelectedProject(null);
@@ -203,9 +236,9 @@ const SubmitDeliverables = () => {
                 loading: false,
                 data: testCasesData,
                 total: testCasesData.length,
-                passed: testCasesData.filter(tc => tc.status === 'Passed').length,
-                failed: testCasesData.filter(tc => tc.status === 'Failed').length,
-                pending: testCasesData.filter(tc => tc.status === 'Pending' || tc.status === 'In Progress').length
+                passed: testCasesData.filter(tc => ['passed', 'approved'].includes(tc.status?.toLowerCase())).length,
+                failed: testCasesData.filter(tc => ['failed', 'rejected'].includes(tc.status?.toLowerCase())).length,
+                pending: testCasesData.filter(tc => ['pending', 'in_progress', 'not_run'].includes(tc.status?.toLowerCase())).length
             };
 
             // Fetch Bugs
@@ -217,9 +250,9 @@ const SubmitDeliverables = () => {
                 loading: false,
                 data: bugsData,
                 total: bugsData.length,
-                critical: bugsData.filter(b => b.severity === 'Critical' || b.severity === 'critical').length,
-                open: bugsData.filter(b => b.status !== 'Resolved' && b.status !== 'resolved').length,
-                resolved: bugsData.filter(b => b.status === 'Resolved' || b.status === 'resolved').length
+                critical: bugsData.filter(b => (b.severity?.toLowerCase() === 'critical')).length,
+                open: bugsData.filter(b => !['resolved', 'closed'].includes(b.status?.toLowerCase())).length,
+                resolved: bugsData.filter(b => ['resolved', 'closed'].includes(b.status?.toLowerCase())).length
             };
 
             // Fetch Performance Tests
@@ -243,8 +276,8 @@ const SubmitDeliverables = () => {
                 loading: false,
                 data: uatData,
                 total: uatData.length,
-                passed: uatData.filter(u => u.status === 'Passed' || u.status === 'passed').length,
-                failed: uatData.filter(u => u.status === 'Failed' || u.status === 'failed').length
+                passed: uatData.filter(u => ['passed', 'approved'].includes(u.status?.toLowerCase())).length,
+                failed: uatData.filter(u => ['failed', 'rejected'].includes(u.status?.toLowerCase())).length
             };
 
             // For security, we'll use a mock for now since there's no specific API
@@ -271,12 +304,13 @@ const SubmitDeliverables = () => {
 
     // Check if testing is complete based on real data
     const isReadyForSubmission = selectedProject &&
-        testingData.testCases.total > 0 &&
+        // testingData.testCases.total > 0 && // Optional: enforce at least one test case?
         testingData.testCases.failed === 0 &&
+        testingData.bugs.critical === 0 && // Only critical bugs block submission? Or all open? User wants all resolved usually.
         testingData.bugs.open === 0 &&
-        testingData.performance.completed &&
-        testingData.security.completed &&
-        testingData.uat.total > 0 &&
+        // testingData.performance.completed &&
+        // testingData.security.completed &&
+        // testingData.uat.total > 0 &&
         testingData.uat.failed === 0;
 
     // Modal handlers
@@ -422,52 +456,71 @@ const SubmitDeliverables = () => {
                                 <FiAlertCircle size={24} />
                                 <div>
                                     <h4>Testing Incomplete</h4>
-                                    <p>Complete all testing activities before submitting to client.</p>
+                                    <p>Some testing activities are not complete. You can still submit with incomplete testing.</p>
+                                    <ul className="incomplete-items">
+                                        {testingData.testCases.failed > 0 && (
+                                            <li>❌ {testingData.testCases.failed} test case(s) failed</li>
+                                        )}
+                                        {testingData.bugs.open > 0 && (
+                                            <li>🐛 {testingData.bugs.open} bug(s) still open ({testingData.bugs.critical} critical)</li>
+                                        )}
+                                        {testingData.uat.failed > 0 && (
+                                            <li>❌ {testingData.uat.failed} UAT(s) failed</li>
+                                        )}
+                                    </ul>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Submission Notes */}
-                    {isReadyForSubmission && (
-                        <div className="submission-form">
-                            <h3>Submission Notes</h3>
-                            <textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Add notes for the client about testing completion, known issues, recommendations, etc..."
-                                rows="6"
-                                className="notes-textarea"
-                            />
-
-                            <div className="form-actions">
-                                <button
-                                    className="btn-cancel"
-                                    onClick={() => {
-                                        setSelectedProject(null);
-                                        setNotes('');
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="btn-submit"
-                                    onClick={handleSubmitToClient}
-                                    disabled={submitting || !notes.trim()}
-                                >
-                                    {submitting ? (
-                                        <>
-                                            <FiClock className="spin" /> Submitting...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FiSend /> Submit to Client
-                                        </>
-                                    )}
-                                </button>
+                    {/* Submission Notes - Show for both ready and incomplete */}
+                    <div className="submission-form">
+                        <h3>Submission Notes</h3>
+                        {!isReadyForSubmission && (
+                            <div className="force-submit-warning">
+                                <FiAlertCircle size={20} />
+                                <span>You are submitting with incomplete testing. Please explain the situation to the client.</span>
                             </div>
+                        )}
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder={
+                                isReadyForSubmission
+                                    ? "Add notes for the client about testing completion, known issues, recommendations, etc..."
+                                    : "IMPORTANT: Explain why you're submitting with incomplete testing, what's pending, and the plan to complete it..."
+                            }
+                            rows="6"
+                            className="notes-textarea"
+                        />
+
+                        <div className="form-actions">
+                            <button
+                                className="btn-cancel"
+                                onClick={() => {
+                                    setSelectedProject(null);
+                                    setNotes('');
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className={`btn-submit ${!isReadyForSubmission ? 'btn-submit-warning' : ''}`}
+                                onClick={handleSubmitToClient}
+                                disabled={submitting || !notes.trim()}
+                            >
+                                {submitting ? (
+                                    <>
+                                        <FiClock className="spin" /> Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiSend /> {isReadyForSubmission ? 'Submit to Client' : 'Force Submit to Client'}
+                                    </>
+                                )}
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </>
             ) : (
                 <div className="empty-state">
@@ -497,53 +550,192 @@ const SubmitDeliverables = () => {
                             ) : (
                                 <>
                                     {modalType === 'testCases' && (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>ID</th>
-                                                    <th>Title</th>
-                                                    <th>Priority</th>
-                                                    <th>Status</th>
-                                                    <th>Executed By</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {modalData.map((tc, idx) => (
-                                                    <tr key={tc.id || idx}>
-                                                        <td>#{tc.id}</td>
-                                                        <td>{tc.title || tc.name}</td>
-                                                        <td><span className={`badge badge-${tc.priority?.toLowerCase()}`}>{tc.priority}</span></td>
-                                                        <td><span className={`badge badge-${tc.status?.toLowerCase()}`}>{tc.status}</span></td>
-                                                        <td>{tc.executedBy?.name || tc.tester?.name || 'N/A'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className="test-cases-details">
+                                            {modalData.map((tc, idx) => (
+                                                <div key={tc.id || idx} className="test-case-detail-card">
+                                                    <div className="test-case-header">
+                                                        <div className="test-case-title-section">
+                                                            <h4>#{tc.id} - {tc.title || tc.name || 'Untitled Test Case'}</h4>
+                                                            <div className="test-case-badges">
+                                                                <span className={`badge badge-${tc.priority?.toLowerCase() || 'medium'}`}>
+                                                                    {tc.priority || 'Medium'}
+                                                                </span>
+                                                                <span className={`badge badge-${tc.status?.toLowerCase() || 'not_run'}`}>
+                                                                    {tc.status || 'Not Run'}
+                                                                </span>
+                                                                <span className={`badge badge-${tc.type?.toLowerCase() || 'functional'}`}>
+                                                                    {tc.type || 'Functional'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="test-case-body">
+                                                        {tc.description && (
+                                                            <div className="test-case-section">
+                                                                <strong>Description:</strong>
+                                                                <p>{tc.description}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {tc.steps && tc.steps.length > 0 && (
+                                                            <div className="test-case-section">
+                                                                <strong>Test Steps:</strong>
+                                                                <ol className="test-steps-list">
+                                                                    {tc.steps.map((step, stepIdx) => (
+                                                                        <li key={stepIdx}>
+                                                                            {typeof step === 'string' ? step : (step.step || step.expected || 'Step ' + (stepIdx + 1))}
+                                                                            {step.expected && typeof step === 'object' && (
+                                                                                <div className="step-expected">
+                                                                                    <em>Expected: {step.expected}</em>
+                                                                                </div>
+                                                                            )}
+                                                                        </li>
+                                                                    ))}
+                                                                </ol>
+                                                            </div>
+                                                        )}
+
+                                                        {tc.expectedResult && (
+                                                            <div className="test-case-section">
+                                                                <strong>Expected Result:</strong>
+                                                                <p>{tc.expectedResult}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="test-case-meta">
+                                                            <div className="meta-item">
+                                                                <span className="meta-label">Created By:</span>
+                                                                <span className="meta-value">
+                                                                    {tc.creator?.name || tc.createdBy?.name || 'Unknown'}
+                                                                </span>
+                                                            </div>
+                                                            {tc.assignee?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Assigned To:</span>
+                                                                    <span className="meta-value">{tc.assignee.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {tc.project?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Project:</span>
+                                                                    <span className="meta-value">{tc.project.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {tc.createdAt && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Created:</span>
+                                                                    <span className="meta-value">
+                                                                        {new Date(tc.createdAt).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
 
                                     {modalType === 'bugs' && (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>ID</th>
-                                                    <th>Title</th>
-                                                    <th>Severity</th>
-                                                    <th>Status</th>
-                                                    <th>Reported By</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {modalData.map((bug, idx) => (
-                                                    <tr key={bug.id || idx}>
-                                                        <td>#{bug.id}</td>
-                                                        <td>{bug.title || bug.description}</td>
-                                                        <td><span className={`badge badge-${bug.severity?.toLowerCase()}`}>{bug.severity}</span></td>
-                                                        <td><span className={`badge badge-${bug.status?.toLowerCase()}`}>{bug.status}</span></td>
-                                                        <td>{bug.reportedBy?.name || bug.reporter?.name || 'N/A'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className="bugs-details">
+                                            {modalData.map((bug, idx) => (
+                                                <div key={bug.id || idx} className="bug-detail-card">
+                                                    <div className="bug-card-header">
+                                                        <div className="bug-title-section">
+                                                            <h4>#{bug.id} - {bug.title || bug.description?.substring(0, 50) || 'Untitled Bug'}</h4>
+                                                            <div className="bug-badges">
+                                                                <span className={`badge badge-${bug.severity?.toLowerCase() || 'medium'}`}>
+                                                                    {bug.severity || 'Medium'}
+                                                                </span>
+                                                                <span className={`badge badge-${bug.status?.toLowerCase() || 'open'}`}>
+                                                                    {bug.status || 'Open'}
+                                                                </span>
+                                                                {bug.priority && (
+                                                                    <span className={`badge badge-${bug.priority?.toLowerCase()}`}>
+                                                                        Priority: {bug.priority}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bug-card-body">
+                                                        {bug.description && (
+                                                            <div className="bug-section">
+                                                                <strong>Description:</strong>
+                                                                <p>{bug.description}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {bug.stepsToReproduce && (
+                                                            <div className="bug-section">
+                                                                <strong>Steps to Reproduce:</strong>
+                                                                <p className="bug-steps">{bug.stepsToReproduce}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {bug.expectedBehavior && (
+                                                            <div className="bug-section">
+                                                                <strong>Expected Behavior:</strong>
+                                                                <p>{bug.expectedBehavior}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {bug.actualBehavior && (
+                                                            <div className="bug-section">
+                                                                <strong>Actual Behavior:</strong>
+                                                                <p>{bug.actualBehavior}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {bug.environment && (
+                                                            <div className="bug-section">
+                                                                <strong>Environment:</strong>
+                                                                <p>{bug.environment}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="bug-meta">
+                                                            <div className="meta-item">
+                                                                <span className="meta-label">Reported By:</span>
+                                                                <span className="meta-value">
+                                                                    {bug.reportedBy?.name || bug.reporter?.name || 'Unknown'}
+                                                                </span>
+                                                            </div>
+                                                            {bug.assignedTo?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Assigned To:</span>
+                                                                    <span className="meta-value">{bug.assignedTo.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {bug.project?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Project:</span>
+                                                                    <span className="meta-value">{bug.project.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {bug.createdAt && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Reported:</span>
+                                                                    <span className="meta-value">
+                                                                        {new Date(bug.createdAt).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            {bug.resolvedAt && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Resolved:</span>
+                                                                    <span className="meta-value">
+                                                                        {new Date(bug.resolvedAt).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
 
                                     {modalType === 'performance' && (
@@ -579,28 +771,118 @@ const SubmitDeliverables = () => {
                                     )}
 
                                     {modalType === 'uat' && (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>ID</th>
-                                                    <th>Test Name</th>
-                                                    <th>Tester</th>
-                                                    <th>Status</th>
-                                                    <th>Feedback</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {modalData.map((uat, idx) => (
-                                                    <tr key={uat.id || idx}>
-                                                        <td>#{uat.id}</td>
-                                                        <td>{uat.testName || uat.name}</td>
-                                                        <td>{uat.tester?.name || uat.testerName || 'N/A'}</td>
-                                                        <td><span className={`badge badge-${uat.status?.toLowerCase()}`}>{uat.status}</span></td>
-                                                        <td>{uat.feedback || uat.comments || 'N/A'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className="uat-details">
+                                            {modalData.map((uat, idx) => (
+                                                <div key={uat.id || idx} className="uat-detail-card">
+                                                    <div className="uat-card-header">
+                                                        <div className="uat-title-section">
+                                                            <h4>#{uat.id} - {uat.title || uat.testName || uat.name || 'Untitled UAT'}</h4>
+                                                            <div className="uat-badges">
+                                                                <span className={`badge badge-${uat.status?.toLowerCase() || 'pending'}`}>
+                                                                    {uat.status || 'Pending'}
+                                                                </span>
+                                                                <span className={`badge badge-${uat.priority?.toLowerCase() || 'medium'}`}>
+                                                                    Priority: {uat.priority || 'Medium'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="uat-card-body">
+                                                        {uat.description && (
+                                                            <div className="uat-section">
+                                                                <strong>Description:</strong>
+                                                                <p>{uat.description}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {uat.steps && uat.steps.length > 0 && (
+                                                            <div className="uat-section">
+                                                                <strong>Test Steps:</strong>
+                                                                <ol className="uat-steps-list">
+                                                                    {uat.steps.map((step, stepIdx) => (
+                                                                        <li key={stepIdx}>
+                                                                            {typeof step === 'string' ? step : (step.step || step.description || 'Step ' + (stepIdx + 1))}
+                                                                        </li>
+                                                                    ))}
+                                                                </ol>
+                                                            </div>
+                                                        )}
+
+                                                        {uat.testSteps && uat.testSteps.length > 0 && !uat.steps && (
+                                                            <div className="uat-section">
+                                                                <strong>Test Steps:</strong>
+                                                                <ol className="uat-steps-list">
+                                                                    {uat.testSteps.map((step, stepIdx) => (
+                                                                        <li key={stepIdx}>
+                                                                            {typeof step === 'string' ? step : (step.step || step.description || 'Step ' + (stepIdx + 1))}
+                                                                        </li>
+                                                                    ))}
+                                                                </ol>
+                                                            </div>
+                                                        )}
+
+                                                        {uat.expectedResult && (
+                                                            <div className="uat-section">
+                                                                <strong>Expected Result:</strong>
+                                                                <p>{uat.expectedResult}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {uat.actualResult && (
+                                                            <div className="uat-section">
+                                                                <strong>Actual Result:</strong>
+                                                                <p>{uat.actualResult}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {(uat.feedback || uat.comments) && (
+                                                            <div className="uat-section">
+                                                                <strong>Feedback/Comments:</strong>
+                                                                <p>{uat.feedback || uat.comments}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="uat-meta">
+                                                            <div className="meta-item">
+                                                                <span className="meta-label">Tester:</span>
+                                                                <span className="meta-value">
+                                                                    {uat.tester?.name || uat.testerName || 'Not Assigned'}
+                                                                </span>
+                                                            </div>
+                                                            {uat.creator?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Created By:</span>
+                                                                    <span className="meta-value">{uat.creator.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {uat.project?.name && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Project:</span>
+                                                                    <span className="meta-value">{uat.project.name}</span>
+                                                                </div>
+                                                            )}
+                                                            {uat.createdAt && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Created:</span>
+                                                                    <span className="meta-value">
+                                                                        {new Date(uat.createdAt).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            {uat.lastUpdated && (
+                                                                <div className="meta-item">
+                                                                    <span className="meta-label">Last Updated:</span>
+                                                                    <span className="meta-value">
+                                                                        {new Date(uat.lastUpdated).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </>
                             )}

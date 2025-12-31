@@ -9,8 +9,8 @@ import {
   FiX,
   FiUser,
   FiSave,
-  FiAlertCircle,
-  FiChevronDown,
+  FiXCircle,
+  FiCheckCircle,
   FiLoader
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -19,6 +19,8 @@ import './Bug.css';
 import bugAPI from '../../services/bugAPI';
 import { projectsAPI } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
+
+
 
 // New Bug Form Component
 const NewBugForm = ({ onSave, onCancel, projects = [], users = [] }) => {
@@ -377,6 +379,26 @@ const Bug = () => {
     setShowNewBugForm(false);
   }, []);
 
+  // Update Status Handler
+  const handleStatusUpdate = async (e, id, newStatus) => {
+    e.stopPropagation();
+    try {
+      // Optimistic update
+      setBugs(prev => prev.map(bug =>
+        bug.id === id ? { ...bug, status: newStatus } : bug
+      ));
+
+      await bugAPI.updateStatus(id, newStatus);
+      toast.success(`Bug marked as ${newStatus.replace('_', ' ')}`);
+      loadBugs(); // Refresh data to ensure consistency
+    } catch (err) {
+      console.error('Error updating status:', err);
+      // Revert on error
+      loadBugs();
+      toast.error('Failed to update status');
+    }
+  };
+
   // Load bugs data
   const loadBugs = useCallback(async () => {
     setLoading(true);
@@ -642,11 +664,12 @@ const Bug = () => {
                       <th>Priority</th>
                       <th>Reported</th>
                       <th>Assigned To</th>
+                      <th className="text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredBugs.map(bug => (
-                      <tr key={bug.id} className="bug-row" onClick={() => {/* Add click handler for bug details */ }}>
+                      <tr key={bug.id} className={`bug-row ${bug.status === 'resolved' ? 'border-success-left' : ''}`}>
                         <td>#{bug.id}</td>
                         <td>
                           <div className="bug-title">{bug.title}</div>
@@ -673,6 +696,24 @@ const Bug = () => {
                         </td>
                         <td>
                           {users.find(u => u.id === bug.assigned_to)?.name || 'Unassigned'}
+                        </td>
+                        <td className="text-end">
+                          <div className="bug-actions d-flex gap-2 justify-content-end">
+                            <button
+                              className={`btn-icon-action pass ${bug.status === 'resolved' ? 'active' : ''}`}
+                              title="Resolve Bug"
+                              onClick={(e) => handleStatusUpdate(e, bug.id, 'resolved')}
+                            >
+                              <FiCheckCircle size={20} />
+                            </button>
+                            <button
+                              className={`btn-icon-action fail ${bug.status === 'closed' ? 'active' : ''}`}
+                              title="Close Bug"
+                              onClick={(e) => handleStatusUpdate(e, bug.id, 'closed')}
+                            >
+                              <FiXCircle size={20} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

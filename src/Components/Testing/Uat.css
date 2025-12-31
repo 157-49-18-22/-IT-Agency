@@ -516,3 +516,46 @@ form {
     flex-direction: column;
   }
 }
+
+/* Action Buttons */
+.btn-icon-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.btn-icon-action:hover {
+  background-color: #f1f5f9;
+}
+
+.btn-icon-action.pass:hover {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.btn-icon-action.pass.active {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.btn-icon-action.fail:hover {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+.btn-icon-action.fail.active {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+/* Row/Card highlighters */
+.uat-test-card.border-success-left {
+  border-left: 4px solid #166534;
+}

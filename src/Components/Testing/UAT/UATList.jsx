@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiSearch, FiFilter, FiCheck, FiX, FiClock, FiAlertTriangle } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiCheck, FiX, FiClock, FiAlertTriangle, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import { uatAPI } from '../../../services/api';
+import { toast } from 'react-toastify';
 import './UATList.css';
 
 const UATList = () => {
@@ -21,14 +22,33 @@ const UATList = () => {
       setUATs(response.data);
     } catch (error) {
       console.error('Error fetching UATs:', error);
+      toast.error('Failed to fetch UATs');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleStatusUpdate = async (e, id, newStatus) => {
+    e.stopPropagation();
+    try {
+      // Optimistic update
+      setUATs(prev => prev.map(uat =>
+        uat.id === id ? { ...uat, status: newStatus } : uat
+      ));
+
+      await uatAPI.updateStatus(id, newStatus);
+      toast.success(`UAT marked as ${newStatus}`);
+      fetchUATs(); // Refresh to ensure consistency
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
+      fetchUATs(); // Revert on error
+    }
+  };
+
   const filteredUATs = uats.filter(uat => {
     const matchesSearch = uat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         uat.description.toLowerCase().includes(searchTerm.toLowerCase());
+      uat.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || uat.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -37,13 +57,17 @@ const UATList = () => {
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',
       in_progress: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800'
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      completed: 'bg-green-100 text-green-800', // Forward compatibility
+      failed: 'bg-red-100 text-red-800' // Forward compatibility
     };
-    
+
     const statusText = {
       pending: 'Pending',
       in_progress: 'In Progress',
+      approved: 'Approved',
+      rejected: 'Rejected',
       completed: 'Completed',
       failed: 'Failed'
     };
@@ -95,8 +119,8 @@ const UATList = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
         </div>
@@ -109,13 +133,17 @@ const UATList = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tester</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUATs.length > 0 ? (
                 filteredUATs.map((uat) => (
-                  <tr key={uat.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/testing/uat/${uat.id}`)}>
+                  <tr
+                    key={uat.id}
+                    className={`hover:bg-gray-50 cursor-pointer ${uat.status === 'approved' ? 'border-l-4 border-l-green-600' : ''}`}
+                    onClick={() => navigate(`/testing/uat/${uat.id}`)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{uat.title}</div>
                       <div className="text-sm text-gray-500 truncate max-w-xs">{uat.description}</div>
@@ -130,15 +158,31 @@ const UATList = () => {
                       {uat.tester || 'Unassigned'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/testing/uat/${uat.id}/edit`);
-                        }}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex justify-end gap-2 items-center">
+                        <button
+                          className={`btn-icon-action pass ${uat.status === 'approved' ? 'active' : ''}`}
+                          title="Approve UAT"
+                          onClick={(e) => handleStatusUpdate(e, uat.id, 'approved')}
+                        >
+                          <FiCheckCircle size={20} />
+                        </button>
+                        <button
+                          className={`btn-icon-action fail ${uat.status === 'rejected' ? 'active' : ''}`}
+                          title="Reject UAT"
+                          onClick={(e) => handleStatusUpdate(e, uat.id, 'rejected')}
+                        >
+                          <FiXCircle size={20} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/testing/uat/${uat.id}/edit`);
+                          }}
+                          className="text-blue-600 hover:text-blue-900 ml-2"
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

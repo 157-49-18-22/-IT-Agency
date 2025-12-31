@@ -12,7 +12,8 @@ import {
   FiAlertCircle,
   FiSave,
   FiXCircle,
-  FiPlusCircle
+  FiPlusCircle,
+  FiCheckCircle
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -410,8 +411,42 @@ const Cases = () => {
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
-        draggable: true
       });
+    }
+  };
+
+  const handleStatusUpdate = async (e, id, newStatus) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Authentication required');
+
+      // Optimistic update
+      setTestCases(prevCases =>
+        prevCases.map(tc =>
+          tc.id === id ? { ...tc, status: newStatus } : tc
+        )
+      );
+
+      const response = await fetch(`http://localhost:5000/api/test-cases/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        fetchTestCases(); // Revert
+        throw new Error('Failed to update status');
+      }
+
+      toast.success(`Test case marked as ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
+      fetchTestCases(); // Revert
     }
   };
 
@@ -498,7 +533,7 @@ const Cases = () => {
           ) : (
             <div className="cases-list">
               {filteredCases.map(testCase => (
-                <div key={testCase.id} className="case-card">
+                <div key={testCase.id} className={`case-card ${testCase.status === 'passed' ? 'border-success' : ''}`}>
                   <div className="case-card-header">
                     <div className="case-meta-tags">
                       <span className={`status-badge ${testCase.status || 'not_run'}`}>
@@ -517,6 +552,22 @@ const Cases = () => {
                       <span className={`priority-badge ${testCase.priority?.toLowerCase() || 'medium'}`}>
                         {testCase.priority ? testCase.priority.charAt(0).toUpperCase() + testCase.priority.slice(1) : 'Medium'}
                       </span>
+                    </div>
+                    <div className="case-actions">
+                      <button
+                        className={`btn-icon-action pass ${testCase.status === 'passed' ? 'active' : ''}`}
+                        title="Mark as Passed"
+                        onClick={(e) => handleStatusUpdate(e, testCase.id, 'passed')}
+                      >
+                        <FiCheckCircle size={20} />
+                      </button>
+                      <button
+                        className={`btn-icon-action fail ${testCase.status === 'failed' ? 'active' : ''}`}
+                        title="Mark as Failed"
+                        onClick={(e) => handleStatusUpdate(e, testCase.id, 'failed')}
+                      >
+                        <FiXCircle size={20} />
+                      </button>
                     </div>
                   </div>
                   <h3>{testCase.title || 'Untitled Test Case'}</h3>

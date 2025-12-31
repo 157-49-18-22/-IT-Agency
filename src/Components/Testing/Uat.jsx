@@ -39,6 +39,7 @@ import {
   FiCalendar,
   FiClock as FiClockIcon,
   FiCheckCircle,
+  FiXCircle,
   FiAlertTriangle as FiAlertTriangleIcon,
   FiPauseCircle,
   FiCircle,
@@ -70,8 +71,10 @@ const priorityOptions = [
 const getStatusIcon = (status) => {
   switch (status) {
     case 'passed':
+    case 'approved':
       return <FiCheckCircle className="status-icon passed" />;
     case 'failed':
+    case 'rejected':
       return <FiX className="status-icon failed" />;
     case 'in_progress':
       return <FiZap className="status-icon in-progress" />;
@@ -275,7 +278,7 @@ const Uat = () => {
   const updateStatus = async (id, status) => {
     try {
       await uatAPI.updateTestStatus(id, status);
-      toast.success('Test case status updated successfully!');
+      toast.success(`Test case marked as ${status}`);
       fetchTests();
     } catch (err) {
       console.error('Error updating test case status:', err);
@@ -533,7 +536,7 @@ const Uat = () => {
       ) : (
         <div className="uat-test-list">
           {filteredTests.map(test => (
-            <div key={test.id} className="uat-test-card">
+            <div key={test.id} className={`uat-test-card ${test.status === 'approved' ? 'border-success-left' : ''}`}>
               <div className="test-card-header">
                 <div className="test-status">
                   {getStatusIcon(test.status)}
@@ -568,13 +571,32 @@ const Uat = () => {
                 </div>
               )}
 
-              <div className="test-actions">
-                <button className="btn-outline">
-                  <FiMessageSquare size={14} /> Add Comment
-                </button>
-                <div>
-                  <button className="btn-text">Edit</button>
-                  <button className="btn-text">Delete</button>
+              <div className="test-actions d-flex justify-content-between align-items-center w-100">
+                <div className="status-actions d-flex gap-2">
+                  <button
+                    className={`btn-icon-action pass ${test.status === 'approved' ? 'active' : ''}`}
+                    title="Approve"
+                    onClick={(e) => { e.stopPropagation(); updateStatus(test.id, 'approved'); }}
+                  >
+                    <FiCheckCircle size={20} />
+                  </button>
+                  <button
+                    className={`btn-icon-action fail ${test.status === 'rejected' ? 'active' : ''}`}
+                    title="Reject"
+                    onClick={(e) => { e.stopPropagation(); updateStatus(test.id, 'rejected'); }}
+                  >
+                    <FiXCircle size={20} />
+                  </button>
+                </div>
+
+                <div className="d-flex gap-2">
+                  <button className="btn-outline">
+                    <FiMessageSquare size={14} /> Add Comment
+                  </button>
+                  <div className="action-buttons-right">
+                    <button className="btn-text" onClick={() => handleEdit(test)}>Edit</button>
+                    <button className="btn-text" onClick={() => handleDelete(test.id)}>Delete</button>
+                  </div>
                 </div>
               </div>
             </div>

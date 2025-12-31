@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { FiCheck, FiX, FiEye, FiDownload, FiMessageCircle } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiCheck, FiX, FiClock, FiEye, FiDownload, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import './ClientApprovals.css';
-import { approvalAPI, deliverablesAPI, projectsAPI } from '../../services/api';
+import { approvalAPI, deliverablesAPI, projectsAPI, testCasesAPI, bugsAPI, uatAPI } from '../../services/api';
 
 // Helper to categorize approvals (Moved outside component for access)
 const getCategory = (app) => {
@@ -40,6 +40,53 @@ export default function ClientApprovals() {
   const [selectedApproval, setSelectedApproval] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [filter, setFilter] = useState('Pending');
+  const [testingDetailsModal, setTestingDetailsModal] = useState(null); // { type: 'testcases'|'bugs'|'uat', approval: {} }
+  const [modalData, setModalData] = useState([]);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // Fetch details when modal opens
+  useEffect(() => {
+    if (testingDetailsModal?.approval) {
+      const fetchDetails = async () => {
+        setModalLoading(true);
+        try {
+          // Robustly get projectId
+          const app = testingDetailsModal.approval;
+          // projectId might be direct property or inside project object
+          const projectId = app.projectId || (typeof app.project === 'object' ? app.project.id : app.project);
+
+          if (!projectId) {
+            console.error('No Project ID found for approval:', app);
+            setModalData([]);
+            setModalLoading(false);
+            return;
+          }
+
+          let response;
+          if (testingDetailsModal.type === 'testcases') {
+            response = await testCasesAPI.getTestCases({ projectId });
+          } else if (testingDetailsModal.type === 'bugs') {
+            response = await bugsAPI.getBugs({ projectId });
+          } else if (testingDetailsModal.type === 'uat') {
+            response = await uatAPI.getUATs({ projectId });
+          }
+
+          // Handle API response structure (usually { data: [...] } or just [...])
+          const data = response?.data?.data || response?.data || [];
+          setModalData(Array.isArray(data) ? data : []);
+        } catch (error) {
+          console.error('Error fetching details:', error);
+          setModalData([]);
+        } finally {
+          setModalLoading(false);
+        }
+      };
+
+      fetchDetails();
+    } else {
+      setModalData([]);
+    }
+  }, [testingDetailsModal]);
 
   useEffect(() => {
     const fetchApprovals = async () => {
@@ -59,7 +106,8 @@ export default function ClientApprovals() {
         // Normalize deliverables to match approval structure
         const normalizedDeliverables = Array.isArray(deliverablesData) ? deliverablesData.map(d => ({
           ...d,
-          id: d.id, // Ensure ID uniqueness if possible, or handle collision
+          id: d.id,
+          uniqueId: `del - ${d.id} `, // Create unique key for React
           title: d.name,
           status: d.status,
           priority: 'Normal', // Default
@@ -74,7 +122,12 @@ export default function ClientApprovals() {
           }] : []
         })) : [];
 
-        const merged = [...(Array.isArray(legacyData) ? legacyData : []), ...normalizedDeliverables];
+        const legacyWithUniqueIds = Array.isArray(legacyData) ? legacyData.map(d => ({
+          ...d,
+          uniqueId: `leg - ${d.id} ` // Create unique key for React
+        })) : [];
+
+        const merged = [...legacyWithUniqueIds, ...normalizedDeliverables];
 
         // Sort by date desc
         merged.sort((a, b) => new Date(b.createdAt || b.requestedDate) - new Date(a.createdAt || a.requestedDate));
@@ -182,8 +235,8 @@ export default function ClientApprovals() {
       }
 
       // Refresh both lists logic is in fetchApprovals, so verify triggering re-fetch?
-      // For now, let's manually update local state or reload. 
-      // Ideally call fetchApprovals() again, but it's inside useEffect. 
+      // For now, let's manually update local state or reload.
+      // Ideally call fetchApprovals() again, but it's inside useEffect.
       // We can move fetch logic outside useEffect or essentially just reload window or filter local state.
 
       setApprovals(prev => prev.map(app =>
@@ -257,7 +310,7 @@ export default function ClientApprovals() {
         {['All', 'UI/UX', 'Development', 'Testing'].map(cat => (
           <button
             key={cat}
-            className={`category-tab ${categoryFilter === cat ? 'active' : ''}`}
+            className={`category - tab ${categoryFilter === cat ? 'active' : ''} `}
             onClick={() => setCategoryFilter(cat)}
           >
             {cat}
@@ -290,7 +343,7 @@ export default function ClientApprovals() {
         {['Pending', 'Approved', 'Rejected', 'Completed', 'All'].map(f => (
           <button
             key={f}
-            className={`filter-btn ${filter === f ? 'active' : ''}`}
+            className={`filter - btn ${filter === f ? 'active' : ''} `}
             onClick={() => setFilter(f)}
           >
             {f}
@@ -301,7 +354,7 @@ export default function ClientApprovals() {
       {/* Approvals List */}
       <div className="approvals-list">
         {filteredApprovals.map(approval => (
-          <div key={approval.id} className={`approval-card ${approval.status.toLowerCase()}`}>
+          <div key={approval.uniqueId || approval.id} className={`approval-card ${approval.status.toLowerCase()}`}>
             <div className="approval-header-row">
               <div className="approval-meta">
                 <span className={`type-badge ${approval.type.toLowerCase().replace(' ', '-')}`}>
@@ -404,21 +457,83 @@ export default function ClientApprovals() {
                       </div>
                     );
                   })}
+                </div >
+              </div >
+            )}
+
+            {
+              approval.notes && (
+                <div className="approval-notes">
+                  <strong>Notes:</strong> {approval.notes}
                 </div>
-              </div>
-            )}
+              )
+            }
 
-            {approval.notes && (
-              <div className="approval-notes">
-                <strong>Notes:</strong> {approval.notes}
-              </div>
-            )}
+            {
+              approval.feedback && (
+                <div className="approval-feedback">
+                  <strong>Your Feedback:</strong> {approval.feedback}
+                </div>
+              )
+            }
 
-            {approval.feedback && (
-              <div className="approval-feedback">
-                <strong>Your Feedback:</strong> {approval.feedback}
-              </div>
-            )}
+            {/* Testing Preview for Testing approvals */}
+            {
+              (() => {
+                const category = getCategory(approval);
+                const isTestingRelated = category === 'Testing' ||
+                  approval.type === 'Stage Transition' ||
+                  approval.title?.toLowerCase().includes('testing');
+
+                console.log('Approval:', approval.title, 'Category:', category, 'Type:', approval.type, 'Show Testing:', isTestingRelated);
+
+                return isTestingRelated ? (
+                  <div className="testing-preview-section">
+                    <div className="testing-preview-header">
+                      <strong>Testing Status:</strong>
+                      <small style={{ marginLeft: '8px', color: '#64748b', fontWeight: 'normal' }}>
+                        Click on items to view details
+                      </small>
+                    </div>
+                    <div className="testing-preview-items">
+                      <span
+                        className="testing-preview-item clickable"
+                        onClick={() => setTestingDetailsModal({ type: 'testcases', approval })}
+                        title="Click to view test cases"
+                      >
+                        <FiCheck style={{ color: '#059669' }} />
+                        <small>Test Cases</small>
+                        <FiEye style={{ color: '#94a3b8', marginLeft: '4px' }} size={14} />
+                      </span>
+                      <span
+                        className="testing-preview-item clickable"
+                        onClick={() => setTestingDetailsModal({ type: 'bugs', approval })}
+                        title="Click to view bugs"
+                      >
+                        <FiCheck style={{ color: '#059669' }} />
+                        <small>Bugs Resolved</small>
+                        <FiEye style={{ color: '#94a3b8', marginLeft: '4px' }} size={14} />
+                      </span>
+                      <span
+                        className="testing-preview-item clickable"
+                        onClick={() => setTestingDetailsModal({ type: 'uat', approval })}
+                        title="Click to view UAT results"
+                      >
+                        <FiCheck style={{ color: '#059669' }} />
+                        <small>UAT</small>
+                        <FiEye style={{ color: '#94a3b8', marginLeft: '4px' }} size={14} />
+                      </span>
+                    </div>
+                    {(approval.title?.includes('INCOMPLETE') || approval.title?.includes('⚠️')) && (
+                      <div className="incomplete-warning">
+                        <FiX style={{ color: '#f59e0b' }} />
+                        <span>Warning: Testing submitted incomplete</span>
+                      </div>
+                    )}
+                  </div>
+                ) : null;
+              })()
+            }
 
             <div className="approval-actions">
               {approval.status.includes('Pending') ? (
@@ -445,90 +560,182 @@ export default function ClientApprovals() {
                 </button>
               )}
             </div>
-          </div>
+          </div >
         ))}
 
-        {filteredApprovals.length === 0 && (
-          <div className="empty-state">
-            <p>No {filter.toLowerCase()} approvals</p>
-          </div>
-        )}
-      </div>
+        {
+          filteredApprovals.length === 0 && (
+            <div className="empty-state">
+              <p>No {filter.toLowerCase()} approvals</p>
+            </div>
+          )
+        }
+      </div >
 
       {/* Modal */}
-      {selectedApproval && (
-        <div className="modal-overlay" onClick={() => setSelectedApproval(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedApproval.title || selectedApproval.name}</h2>
-              <button className="modal-close" onClick={() => setSelectedApproval(null)}>×</button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h3>Description</h3>
-                <p>{selectedApproval.description}</p>
+      {
+        selectedApproval && (
+          <div className="modal-overlay" onClick={() => setSelectedApproval(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{selectedApproval.title || selectedApproval.name}</h2>
+                <button className="modal-close" onClick={() => setSelectedApproval(null)}>×</button>
               </div>
 
-              <div className="modal-section">
-                <h3>Details</h3>
-                <div className="modal-details-grid">
-                  <div><strong>Type:</strong> {selectedApproval.type}</div>
-                  <div><strong>Stage:</strong> {selectedApproval.stage || selectedApproval.phase}</div>
-                  <div><strong>Priority:</strong> {selectedApproval.priority || 'Normal'}</div>
-                  <div><strong>Status:</strong> {selectedApproval.status}</div>
-                  <div><strong>Requested by:</strong> {selectedApproval.requestedBy?.name || selectedApproval.requestedBy || 'N/A'}</div>
-                  <div><strong>Due Date:</strong> {selectedApproval.dueDate ? new Date(selectedApproval.dueDate).toLocaleDateString() : 'N/A'}</div>
-                </div>
-              </div>
-
-              {selectedApproval.notes && (
+              <div className="modal-body">
                 <div className="modal-section">
-                  <h3>Notes from Team</h3>
-                  <p>{selectedApproval.notes}</p>
+                  <h3>Description</h3>
+                  <p>{selectedApproval.description}</p>
                 </div>
-              )}
+
+                <div className="modal-section">
+                  <h3>Details</h3>
+                  <div className="modal-details-grid">
+                    <div><strong>Type:</strong> {selectedApproval.type}</div>
+                    <div><strong>Stage:</strong> {selectedApproval.stage || selectedApproval.phase}</div>
+                    <div><strong>Priority:</strong> {selectedApproval.priority || 'Normal'}</div>
+                    <div><strong>Status:</strong> {selectedApproval.status}</div>
+                    <div><strong>Requested by:</strong> {selectedApproval.requestedBy?.name || selectedApproval.requestedBy || 'N/A'}</div>
+                    <div><strong>Due Date:</strong> {selectedApproval.dueDate ? new Date(selectedApproval.dueDate).toLocaleDateString() : 'N/A'}</div>
+                  </div>
+                </div>
+
+                {selectedApproval.notes && (
+                  <div className="modal-section">
+                    <h3>Notes from Team</h3>
+                    <p>{selectedApproval.notes}</p>
+                  </div>
+                )}
+
+                {selectedApproval.status.includes('Pending') && (
+                  <div className="modal-section">
+                    <h3>Your Feedback</h3>
+                    <textarea
+                      className="feedback-textarea"
+                      value={feedback}
+                      onChange={e => setFeedback(e.target.value)}
+                      placeholder="Provide your feedback or approval comments..."
+                      rows="4"
+                    />
+                  </div>
+                )}
+
+                {selectedApproval.feedback && (
+                  <div className="modal-section">
+                    <h3>Your Previous Feedback</h3>
+                    <p>{selectedApproval.feedback}</p>
+                  </div>
+                )}
+              </div>
 
               {selectedApproval.status.includes('Pending') && (
-                <div className="modal-section">
-                  <h3>Your Feedback</h3>
-                  <textarea
-                    className="feedback-textarea"
-                    value={feedback}
-                    onChange={e => setFeedback(e.target.value)}
-                    placeholder="Provide your feedback or approval comments..."
-                    rows="4"
-                  />
-                </div>
-              )}
-
-              {selectedApproval.feedback && (
-                <div className="modal-section">
-                  <h3>Your Previous Feedback</h3>
-                  <p>{selectedApproval.feedback}</p>
+                <div className="modal-footer">
+                  <button className="btn-secondary" onClick={() => setSelectedApproval(null)}>
+                    Cancel
+                  </button>
+                  <button className="btn-reject-modal" onClick={() => handleReject(selectedApproval.id)}>
+                    <FiX /> Request Changes
+                  </button>
+                  <button className="btn-approve-modal" onClick={() => handleApprove(selectedApproval.id)}>
+                    <FiCheck /> Approve
+                  </button>
                 </div>
               )}
             </div>
+          </div>
+        )
+      }
 
-            {selectedApproval.status.includes('Pending') && (
+      {/* Testing Details Modal */}
+      {
+        testingDetailsModal && (
+          <div className="modal-overlay" onClick={() => setTestingDetailsModal(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>
+                  {testingDetailsModal.type === 'testcases' && '📋 Test Cases Details'}
+                  {testingDetailsModal.type === 'bugs' && '🐛 Bugs Details'}
+                  {testingDetailsModal.type === 'uat' && '✅ UAT Details'}
+                </h2>
+                <button className="modal-close" onClick={() => setTestingDetailsModal(null)}>×</button>
+              </div>
+
+              <div className="modal-body">
+                <div className="modal-section">
+                  <h3>
+                    Project: {
+                      typeof testingDetailsModal.approval?.project === 'object'
+                        ? (testingDetailsModal.approval?.project?.name || 'N/A')
+                        : (testingDetailsModal.approval?.project || testingDetailsModal.approval?.title || 'N/A')
+                    }
+                  </h3>
+                  <p style={{ color: '#6b7280', marginBottom: '20px' }}>
+                    {testingDetailsModal.type === 'testcases' && 'All test cases executed for this project'}
+                    {testingDetailsModal.type === 'bugs' && 'All bugs reported and resolved for this project'}
+                    {testingDetailsModal.type === 'uat' && 'User Acceptance Testing results for this project'}
+                  </p>
+
+                  <div style={{ marginTop: '10px' }}>
+                    {modalLoading ? (
+                      <div className="loading-spinner">Loading details...</div>
+                    ) : modalData.length === 0 ? (
+                      <p className="no-data">No data available for this category.</p>
+                    ) : (
+                      <div className="details-list">
+                        {testingDetailsModal.type === 'testcases' && modalData.map((tc, idx) => (
+                          <div key={idx} className="detail-card">
+                            <div className="detail-header">
+                              <h4>#{tc.id} - {tc.title || tc.name}</h4>
+                              <div className="badges">
+                                <span className={`badge status-${tc.status?.toLowerCase()}`}>{tc.status}</span>
+                                <span className={`badge priority-${tc.priority?.toLowerCase()}`}>{tc.priority}</span>
+                              </div>
+                            </div>
+                            {tc.description && <p className="detail-desc"><strong>Description:</strong> {tc.description}</p>}
+                            {tc.expectedResult && <p className="detail-desc"><strong>Expected:</strong> {tc.expectedResult}</p>}
+                          </div>
+                        ))}
+
+                        {testingDetailsModal.type === 'bugs' && modalData.map((bug, idx) => (
+                          <div key={idx} className="detail-card bug-card">
+                            <div className="detail-header">
+                              <h4>#{bug.id} - {bug.title || bug.description?.substring(0, 50)}</h4>
+                              <div className="badges">
+                                <span className={`badge severity-${bug.severity?.toLowerCase()}`}>{bug.severity}</span>
+                                <span className={`badge status-${bug.status?.toLowerCase()}`}>{bug.status}</span>
+                              </div>
+                            </div>
+                            {bug.stepsToReproduce && <p className="detail-desc"><strong>Steps:</strong> {bug.stepsToReproduce}</p>}
+                            {bug.actualBehavior && <p className="detail-desc"><strong>Actual:</strong> {bug.actualBehavior}</p>}
+                          </div>
+                        ))}
+
+                        {testingDetailsModal.type === 'uat' && modalData.map((uat, idx) => (
+                          <div key={idx} className="detail-card uat-card">
+                            <div className="detail-header">
+                              <h4>#{uat.id} - {uat.title || uat.scenario}</h4>
+                              <span className={`badge status-${uat.status?.toLowerCase()}`}>{uat.status}</span>
+                            </div>
+                            {uat.feedback && <p className="detail-desc"><strong>Feedback:</strong> {uat.feedback}</p>}
+                            {uat.testedBy && <p className="detail-meta">Tested by: {uat.testedBy.name || uat.testedBy}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="modal-footer">
-                <button className="btn-secondary" onClick={() => setSelectedApproval(null)}>
-                  Cancel
-                </button>
-                <button className="btn-reject-modal" onClick={() => handleReject(selectedApproval.id)}>
-                  <FiX /> Request Changes
-                </button>
-                <button className="btn-approve-modal" onClick={() => handleApprove(selectedApproval.id)}>
-                  <FiCheck /> Approve
+                <button className="btn-secondary" onClick={() => setTestingDetailsModal(null)}>
+                  Close
                 </button>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
-
 
 

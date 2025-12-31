@@ -307,6 +307,49 @@
     transform: none;
 }
 
+.btn-submit-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+.btn-submit-warning:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4) !important;
+}
+
+.force-submit-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    color: #92400e;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.force-submit-warning svg {
+    flex-shrink: 0;
+    color: #f59e0b;
+}
+
+.incomplete-items {
+    margin: 12px 0 0 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.incomplete-items li {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.incomplete-items li:last-child {
+    margin-bottom: 0;
+}
+
 .spin {
     animation: spin 1s linear infinite;
 }
@@ -581,6 +624,376 @@
     opacity: 0.9;
 }
 
+/* Test Case Detail Cards */
+.test-cases-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.test-case-detail-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.test-case-detail-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.test-case-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.test-case-title-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.2rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.test-case-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.test-case-body {
+    padding: 20px;
+}
+
+.test-case-section {
+    margin-bottom: 20px;
+}
+
+.test-case-section:last-child {
+    margin-bottom: 0;
+}
+
+.test-case-section strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.test-case-section p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.test-steps-list {
+    margin: 0;
+    padding-left: 24px;
+    color: #334155;
+}
+
+.test-steps-list li {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.test-steps-list li:last-child {
+    margin-bottom: 0;
+}
+
+.step-expected {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-left: 3px solid #059669;
+    border-radius: 4px;
+}
+
+.step-expected em {
+    color: #065f46;
+    font-size: 0.9rem;
+}
+
+.test-case-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+}
+
+.test-case-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.test-case-meta .meta-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.test-case-meta .meta-value {
+    font-size: 0.95rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Additional badge styles for test case types */
+.badge-functional {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.badge-integration {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.badge-regression {
+    background: #fce7f3;
+    color: #db2777;
+}
+
+.badge-not_run {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.badge-approved {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.badge-rejected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* UAT Detail Cards - Same styling as test cases for consistency */
+.uat-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.uat-detail-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.uat-detail-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.uat-card-header {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    padding: 20px;
+    border-bottom: 2px solid #fbbf24;
+}
+
+.uat-title-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.2rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.uat-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.uat-card-body {
+    padding: 20px;
+}
+
+.uat-section {
+    margin-bottom: 20px;
+}
+
+.uat-section:last-child {
+    margin-bottom: 0;
+}
+
+.uat-section strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.uat-section p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.uat-steps-list {
+    margin: 0;
+    padding-left: 24px;
+    color: #334155;
+}
+
+.uat-steps-list li {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.uat-steps-list li:last-child {
+    margin-bottom: 0;
+}
+
+.uat-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+}
+
+.uat-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.uat-meta .meta-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.uat-meta .meta-value {
+    font-size: 0.95rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Bug Detail Cards - Red theme for bugs */
+.bugs-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bug-detail-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.bug-detail-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.bug-card-header {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    padding: 20px;
+    border-bottom: 2px solid #f87171;
+}
+
+.bug-title-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.2rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.bug-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.bug-card-body {
+    padding: 20px;
+}
+
+.bug-section {
+    margin-bottom: 20px;
+}
+
+.bug-section:last-child {
+    margin-bottom: 0;
+}
+
+.bug-section strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bug-section p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.bug-steps {
+    white-space: pre-wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #dc2626;
+}
+
+.bug-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+}
+
+.bug-meta .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bug-meta .meta-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.bug-meta .meta-value {
+    font-size: 0.95rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
 @media (max-width: 768px) {
     .project-header {
         flex-direction: column;
@@ -614,5 +1027,32 @@
     .data-table th,
     .data-table td {
         padding: 10px 8px;
+    }
+
+    .test-case-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .test-case-badges {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .uat-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .uat-badges {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bug-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .bug-badges {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
