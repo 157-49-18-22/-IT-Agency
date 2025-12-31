@@ -18,7 +18,8 @@ const DeveloperDeliverables = () => {
     const [submitData, setSubmitData] = useState({
         title: '',
         description: '',
-        notes: ''
+        notes: '',
+        repositoryUrl: ''
     });
 
     useEffect(() => {
@@ -125,6 +126,11 @@ const DeveloperDeliverables = () => {
             return;
         }
 
+        if (!submitData.repositoryUrl) {
+            toast.error('Please enter the Repository URL');
+            return;
+        }
+
         try {
             const deliverableData = {
                 projectId: selectedProject.id,
@@ -135,7 +141,7 @@ const DeveloperDeliverables = () => {
                 status: 'Pending Approval', // Matched to Database Enum
                 type: 'Code', // Enum value
                 // Adding required fields for model validation
-                fileUrl: '#repository',
+                fileUrl: submitData.repositoryUrl || '#repository',
                 fileName: 'Repository Code',
                 fileSize: 0,
                 fileType: 'code/repository'
@@ -146,7 +152,7 @@ const DeveloperDeliverables = () => {
             if (response.data.success) {
                 toast.success('Deliverable submitted for client review!');
                 setShowSubmitModal(false);
-                setSubmitData({ title: '', description: '', notes: '' });
+                setSubmitData({ title: '', description: '', notes: '', repositoryUrl: '' });
                 setSelectedProject(null);
 
                 // Refresh lists
@@ -366,6 +372,18 @@ const DeveloperDeliverables = () => {
                             </div>
 
                             <div className="form-group">
+                                <label>Repository URL *</label>
+                                <input
+                                    type="url"
+                                    value={submitData.repositoryUrl}
+                                    onChange={(e) => setSubmitData({ ...submitData, repositoryUrl: e.target.value })}
+                                    placeholder="https://github.com/..."
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
+                                />
+                            </div>
+
+                            <div className="form-group">
                                 <label>Description</label>
                                 <textarea
                                     value={submitData.description}
@@ -391,7 +409,7 @@ const DeveloperDeliverables = () => {
                                 <button type="button" onClick={() => setShowSubmitModal(false)} className="btn-secondary">
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn-primary" style={{ background: '#667eea' }}>
+                                <button type="button" onClick={handleSubmit} className="btn-primary" style={{ background: '#667eea' }}>
                                     <FiSend /> Submit for Review
                                 </button>
                             </div>

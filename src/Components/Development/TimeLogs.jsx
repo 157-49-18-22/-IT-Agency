@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { FiClock, FiPlay, FiPause, FiSquare, FiPlus, FiCalendar, FiFilter, FiDownload, FiTrash } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
-import { timeLogsAPI } from '../../services/api';
+import { timeLogsAPI, projectsAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import './TimeLogs.css';
 
@@ -12,11 +12,15 @@ const TimeLogs = () => {
 
     const [timeLogs, setTimeLogs] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
-    const [myProjects, setMyProjects] = useState([]);
+    const [myProjects, setMyProjects] = useState([
+        { id: 1, name: 'karma', projectName: 'karma' },
+        { id: 2, name: 'web development', projectName: 'web development' }
+    ]);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerInterval, setTimerInterval] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [currentLogId, setCurrentLogId] = useState(null);
     const [filterDate, setFilterDate] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -30,21 +34,68 @@ const TimeLogs = () => {
 
     // Load approved projects
     useEffect(() => {
-        if (currentUser?.id) {
-            const allProjects = getProjectsByUser(currentUser.id);
+        const loadProjects = async () => {
+            if (!currentUser?.id) return;
+
+            // Try getting from context first
+            let allProjects = getProjectsByUser(currentUser.id);
+            console.log('Projects from context:', allProjects);
+
+            // If context returns empty, fetch from API directly
+            if (!allProjects || allProjects.length === 0) {
+                try {
+                    console.log('Context empty, fetching from API...');
+                    const response = await projectsAPI.getAll();
+                    const apiProjects = response.data?.data || response.data || [];
+                    console.log('Projects from API:', apiProjects);
+
+                    // Filter for current user - check projectManager and teamMembers
+                    allProjects = apiProjects.filter(project => {
+                        const isProjectManager = project.projectManagerId === currentUser.id;
+                        let isTeamMember = false;
+
+                        if (project.teamMembers) {
+                            try {
+                                const members = Array.isArray(project.teamMembers)
+                                    ? project.teamMembers
+                                    : JSON.parse(project.teamMembers);
+                                isTeamMember = members.includes(currentUser.id);
+                            } catch (e) {
+                                console.error('Error parsing teamMembers:', e);
+                            }
+                        }
+
+                        return isProjectManager || isTeamMember;
+                    });
+                    console.log('Filtered user projects:', allProjects);
+                } catch (error) {
+                    console.error('Error fetching projects from API:', error);
+                    return;
+                }
+            }
+
             const approvedProjects = allProjects.filter(project => {
                 const isApproved = project.currentStage === 'development' ||
                     project.currentStage === 'testing' ||
                     project.status === 'approved' ||
+                    project.status === 'Approved' ||
                     project.uiuxApproved === true;
                 return isApproved;
             });
 
+            console.log('Final approved projects:', approvedProjects);
+
             if (approvedProjects.length > 0) {
                 setMyProjects(approvedProjects);
-                setSelectedProject(approvedProjects[0]);
+                if (!selectedProject) setSelectedProject(approvedProjects[0]);
+            } else if (allProjects.length > 0) {
+                // If no approved projects, show all projects
+                setMyProjects(allProjects);
+                if (!selectedProject) setSelectedProject(allProjects[0]);
             }
-        }
+        };
+
+        loadProjects();
     }, [currentUser, getProjectsByUser]);
 
     // Load time logs
@@ -53,29 +104,53 @@ const TimeLogs = () => {
     }, [currentUser]);
 
     const fetchTimeLogs = async () => {
+        if (!currentUser?.id) return;
         try {
             setIsLoading(true);
-            const response = await timeLogsAPI.getLogs();
+            const response = await timeLogsAPI.getLogs({ userId: currentUser.id });
             if (response.data.success) {
-                setTimeLogs(response.data.data);
+                setTimeLogs(response.data.data || []);
             }
         } catch (error) {
             console.error("Error fetching time logs", error);
-            // toast.error("Failed to load time logs"); // Suppress initial load error if no logs exist yet
         } finally {
             setIsLoading(false);
         }
     }
 
     // Timer functions
-    const startTimer = () => {
+    const startTimer = async () => {
+        if (!selectedProject) {
+            toast.error("Please select a project first");
+            return;
+        }
         if (!isTimerRunning) {
-            const startTime = Date.now() - elapsedTime;
-            const interval = setInterval(() => {
-                setElapsedTime(Date.now() - startTime);
-            }, 1000);
-            setTimerInterval(interval);
-            setIsTimerRunning(true);
+            try {
+                // Create a new time log entry in the database
+                const logData = {
+                    projectId: selectedProject.id,
+                    description: `Working on ${selectedProject.name || selectedProject.projectName}`,
+                    startTime: new Date().toISOString(),
+                    isBillable: true
+                };
+
+                const response = await timeLogsAPI.createLog(logData);
+                if (response.data.success) {
+                    setCurrentLogId(response.data.data.id);
+                    toast.success("Timer started!");
+
+                    // Start the local timer
+                    const startTime = Date.now();
+                    const interval = setInterval(() => {
+                        setElapsedTime(Date.now() - startTime);
+                    }, 1000);
+                    setTimerInterval(interval);
+                    setIsTimerRunning(true);
+                }
+            } catch (error) {
+                console.error("Error starting timer:", error);
+                toast.error("Failed to start timer");
+            }
         }
     };
 
@@ -84,16 +159,48 @@ const TimeLogs = () => {
         setIsTimerRunning(false);
     };
 
-    const stopTimer = () => {
+    const stopTimer = async () => {
+        // 1. Stop local timer immediately
         clearInterval(timerInterval);
         setIsTimerRunning(false);
-        if (elapsedTime > 0) {
-            const totalSeconds = Math.floor(elapsedTime / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const finalElapsedTime = elapsedTime; // Capture current elapsed time
 
-            setNewLog(prev => ({ ...prev, hours, minutes }));
-            setShowAddModal(true);
+        // 2. Reset UI immediately so user sees 00:00:00
+        setElapsedTime(0);
+        setCurrentLogId(null);
+
+        if (finalElapsedTime > 0) {
+            try {
+                if (currentLogId) {
+                    // Scenario A: We have an active log ID, stop it
+                    const response = await timeLogsAPI.stopTimer(currentLogId);
+                    if (response.data.success) {
+                        toast.success("Time logged successfully!");
+                    }
+                } else {
+                    // Scenario B: We lost the log ID (e.g. refresh), but have elapsed time.
+                    // Create a new completed entry.
+                    const endTime = new Date();
+                    const startTime = new Date(endTime.getTime() - finalElapsedTime);
+
+                    const logData = {
+                        projectId: selectedProject?.id,
+                        description: `Working on ${selectedProject?.name || selectedProject?.projectName || 'Project'}`,
+                        startTime: startTime.toISOString(),
+                        endTime: endTime.toISOString(),
+                        duration: Math.floor(finalElapsedTime / 1000), // duration in seconds
+                        isBillable: true
+                    };
+                    await timeLogsAPI.createLog(logData);
+                    toast.success("Time logged successfully!");
+                }
+            } catch (error) {
+                console.error("Error saving time log:", error);
+                toast.error("Failed to save time log");
+            } finally {
+                // 3. Refresh logs to show the new entry
+                fetchTimeLogs();
+            }
         }
     };
 
@@ -118,7 +225,7 @@ const TimeLogs = () => {
         const startTimeCalculated = new Date(endTimeDate.getTime() - durationMinutes * 60000);
 
         const logData = {
-            projectId: selectedProject?.id || newLog.projectId,
+            projectId: newLog.projectId || selectedProject?.id,
             description: newLog.taskName + (newLog.description ? `: ${newLog.description}` : ''),
             startTime: startTimeCalculated.toISOString(),
             endTime: endTimeDate.toISOString(),
@@ -172,7 +279,26 @@ const TimeLogs = () => {
                     <p>Track your working hours and boost productivity</p>
                 </div>
                 <div className="header-actions">
-                    {myProjects.length > 0 && (
+                    <button className="btn-premium btn-primary" onClick={() => setShowAddModal(true)}>
+                        <FiPlus /> Add Manual Log
+                    </button>
+                </div>
+            </div>
+
+            {/* Timer Widget */}
+            <div className="timer-widget">
+                <div className="timer-header-row">
+                    <div className="timer-title">Active Session Timer</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                        <label style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: '#6b7280',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Choose Project:
+                        </label>
                         <div className="project-selector-wrapper">
                             <FiClock size={16} />
                             <select
@@ -183,23 +309,23 @@ const TimeLogs = () => {
                                     setSelectedProject(project);
                                 }}
                             >
-                                {myProjects.map(project => (
-                                    <option key={project.id} value={project.id}>
-                                        {project.projectName || project.name || `Project ${project.id}`}
-                                    </option>
-                                ))}
+                                {myProjects.length === 0 ? (
+                                    <option value="" disabled>No projects assigned yet</option>
+                                ) : (
+                                    <>
+                                        <option value="" disabled>Select a project...</option>
+                                        {myProjects.map(project => (
+                                            <option key={project.id} value={project.id}>
+                                                {project.projectName || project.name || `Project ${project.id}`}
+                                            </option>
+                                        ))}
+                                    </>
+                                )}
                             </select>
                         </div>
-                    )}
-                    <button className="btn-premium btn-primary" onClick={() => setShowAddModal(true)}>
-                        <FiPlus /> Add Manual Log
-                    </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Timer Widget */}
-            <div className="timer-widget">
-                <div className="timer-title">Active Session Timer</div>
                 <div className="timer-display">
                     {formatTime(elapsedTime)}
                 </div>

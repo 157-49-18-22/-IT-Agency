@@ -533,6 +533,123 @@ body,
   }
 }
 
+/* Time Tracking Widget */
+.time-tracking-widget {
+  padding: 16px;
+  background: #1e293b;
+  border-radius: 12px;
+  margin: 12px 14px;
+  border: 1px solid #334155;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.timer-display {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1.4rem;
+  /* Reduced size to prevent cutoff */
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 20px;
+  letter-spacing: 0;
+  background: #0f172a;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.timer-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  /* More space */
+  margin-bottom: 20px;
+}
+
+.timer-button {
+  width: 44px;
+  /* Slightly larger */
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.timer-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.15);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.timer-button:active {
+  transform: translateY(1px);
+}
+
+.timer-button.start {
+  background: #10b981;
+  color: white;
+}
+
+.timer-button.pause {
+  background: #f59e0b;
+  color: white;
+}
+
+.timer-button.stop {
+  background: #ef4444;
+  color: white;
+}
+
+.time-logs-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid #334155;
+  font-size: 0.8rem;
+}
+
+.time-logs-summary span {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.view-all {
+  color: #ffffff;
+  background-color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  /* Fix vertical alignment */
+  align-items: center;
+}
+
+.view-all:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.view-all:hover {
+  background: rgba(96, 165, 250, 0.1);
+  text-decoration: none;
+}
+
 /* =========================================
    DASHBOARD STYLES
    ========================================= */

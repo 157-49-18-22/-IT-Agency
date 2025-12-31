@@ -225,7 +225,7 @@ export const timeTrackingAPI = {
 // Client APIs
 export const clientAPI = {
   getAll: () => api.get('/clients'),
-  getDashboard: () => api.get('/client/dashboard'),
+  getDashboard: () => api.get('/clients/dashboard'),
   getStats: (clientId) => api.get(`/client/${clientId}/stats`)
 };
 

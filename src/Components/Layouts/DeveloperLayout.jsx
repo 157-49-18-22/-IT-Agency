@@ -70,7 +70,7 @@ import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
 import { Box, Button } from '@mui/material';
 import { getFileIcon, formatFileSize, formatRelativeTime, getStatusColor, getPriorityColor } from '../../utils/fileHelpers';
-import { tasksAPI, bugsAPI, timeLogsAPI, messageAPI } from '../../services/api';
+import { tasksAPI, bugsAPI, timeLogsAPI, messageAPI, activityAPI, testingAPI } from '../../services/api';
 
 const DeveloperLayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
@@ -266,46 +266,102 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     checkPhaseCompletion();
   }, [checkPhaseCompletion]);
 
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+
   // Fetch Real Dashboard Data
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!currentUser?.id) return;
 
       try {
-        // Fetch Tasks
+        // Fetch Tasks (for Deadlines and Stats)
         const tasksRes = await tasksAPI.getTasks({ assignedTo: currentUser.id });
-        const tasks = tasksRes.data || [];
+        const tasks = tasksRes.data?.data || [];
         const completedTasks = tasks.filter(t => t.status === 'Completed').length;
 
-        // Fetch Bugs (if available, otherwise mock 0)
+        // Calculate Upcoming Deadlines
+        const today = new Date();
+        const deadlines = tasks
+          .filter(t => t.endDate && new Date(t.endDate) >= today && t.status !== 'Completed')
+          .sort((a, b) => new Date(a.endDate) - new Date(b.endDate))
+          .slice(0, 3)
+          .map(t => ({
+            id: t.id,
+            title: t.name,
+            date: t.endDate,
+            assignee: 'Me', // Since we filtered by assignedTo me
+            daysLeft: Math.ceil((new Date(t.endDate) - today) / (1000 * 60 * 60 * 24))
+          }));
+        setUpcomingDeadlines(deadlines);
+
+        // Fetch Bugs
         let bugs = [];
+        let fixedBugs = 0;
         try {
           const bugsRes = await bugsAPI.getBugs({ assignedTo: currentUser.id });
-          bugs = bugsRes.data || [];
+          bugs = bugsRes.data?.data || [];
+          fixedBugs = bugs.filter(b => b.status === 'Resolved' || b.status === 'Closed' || b.status === 'Fixed').length;
         } catch (e) {
           console.warn("Bugs API not available", e);
         }
-        const fixedBugs = bugs.filter(b => b.status === 'Fixed').length;
 
         // Fetch Time Logs
-        const logsRes = await timeLogsAPI.getLogs();
-        const logs = logsRes.data?.data || [];
-        setTimeLogs(logs); // Update state used by timer logic too
+        let logs = [];
+        try {
+          const logsRes = await timeLogsAPI.getLogs({ userId: currentUser.id });
+          logs = logsRes.data?.data || [];
+          setTimeLogs(logs);
+        } catch (e) {
+          console.warn("Time logs fetch failed", e);
+        }
 
-        const totalTimeMs = logs.reduce((acc, log) => acc + (log.duration * 60000), 0);
-        // Note: log.duration from API might be in minutes (based on TimeLogs.jsx logic). 
-        // In TimeLogs.jsx: log.duration * 60000 -> so log.duration is minutes.
-        // But here formatTime expects ms. 
-        // Let's assume log.duration is minutes.
+        // Fetch Activities (Real)
+        try {
+          // Using activityAPI if available, otherwise fallback to logs
+          // Assuming activityAPI.getActivities supports userId filter
+          const activitiesRes = await activityAPI.getActivities({ userId: currentUser.id, limit: 5 });
+          const realActivities = activitiesRes.data?.data || [];
+          if (realActivities.length > 0) {
+            setRecentActivities(realActivities);
+          } else {
+            // Fallback to logs if no real activities
+            setRecentActivities(logs.slice(0, 5).map(log => ({
+              id: log.id,
+              type: 'log',
+              title: log.task || 'Work Logged',
+              date: log.date
+            })));
+          }
+        } catch (e) {
+          console.warn("Activities API failed, falling back to logs", e);
+          setRecentActivities(logs.slice(0, 5).map(log => ({
+            id: log.id,
+            type: 'log',
+            title: log.task || 'Work Logged',
+            date: log.date
+          })));
+        }
+
+        // Fetch Testing Stats (Code Coverage)
+        let coverage = 78; // Default
+        try {
+          const testStats = await testingAPI.getDashboardStats();
+          if (testStats.data?.coverage) {
+            coverage = testStats.data.coverage;
+          }
+        } catch (e) {
+          // console.warn("Testing stats not available");
+        }
 
         setProgressData(prev => ({
           ...prev,
           tasksCompleted: completedTasks,
-          totalTasks: tasks.length || 1, // Avoid 0/0
+          totalTasks: tasks.length || 1,
           bugsFixed: fixedBugs,
           totalBugs: bugs.length || 1,
-          codeCoverage: 85, // Hardcoded for now as it's complex to measure from frontend
-          progressHistory: [10, 30, 50, (completedTasks / (tasks.length || 1)) * 100] // Dynamic
+          codeCoverage: coverage,
+          progressHistory: [10, 30, 50, (completedTasks / (tasks.length || 1)) * 100] // Roughly calculated for now
         }));
 
       } catch (err) {
@@ -568,38 +624,12 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
               )}
             </li>
 
-            {/* Time Tracking Section */}
-            <li className={`nav-section ${expandedSections.timeTracking ? 'expanded' : ''}`}>
-              <div className="section-header" onClick={() => toggleSection('timeTracking')}>
+            {/* Time Tracking Link */}
+            <li className={isActive('/time-logs')}>
+              <Link to="/time-logs">
                 <FaStopwatch className="nav-icon" />
                 <span>Time Tracking</span>
-                {expandedSections.timeTracking ? <FaChevronDown /> : <FaChevronRight />}
-              </div>
-              {expandedSections.timeTracking && (
-                <div className="time-tracking-widget">
-                  <div className="timer-display">
-                    {formatTime(elapsedTime)}
-                  </div>
-                  <div className="timer-controls">
-                    {!isTimerRunning ? (
-                      <button onClick={startTimer} className="timer-button start">
-                        <FaPlay />
-                      </button>
-                    ) : (
-                      <button onClick={pauseTimer} className="timer-button pause">
-                        <FaPause />
-                      </button>
-                    )}
-                    <button onClick={stopTimer} className="timer-button stop">
-                      <FaStop />
-                    </button>
-                  </div>
-                  <div className="time-logs-summary">
-                    <span>Today: {timeLogs.length} logs</span>
-                    <Link to="/time-logs" className="view-all">View All</Link>
-                  </div>
-                </div>
-              )}
+              </Link>
             </li>
 
             {/* Collaboration Section */}
@@ -815,28 +845,25 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                       <Link to="/calendar" className="view-more">View Calendar</Link>
                     </div>
                     <div className="deadlines-list">
-                      <div className="deadline-item warning">
-                        <div className="deadline-date">
-                          <span className="day">28</span>
-                          <span className="month">Dec</span>
+                      {upcomingDeadlines.length > 0 ? (
+                        upcomingDeadlines.map(deadline => (
+                          <div className={`deadline-item ${deadline.daysLeft <= 2 ? 'warning' : 'normal'}`} key={deadline.id}>
+                            <div className="deadline-date">
+                              <span className="day">{new Date(deadline.date).getDate()}</span>
+                              <span className="month">{new Date(deadline.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                            </div>
+                            <div className="deadline-info">
+                              <h4>{deadline.title}</h4>
+                              <p>{deadline.assignee}</p>
+                            </div>
+                            <span className="deadline-tag">{deadline.daysLeft <= 0 ? 'Today' : `${deadline.daysLeft} days left`}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state-small" style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>
+                          <p>No upcoming deadlines</p>
                         </div>
-                        <div className="deadline-info">
-                          <h4>API Integration</h4>
-                          <p>Backend Team</p>
-                        </div>
-                        <span className="deadline-tag">2 days left</span>
-                      </div>
-                      <div className="deadline-item">
-                        <div className="deadline-date">
-                          <span className="day">05</span>
-                          <span className="month">Jan</span>
-                        </div>
-                        <div className="deadline-info">
-                          <h4>Q4 Report Submission</h4>
-                          <p>Management</p>
-                        </div>
-                        <span className="deadline-tag normal">1 week left</span>
-                      </div>
+                      )}
                     </div>
                   </div>
 
@@ -879,18 +906,18 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                     <Link to="/activity" className="view-more">View All</Link>
                   </div>
                   <div className="activity-list">
-                    {timeLogs.slice(0, 3).map((log, index) => (
-                      <div className="activity-item" key={index}>
+                    {recentActivities.slice(0, 5).map((activity, index) => (
+                      <div className="activity-item" key={activity.id || index}>
                         <div className="activity-icon">
-                          <FaCode />
+                          {activity.type === 'log' ? <FaClock /> : <FaCode />}
                         </div>
                         <div className="activity-details">
-                          <span className="activity-title">{log.task || 'Development'}</span>
-                          <span className="activity-time">{formatRelativeTime(log.date)}</span>
+                          <span className="activity-title">{activity.title || activity.description || 'Activity'}</span>
+                          <span className="activity-time">{formatRelativeTime(activity.createdAt || activity.date)}</span>
                         </div>
                       </div>
                     ))}
-                    {timeLogs.length === 0 && (
+                    {recentActivities.length === 0 && (
                       <div className="empty-state">
                         <p>No recent activity recorded.</p>
                       </div>

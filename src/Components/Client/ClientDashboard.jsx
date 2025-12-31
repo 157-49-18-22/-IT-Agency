@@ -1,37 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaClock, FaExclamationTriangle, FaDownload, FaEye } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { clientAPI } from '../../services/api';
 import './ClientPortal.css';
 
 const ClientDashboard = () => {
-    const [projectData, setProjectData] = useState({
-        projectName: 'IT Agency Website',
-        currentStage: 'Development',
-        overallProgress: 65,
-        stages: {
-            uiux: { progress: 100, status: 'Completed' },
-            development: { progress: 65, status: 'In Progress' },
-            testing: { progress: 0, status: 'Not Started' }
-        },
-        nextMilestone: {
-            name: 'Development Phase Completion',
-            date: '2024-01-15',
-            daysRemaining: 12
-        }
-    });
-
-    const [recentActivity, setRecentActivity] = useState([
-        { id: 1, type: 'deliverable', message: 'New wireframes uploaded', time: '2 hours ago', icon: FaCheckCircle },
-        { id: 2, type: 'update', message: 'Development sprint 2 completed', time: '5 hours ago', icon: FaClock },
-        { id: 3, type: 'approval', message: 'Mockup approval pending', time: '1 day ago', icon: FaExclamationTriangle }
-    ]);
-
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [projectData, setProjectData] = useState(null);
+    const [recentActivity, setRecentActivity] = useState([]);
     const [quickStats, setQuickStats] = useState({
-        totalDeliverables: 24,
-        pendingApprovals: 3,
-        completedMilestones: 8,
-        totalMilestones: 12
+        totalDeliverables: 0,
+        pendingApprovals: 0,
+        completedMilestones: 0,
+        totalMilestones: 0
     });
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                const response = await clientAPI.getDashboard();
+                if (response.data.success) {
+                    const data = response.data.data;
+                    setProjectData({
+                        projectName: data.projectName,
+                        currentStage: data.currentStage,
+                        overallProgress: data.overallProgress,
+                        stages: data.stages,
+                        nextMilestone: data.nextMilestone
+                    });
+                    setQuickStats(data.quickStats);
+                    setRecentActivity(data.recentActivity);
+                } else {
+                    setError('Failed to load dashboard data');
+                }
+            } catch (err) {
+                console.error('Error fetching client dashboard:', err);
+                // Try to get specific message from backend
+                const errorMsg = err.response?.data?.message || 'Error connecting to server. Please try again later.';
+                setError(errorMsg);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    const formatTimeAgo = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes} mins ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hours ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} days ago`;
+    };
+
+    if (loading) {
+        return (
+            <div className="client-dashboard loading-container">
+                <div className="loader"></div>
+                <p>Loading your project dashboard...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="client-dashboard error-container">
+                <FaExclamationTriangle size={48} color="#e53e3e" />
+                <h3>Oops! Something went wrong</h3>
+                <p>{error}</p>
+                <button onClick={() => window.location.reload()} className="retry-btn">Try Again</button>
+            </div>
+        );
+    }
+
+    if (!projectData) {
+        return (
+            <div className="client-dashboard empty-container">
+                <h3>No Active Project Found</h3>
+                <p>Please contact your administrator if you believe this is an error.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="client-dashboard">
@@ -78,11 +136,13 @@ const ClientDashboard = () => {
                     <div className="stage-item">
                         <div className="stage-header">
                             <span className="stage-name">UI/UX Design</span>
-                            <span className="stage-status completed">{projectData.stages.uiux.status}</span>
+                            <span className={`stage-status ${projectData.stages.uiux.status.toLowerCase().replace(' ', '-')}`}>
+                                {projectData.stages.uiux.status}
+                            </span>
                         </div>
                         <div className="progress-bar">
                             <div
-                                className="progress-fill completed"
+                                className={`progress-fill ${projectData.stages.uiux.status.toLowerCase().replace(' ', '-')}`}
                                 style={{ width: `${projectData.stages.uiux.progress}%` }}
                             ></div>
                         </div>
@@ -92,11 +152,13 @@ const ClientDashboard = () => {
                     <div className="stage-item">
                         <div className="stage-header">
                             <span className="stage-name">Development</span>
-                            <span className="stage-status in-progress">{projectData.stages.development.status}</span>
+                            <span className={`stage-status ${projectData.stages.development.status.toLowerCase().replace(' ', '-')}`}>
+                                {projectData.stages.development.status}
+                            </span>
                         </div>
                         <div className="progress-bar">
                             <div
-                                className="progress-fill in-progress"
+                                className={`progress-fill ${projectData.stages.development.status.toLowerCase().replace(' ', '-')}`}
                                 style={{ width: `${projectData.stages.development.progress}%` }}
                             ></div>
                         </div>
@@ -106,11 +168,13 @@ const ClientDashboard = () => {
                     <div className="stage-item">
                         <div className="stage-header">
                             <span className="stage-name">Testing</span>
-                            <span className="stage-status not-started">{projectData.stages.testing.status}</span>
+                            <span className={`stage-status ${projectData.stages.testing.status.toLowerCase().replace(' ', '-')}`}>
+                                {projectData.stages.testing.status}
+                            </span>
                         </div>
                         <div className="progress-bar">
                             <div
-                                className="progress-fill not-started"
+                                className={`progress-fill ${projectData.stages.testing.status.toLowerCase().replace(' ', '-')}`}
                                 style={{ width: `${projectData.stages.testing.progress}%` }}
                             ></div>
                         </div>
@@ -168,17 +232,21 @@ const ClientDashboard = () => {
                 <div className="activity-card">
                     <h3>Recent Activity</h3>
                     <div className="activity-list">
-                        {recentActivity.map(activity => (
-                            <div key={activity.id} className="activity-item">
-                                <div className={`activity-icon ${activity.type}`}>
-                                    <activity.icon />
+                        {recentActivity.length > 0 ? (
+                            recentActivity.map(activity => (
+                                <div key={activity.id} className="activity-item">
+                                    <div className={`activity-icon ${activity.type || 'update'}`}>
+                                        <FaClock />
+                                    </div>
+                                    <div className="activity-content">
+                                        <p>{activity.message}</p>
+                                        <span className="activity-time">{formatTimeAgo(activity.time)}</span>
+                                    </div>
                                 </div>
-                                <div className="activity-content">
-                                    <p>{activity.message}</p>
-                                    <span className="activity-time">{activity.time}</span>
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p className="no-activity">No recent activity found.</p>
+                        )}
                     </div>
                     <Link to="/client/progress" className="view-all-link">
                         View All Activity →
@@ -193,13 +261,17 @@ const ClientDashboard = () => {
                             <FaClock size={48} />
                         </div>
                         <h4>{projectData.nextMilestone.name}</h4>
-                        <p className="milestone-date">
-                            Due: {new Date(projectData.nextMilestone.date).toLocaleDateString('en-US', {
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric'
-                            })}
-                        </p>
+                        {projectData.nextMilestone.date ? (
+                            <p className="milestone-date">
+                                Due: {new Date(projectData.nextMilestone.date).toLocaleDateString('en-US', {
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                })}
+                            </p>
+                        ) : (
+                            <p className="milestone-date">No due date set</p>
+                        )}
                         <div className="days-remaining">
                             <span className="days-number">{projectData.nextMilestone.daysRemaining}</span>
                             <span className="days-label">days remaining</span>

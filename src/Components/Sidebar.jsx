@@ -116,12 +116,7 @@ const Sidebar = () => {
               </Link>
             </li>
 
-            <li className={isActive('/dashboard-enhanced')}>
-              <Link to="/dashboard-enhanced">
-                <FaChartLine className="nav-icon" />
-                <span>Enhanced Dashboard</span>
-              </Link>
-            </li>
+
 
             {/* Projects Section */}
             <li className={`nav-section ${expandedSections.projects ? 'expanded' : ''}`}>
