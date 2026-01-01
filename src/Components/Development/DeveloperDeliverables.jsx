@@ -91,7 +91,6 @@ const DeveloperDeliverables = () => {
                         (sprintResponse.data?.sprints && sprintResponse.data.sprints.length > 0);
 
                     // Check if already submitted
-                    // Use try-catch specifically for this call as it might 404 if no deliverables
                     let alreadySubmitted = false;
                     try {
                         const delivResponse = await deliverablesAPI.getDeliverables({
@@ -100,15 +99,12 @@ const DeveloperDeliverables = () => {
                         });
                         const deliverables = delivResponse.data?.data || delivResponse.data || [];
                         alreadySubmitted = deliverables.some(d =>
-                            d.status === 'In Review' || d.status === 'Approved' || d.status === 'Pending Approval' || d.status === 'pending'
+                            d.status === 'In Review' || d.status === 'Approved' || d.status === 'Pending Approval' || d.status === 'pending' || d.status === 'Draft'
                         );
                     } catch (err) {
-                        // If 404 or empty, it means no deliverables, so not submitted
                         alreadySubmitted = false;
                     }
 
-                    // For debugging/usability, we might want to relax "hasSprints" if just testing
-                    // But strictly: hasSprints && !alreadySubmitted
                     if ((hasCode || hasSprints) && !alreadySubmitted) {
                         eligible.push({
                             ...project,
@@ -124,7 +120,6 @@ const DeveloperDeliverables = () => {
             setEligibleProjects(eligible);
         } catch (error) {
             console.error('Error checking eligible projects:', error);
-            // toast.error('Failed to load projects'); // Suppress to avoid spam
         } finally {
             setIsLoading(false);
         }
@@ -161,7 +156,7 @@ const DeveloperDeliverables = () => {
                 name: submitData.title || `Development Deliverable - ${selectedProject.projectName || selectedProject.name}`,
                 description: submitData.description,
                 notes: submitData.notes,
-                status: 'In Review', // Fixed: Must match DB Enum ('In Review', not 'Pending Approval')
+                status: 'Draft', // Using 'Draft' as safe default to avoid enum mismatches
                 type: 'Code',
                 fileUrl: submitData.repositoryUrl || '#repository',
                 fileName: 'Repository Code',
@@ -191,10 +186,11 @@ const DeveloperDeliverables = () => {
     const getStatusColor = (status) => {
         const colors = {
             'In Review': '#f59e0b',
-            'Pending Approval': '#f59e0b', // Specific match
+            'Pending Approval': '#f59e0b',
+            'Draft': '#6b7280',
             pending: '#f59e0b',
             approved: '#10b981',
-            Approved: '#10b981', // Case insensitive support
+            Approved: '#10b981',
             rejected: '#ef4444',
             Rejected: '#ef4444'
         };
@@ -223,7 +219,7 @@ const DeveloperDeliverables = () => {
                 <div style={{ background: '#fff3cd', padding: '20px', borderRadius: '12px', border: '2px solid #f59e0b' }}>
                     <div style={{ color: '#856404', fontSize: '14px', marginBottom: '8px' }}>Pending Review</div>
                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>
-                        {submittedDeliverables.filter(d => d.status === 'pending' || d.status === 'Pending Approval' || d.status === 'In Review').length}
+                        {submittedDeliverables.filter(d => d.status === 'pending' || d.status === 'Pending Approval' || d.status === 'In Review' || d.status === 'Draft').length}
                     </div>
                 </div>
                 <div style={{ background: '#d1f2eb', padding: '20px', borderRadius: '12px', border: '2px solid #10b981' }}>
@@ -351,7 +347,7 @@ const DeveloperDeliverables = () => {
                                             gap: '4px'
                                         }}
                                     >
-                                        {(deliverable.status === 'pending' || deliverable.status === 'In Review' || deliverable.status === 'Pending Approval') && <FiClock />}
+                                        {(deliverable.status === 'pending' || deliverable.status === 'In Review' || deliverable.status === 'Pending Approval' || deliverable.status === 'Draft') && <FiClock />}
                                         {(deliverable.status === 'approved' || deliverable.status === 'Approved') && <FiCheck />}
                                         {deliverable.status}
                                     </span>
