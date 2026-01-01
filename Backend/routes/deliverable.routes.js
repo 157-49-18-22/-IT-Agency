@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
   try {
     const { projectId, phase, status } = req.query;
     const where = { isArchived: false };
-    
+
     if (projectId) where.projectId = projectId;
     if (phase) where.phase = phase;
     if (status) where.status = status;
@@ -43,26 +43,27 @@ router.get('/', async (req, res) => {
 // Create a new deliverable
 router.post('/', async (req, res) => {
   const transaction = await sequelize.transaction();
-  
+
   try {
+    console.log('Creating deliverable with body:', req.body);
     const { projectId } = req.body;
-    
+
     // Check if project exists
     const project = await Project.findByPk(projectId, { transaction });
     if (!project) {
       await transaction.rollback();
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Project not found' 
+      return res.status(400).json({
+        success: false,
+        message: 'Project not found'
       });
     }
-    
+
     // Create the deliverable
-    const deliverable = await Deliverable.create({ 
+    const deliverable = await Deliverable.create({
       ...req.body,
-      uploadedById: req.user.id 
+      uploadedById: req.user.id
     }, { transaction });
-    
+
     // Fetch the created deliverable with associations
     const createdDeliverable = await Deliverable.findByPk(deliverable.id, {
       include: [
@@ -71,28 +72,45 @@ router.post('/', async (req, res) => {
       ],
       transaction
     });
-    
+
     // Commit the transaction
     await transaction.commit();
-    
+
     res.status(201).json({ success: true, data: createdDeliverable });
   } catch (error) {
     if (transaction && !transaction.finished) {
       await transaction.rollback();
     }
     console.error('Error creating deliverable:', error);
-    
-    // Handle foreign key constraint error
+    if (error.errors) {
+      console.error('Validation errors:', error.errors.map(e => e.message));
+    }
+
+    // Handle specific Sequelize errors
     if (error.name === 'SequelizeForeignKeyConstraintError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid project ID. Please provide a valid project ID.' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid project ID. Please provide a valid project ID.'
       });
     }
-    
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create deliverable. Please try again.' 
+
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error: ' + error.errors.map(e => e.message).join(', ')
+      });
+    }
+
+    if (error.name === 'SequelizeDatabaseError') {
+      return res.status(500).json({
+        success: false,
+        message: 'Database Error: ' + error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create deliverable: ' + error.message
     });
   }
 });
