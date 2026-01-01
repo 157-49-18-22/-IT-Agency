@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSend, FiCheck, FiClock, FiEye, FiImage, FiLayers, FiSmartphone, FiX, FiCalendar, FiUser } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../services/api';
+import { API_URL } from '../../config/endpoints';
 import './DesignDeliverables.css';
 
 export default function DesignDeliverables() {
@@ -17,23 +18,16 @@ export default function DesignDeliverables() {
     const fetchProjectsWithDesigns = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
 
             // Fetch all projects
-            const projectsResponse = await axios.get('/api/projects', config);
+            const projectsResponse = await api.get('/projects');
             const allProjects = projectsResponse.data?.data || [];
 
             // Fetch wireframes, mockups, and prototypes
             const [wireframesRes, mockupsRes, prototypesRes] = await Promise.all([
-                axios.get('/api/wireframes', config),
-                axios.get('/api/mockups', config),
-                axios.get('/api/prototypes', config)
+                api.get('/wireframes'),
+                api.get('/mockups'),
+                api.get('/prototypes')
             ]);
 
             const wireframes = wireframesRes.data?.data || [];
@@ -71,13 +65,6 @@ export default function DesignDeliverables() {
 
         try {
             setSubmitting(project.id);
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
 
             // Create approval request
             const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -113,7 +100,7 @@ export default function DesignDeliverables() {
                 ]
             };
 
-            await axios.post('/api/approvals', approvalData, config);
+            await api.post('/approvals', approvalData);
 
             alert('✅ Design submitted to client successfully!');
             fetchProjectsWithDesigns(); // Refresh
@@ -129,7 +116,9 @@ export default function DesignDeliverables() {
         const url = design.imageUrl || design.image_url;
         if (!url) return null;
         if (url.startsWith('http')) return url;
-        const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://itbackend-p8k1.onrender.com';
+
+        // Use API_URL from config and strip /api to get base URL
+        const baseUrl = API_URL.replace('/api', '');
         return `${baseUrl}${url}`;
     };
 

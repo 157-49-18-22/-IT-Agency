@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Client.css';
-import axios from 'axios';
+import api from '../../services/api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -33,27 +33,10 @@ const Client = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const clientsPerPage = 10;
 
-  // Create axios instance with auth header
-  const api = axios.create({
-    baseURL: window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
-
   // Fetch clients from API
   const fetchClients = async () => {
     setLoading(true);
     try {
-      // Ensure we have the latest token
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
       const response = await api.get('/clients', {
         params: {
           page: currentPage,
@@ -133,8 +116,6 @@ const Client = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Ensure we have the latest token
-      api.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
       if (editingClient) {
         // Update existing client
         const response = await api.put(`/clients/${editingClient.id}`, formData);
@@ -184,8 +165,7 @@ const Client = () => {
   const handleDelete = async (clientId) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       try {
-        const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
-        await axios.delete(`${apiUrl}/clients/${clientId}`);
+        await api.delete(`/clients/${clientId}`);
         setClients(clients.filter(client => client.id !== clientId));
         toast.success('Client deleted successfully!');
       } catch (error) {
