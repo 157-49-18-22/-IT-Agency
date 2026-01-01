@@ -8,14 +8,11 @@ import './TimeLogs.css';
 
 const TimeLogs = () => {
     const { currentUser } = useAuth();
-    const { getProjectsByUser } = useContext(ProjectContext);
+    const { getProjectsByUser, projects: contextProjects } = useContext(ProjectContext);
 
     const [timeLogs, setTimeLogs] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
-    const [myProjects, setMyProjects] = useState([
-        { id: 1, name: 'karma', projectName: 'karma' },
-        { id: 2, name: 'web development', projectName: 'web development' }
-    ]);
+    const [myProjects, setMyProjects] = useState([]);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerInterval, setTimerInterval] = useState(null);
@@ -32,71 +29,31 @@ const TimeLogs = () => {
         projectId: ''
     });
 
-    // Load approved projects
+    // Load projects
     useEffect(() => {
         const loadProjects = async () => {
-            if (!currentUser?.id) return;
+            let userProjects = [];
 
-            // Try getting from context first
-            let allProjects = getProjectsByUser(currentUser.id);
-            console.log('Projects from context:', allProjects);
-
-            // If context returns empty, fetch from API directly
-            if (!allProjects || allProjects.length === 0) {
-                try {
-                    console.log('Context empty, fetching from API...');
-                    const response = await projectsAPI.getAll();
-                    const apiProjects = response.data?.data || response.data || [];
-                    console.log('Projects from API:', apiProjects);
-
-                    // Filter for current user - check projectManager and teamMembers
-                    allProjects = apiProjects.filter(project => {
-                        const isProjectManager = project.projectManagerId === currentUser.id;
-                        let isTeamMember = false;
-
-                        if (project.teamMembers) {
-                            try {
-                                const members = Array.isArray(project.teamMembers)
-                                    ? project.teamMembers
-                                    : JSON.parse(project.teamMembers);
-                                isTeamMember = members.includes(currentUser.id);
-                            } catch (e) {
-                                console.error('Error parsing teamMembers:', e);
-                            }
-                        }
-
-                        return isProjectManager || isTeamMember;
-                    });
-                    console.log('Filtered user projects:', allProjects);
-                } catch (error) {
-                    console.error('Error fetching projects from API:', error);
-                    return;
-                }
+            if (currentUser?.id) {
+                userProjects = getProjectsByUser(currentUser.id);
             }
 
-            const approvedProjects = allProjects.filter(project => {
-                const isApproved = project.currentStage === 'development' ||
-                    project.currentStage === 'testing' ||
-                    project.status === 'approved' ||
-                    project.status === 'Approved' ||
-                    project.uiuxApproved === true;
-                return isApproved;
-            });
+            // Fallback to all projects if user has no specific assignments
+            if ((!userProjects || userProjects.length === 0) && contextProjects?.length > 0) {
+                userProjects = contextProjects;
+            }
 
-            console.log('Final approved projects:', approvedProjects);
-
-            if (approvedProjects.length > 0) {
-                setMyProjects(approvedProjects);
-                if (!selectedProject) setSelectedProject(approvedProjects[0]);
-            } else if (allProjects.length > 0) {
-                // If no approved projects, show all projects
-                setMyProjects(allProjects);
-                if (!selectedProject) setSelectedProject(allProjects[0]);
+            if (userProjects.length > 0) {
+                setMyProjects(userProjects);
+                // Select first project by default if none selected
+                if (!selectedProject) {
+                    setSelectedProject(userProjects[0]);
+                }
             }
         };
 
         loadProjects();
-    }, [currentUser, getProjectsByUser]);
+    }, [currentUser, getProjectsByUser, contextProjects]);
 
     // Load time logs
     useEffect(() => {
