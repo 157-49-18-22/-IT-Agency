@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheck, FiClock, FiEye, FiDownload } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../services/api';
 import './ApprovedProjects.css';
 
 export default function ApprovedProjects() {
@@ -14,16 +14,9 @@ export default function ApprovedProjects() {
     const fetchApprovedProjects = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
 
             // Fetch approved approvals
-            const approvalsRes = await axios.get('/api/approvals?status=Approved', config);
+            const approvalsRes = await api.get('/approvals?status=Approved');
             const approvedApprovals = approvalsRes.data?.data || approvalsRes.data || [];
 
             // Group by project
