@@ -537,7 +537,7 @@ export default function ClientApprovals() {
             }
 
             <div className="approval-actions">
-              {approval.status.includes('Pending') ? (
+              {(approval.status.includes('Pending') || approval.status === 'In Review') ? (
                 <>
                   <button className="btn-view" onClick={() => setSelectedApproval(approval)}>
                     <FiEye /> Review & Respond
@@ -608,7 +608,7 @@ export default function ClientApprovals() {
                   </div>
                 )}
 
-                {selectedApproval.status.includes('Pending') && (
+                {(selectedApproval.status.includes('Pending') || selectedApproval.status === 'In Review') && (
                   <div className="modal-section">
                     <h3>Your Feedback</h3>
                     <textarea
@@ -629,7 +629,7 @@ export default function ClientApprovals() {
                 )}
               </div>
 
-              {selectedApproval.status.includes('Pending') && (
+              {(selectedApproval.status.includes('Pending') || selectedApproval.status === 'In Review') && (
                 <div className="modal-footer">
                   <button className="btn-secondary" onClick={() => setSelectedApproval(null)}>
                     Cancel
