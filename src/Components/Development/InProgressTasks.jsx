@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiClock, FiCheckCircle, FiPlay, FiPause, FiEye, FiDownload } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../services/api';
 import './InProgressTasks.css';
 
 export default function InProgressTasks() {
@@ -15,16 +15,9 @@ export default function InProgressTasks() {
   const fetchInProgressProjects = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
 
       // Fetch approved approvals (these are ready for development)
-      const approvalsRes = await axios.get('/api/approvals?status=Approved', config);
+      const approvalsRes = await api.get('/approvals?status=Approved');
       const approvedApprovals = approvalsRes.data?.data || approvalsRes.data || [];
 
       // Group by project and mark as "In Progress"
@@ -120,8 +113,8 @@ export default function InProgressTasks() {
                   <span>{project.progress}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
+                  <div
+                    className="progress-fill"
                     style={{ width: `${project.progress}%` }}
                   ></div>
                 </div>
@@ -165,14 +158,14 @@ export default function InProgressTasks() {
 
               <div className="task-timer">
                 {activeTimer === project.id ? (
-                  <button 
+                  <button
                     className="timer-btn pause"
                     onClick={handlePauseTimer}
                   >
                     <FiPause /> Pause Timer
                   </button>
                 ) : (
-                  <button 
+                  <button
                     className="timer-btn start"
                     onClick={() => handleStartTimer(project.id)}
                   >

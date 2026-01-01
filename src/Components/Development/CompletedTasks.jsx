@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaTrophy, FaChartLine } from 'react-icons/fa';
-import axios from 'axios';
+import api from '../../services/api';
 import './TaskPages.css';
 
 const CompletedTasks = () => {
@@ -14,7 +14,7 @@ const CompletedTasks = () => {
     const fetchTasks = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('/api/tasks?status=completed');
+            const response = await api.get('/tasks?status=completed');
             setTasks(response.data.tasks || response.data || []);
         } catch (error) {
             console.error('Error fetching tasks:', error);
