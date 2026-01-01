@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV, FaLink } from 'react-icons/fa';
-import axios from 'axios';
+import api from '../../services/api';
 import './Prototypes.css';
 
 const Prototypes = () => {
@@ -30,13 +30,7 @@ const Prototypes = () => {
   const fetchPrototypes = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/prototypes', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get('/prototypes');
       const prototypesData = response.data?.data || [];
       setPrototypes(prototypesData);
     } catch (err) {
@@ -50,13 +44,7 @@ const Prototypes = () => {
   // Fetch projects from API
   const fetchProjects = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get('/projects');
       const projectsData = response.data?.data || [];
       setProjects(projectsData);
     } catch (err) {
@@ -151,22 +139,21 @@ const Prototypes = () => {
     try {
       setIsSubmitting(true);
       setError('');
-      const token = localStorage.getItem('token');
+
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
         },
       };
 
       if (currentPrototype.id) {
         // Update existing prototype
         console.log('Updating prototype:', currentPrototype.id);
-        await axios.put(`/api/prototypes/${currentPrototype.id}`, formData, config);
+        await api.put(`/prototypes/${currentPrototype.id}`, formData, config);
       } else {
         // Create new prototype
         console.log('Creating new prototype');
-        await axios.post('/api/prototypes', formData, config);
+        await api.post('/prototypes', formData, config);
       }
 
       setIsModalOpen(false);
@@ -207,7 +194,7 @@ const Prototypes = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this prototype?')) {
       try {
-        await axios.delete(`/api/prototypes/${id}`);
+        await api.delete(`/prototypes/${id}`);
         fetchPrototypes();
       } catch (err) {
         setError('Failed to delete prototype');
