@@ -29,66 +29,86 @@ export default function Sprints() {
     projectId: 1 // Will be updated from selected project
   });
 
-  // Load approved projects from database (matching "Approved Projects" page)
+  // Load projects with robust fallback
   useEffect(() => {
-    const fetchApprovedProjects = async () => {
+    const fetchProjects = async () => {
       if (!currentUser?.id) return;
 
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        const config = {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        };
+        let availableProjects = [];
 
-        // Fetch approved approvals from database (same as ApprovedProjects.jsx)
-        const response = await axios.get('/api/approvals?status=Approved', config);
-        const approvedApprovals = response.data?.data || response.data || [];
+        // 1. Try fetching approved projects first
+        try {
+          const approvalsRes = await axios.get(import.meta.env.VITE_API_URL + '/approvals?status=Approved', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const approvedData = approvalsRes.data?.data || approvalsRes.data || [];
 
-        console.log('Approved approvals from database:', approvedApprovals);
-
-        // Group by project
-        const projectMap = new Map();
-        approvedApprovals.forEach(approval => {
-          if (approval.projectId) {
-            if (!projectMap.has(approval.projectId)) {
+          const projectMap = new Map();
+          approvedData.forEach(approval => {
+            if (approval.projectId && !projectMap.has(approval.projectId)) {
               projectMap.set(approval.projectId, {
                 id: approval.projectId,
                 projectName: approval.project?.name || `Project ${approval.projectId}`,
-                uiuxApproved: true,
-                approvedDate: approval.approvedAt
+                uiuxApproved: true
               });
             }
+          });
+          availableProjects = Array.from(projectMap.values());
+        } catch (e) {
+          console.warn('Approvals fetch failed', e);
+        }
+
+        // 2. Fallback to Context/User Projects
+        if (availableProjects.length === 0) {
+          const userProjects = getProjectsByUser(currentUser.id);
+          if (userProjects && userProjects.length > 0) {
+            availableProjects = userProjects.map(p => ({
+              id: p.id,
+              projectName: p.name || p.projectName
+            }));
           }
-        });
+        }
 
-        const approvedProjects = Array.from(projectMap.values());
-        console.log('Approved projects for Sprint dropdown:', approvedProjects);
+        // 3. Fallback to ALL projects (for safety/admin)
+        if (availableProjects.length === 0) {
+          try {
+            const allRes = await axios.get(import.meta.env.VITE_API_URL + '/projects', {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            const allPrjs = allRes.data?.data || allRes.data || [];
+            availableProjects = allPrjs.map(p => ({
+              id: p.id,
+              projectName: p.name || p.projectName
+            }));
+          } catch (e) {
+            console.error('Final fallback failed', e);
+          }
+        }
 
-        if (approvedProjects.length > 0) {
-          setMyProjects(approvedProjects);
-          setSelectedProject(approvedProjects[0]);
-          setFormData(prev => ({ ...prev, projectId: approvedProjects[0].id }));
+        console.log('Final projects for Sprint:', availableProjects);
+
+        if (availableProjects.length > 0) {
+          setMyProjects(availableProjects);
+          // Set default selected project
+          if (!selectedProject || !availableProjects.find(p => p.id === selectedProject.id)) {
+            setSelectedProject(availableProjects[0]);
+            setFormData(prev => ({ ...prev, projectId: availableProjects[0].id }));
+          }
         } else {
           setMyProjects([]);
-          setSelectedProject(null);
-          toast.info('No approved projects found. Please get your designs approved first.');
+          if (!selectedProject) setSelectedProject(null);
         }
       } catch (error) {
-        console.error('Error fetching approved projects:', error);
-        toast.error('Failed to load approved projects');
-        setMyProjects([]);
-        setSelectedProject(null);
+        console.error('Error in project fetch:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchApprovedProjects();
-  }, [currentUser]);
+    fetchProjects();
+  }, [currentUser, getProjectsByUser]);
 
   useEffect(() => {
     const fetchSprints = async () => {
@@ -272,7 +292,6 @@ export default function Sprints() {
   return (
     <div className="sprints-container">
       {/* New Sprint Modal */}
-      {console.log('Rendering modal, isNewSprintModalOpen:', isNewSprintModalOpen)}
       {isNewSprintModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -325,7 +344,7 @@ export default function Sprints() {
                   </select>
                 ) : (
                   <div style={{ padding: '10px', background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '6px', fontSize: '14px', color: '#92400e' }}>
-                    No approved projects available
+                    No projects available. Please create a project first.
                   </div>
                 )}
               </div>
@@ -453,11 +472,9 @@ export default function Sprints() {
           <button
             className="btn-primary"
             onClick={(e) => {
-              console.log('Button clicked, opening modal...');
               e.preventDefault();
               e.stopPropagation();
               setIsNewSprintModalOpen(true);
-              console.log('isNewSprintModalOpen should be true now');
             }}
             style={{
               display: 'flex',
