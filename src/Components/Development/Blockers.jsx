@@ -24,22 +24,55 @@ const Blockers = () => {
     });
 
     useEffect(() => {
-        if (currentUser?.id) {
-            let userProjects = getProjectsByUser(currentUser.id);
-            // Fallback to all projects if user has no assigned projects
-            if (userProjects.length === 0 && allProjects?.length > 0) {
-                userProjects = allProjects;
+        const fetchProjects = async () => {
+            let availableProjects = [];
+
+            // 1. Try getting projects from Context (User specific)
+            if (currentUser?.id) {
+                availableProjects = getProjectsByUser(currentUser.id);
             }
-            setMyProjects(userProjects);
-            if (userProjects.length > 0) {
-                setNewBlocker(prev => ({ ...prev, projectId: userProjects[0].id }));
+
+            // 2. Fallback to All Context Projects
+            if ((!availableProjects || availableProjects.length === 0) && allProjects?.length > 0) {
+                availableProjects = allProjects;
             }
+
+            // 3. Final Fallback: Fetch directly from API
+            if (!availableProjects || availableProjects.length === 0) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const response = await fetch(import.meta.env.VITE_API_URL + '/projects', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            availableProjects = data.data;
+                        } else if (Array.isArray(data)) {
+                            availableProjects = data;
+                        } else if (data.data) {
+                            availableProjects = data.data;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Fallback project fetch failed', err);
+                }
+            }
+
+            setMyProjects(availableProjects || []);
+
+            // Set default selection
+            if (availableProjects && availableProjects.length > 0) {
+                setNewBlocker(prev => ({
+                    ...prev,
+                    projectId: prev.projectId || availableProjects[0].id
+                }));
+            }
+
             fetchBlockers();
-        } else if (allProjects?.length > 0) {
-            setMyProjects(allProjects);
-            setNewBlocker(prev => ({ ...prev, projectId: allProjects[0].id }));
-            fetchBlockers();
-        }
+        };
+
+        fetchProjects();
     }, [currentUser, getProjectsByUser, allProjects]);
 
     const fetchBlockers = async () => {

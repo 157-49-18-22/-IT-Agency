@@ -275,32 +275,25 @@ export default App;`,
     }
   };
 
-  // Fetch approved projects from database (matching "Approved Projects" page)
+  // Fetch projects with robust fallback
   useEffect(() => {
-    const fetchApprovedProjects = async () => {
+    const fetchProjects = async () => {
       if (!currentUser?.id) return;
 
       try {
         setIsLoading(true);
-        const token = localStorage.getItem('token');
-        const config = {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        };
+        let availableProjects = [];
 
-        // Fetch approved approvals from database (same as ApprovedProjects.jsx)
-        const response = await axios.get('/api/approvals?status=Approved', config);
-        const approvedApprovals = response.data?.data || response.data || [];
+        // 1. Try fetching approved projects first (ideal path)
+        try {
+          const approvalsRes = await axios.get(import.meta.env.VITE_API_URL + '/approvals?status=Approved', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const approvedData = approvalsRes.data?.data || approvalsRes.data || [];
 
-        console.log('Approved approvals from database:', approvedApprovals);
-
-        // Group by project
-        const projectMap = new Map();
-        approvedApprovals.forEach(approval => {
-          if (approval.projectId) {
-            if (!projectMap.has(approval.projectId)) {
+          const projectMap = new Map();
+          approvedData.forEach(approval => {
+            if (approval.projectId && !projectMap.has(approval.projectId)) {
               projectMap.set(approval.projectId, {
                 id: approval.projectId,
                 projectName: approval.project?.name || `Project ${approval.projectId}`,
@@ -308,32 +301,63 @@ export default App;`,
                 approvedDate: approval.approvedAt
               });
             }
+          });
+          availableProjects = Array.from(projectMap.values());
+        } catch (err) {
+          console.warn('Approvals fetch failed', err);
+        }
+
+        // 2. Fallback to Context/User Projects
+        if (availableProjects.length === 0) {
+          const userProjects = getProjectsByUser(currentUser.id);
+          if (userProjects && userProjects.length > 0) {
+            availableProjects = userProjects.map(p => ({
+              id: p.id,
+              projectName: p.name || p.projectName,
+              uiuxApproved: false
+            }));
           }
-        });
+        }
 
-        const approvedProjects = Array.from(projectMap.values());
-        console.log('Approved projects for Code dropdown:', approvedProjects);
+        // 3. Fallback to ALL projects (last resort)
+        if (availableProjects.length === 0) {
+          try {
+            const allRes = await axios.get(import.meta.env.VITE_API_URL + '/projects', {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            const allPrjs = allRes.data?.data || allRes.data || [];
+            availableProjects = allPrjs.map(p => ({
+              id: p.id,
+              projectName: p.name || p.projectName,
+              uiuxApproved: false
+            }));
+          } catch (e) {
+            console.error('Final fallback failed', e);
+          }
+        }
 
-        if (approvedProjects.length > 0) {
-          setMyProjects(approvedProjects);
-          setSelectedProject(approvedProjects[0]);
+        console.log('Final projects for Code dropdown:', availableProjects);
+
+        if (availableProjects.length > 0) {
+          setMyProjects(availableProjects);
+          // Set default selected project
+          if (!selectedProject || !availableProjects.find(p => p.id === selectedProject.id)) {
+            setSelectedProject(availableProjects[0]);
+          }
         } else {
           setMyProjects([]);
-          setSelectedProject(null);
-          toast.info('No approved projects found. Please get your designs approved first.');
+          if (!selectedProject) setSelectedProject(null);
         }
       } catch (error) {
-        console.error('Error fetching approved projects:', error);
-        toast.error('Failed to load approved projects');
-        setMyProjects([]);
-        setSelectedProject(null);
+        console.error('Error fetching projects:', error);
+        toast.error('Failed to load projects');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchApprovedProjects();
-  }, [currentUser]);
+    fetchProjects();
+  }, [currentUser, getProjectsByUser]);
 
   // Fetch files when component mounts or project changes
   useEffect(() => {
@@ -510,20 +534,20 @@ export default App;`,
                   </>
                 ) : 'Create File'}
               </button>
-              {error && (
-                <div className="error-message" style={{
-                  color: '#ef4444',
-                  marginTop: '10px',
-                  padding: '8px',
-                  backgroundColor: '#fef2f2',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  gridColumn: '1 / -1'
-                }}>
-                  {error}
-                </div>
-              )}
             </div>
+            {error && (
+              <div className="error-message" style={{
+                color: '#ef4444',
+                marginTop: '10px',
+                padding: '8px',
+                backgroundColor: '#fef2f2',
+                borderRadius: '4px',
+                fontSize: '14px',
+                gridColumn: '1 / -1'
+              }}>
+                {error}
+              </div>
+            )}
           </div>
         </div>
       )}
