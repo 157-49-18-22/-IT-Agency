@@ -8,7 +8,7 @@ import './TaskPages.css';
 
 const Blockers = () => {
     const { currentUser } = useAuth();
-    const { getProjectsByUser } = useContext(ProjectContext);
+    const { getProjectsByUser, projects: allProjects } = useContext(ProjectContext);
 
     const [blockers, setBlockers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,14 +25,22 @@ const Blockers = () => {
 
     useEffect(() => {
         if (currentUser?.id) {
-            const projects = getProjectsByUser(currentUser.id);
-            setMyProjects(projects);
-            if (projects.length > 0) {
-                setNewBlocker(prev => ({ ...prev, projectId: projects[0].id }));
+            let userProjects = getProjectsByUser(currentUser.id);
+            // Fallback to all projects if user has no assigned projects
+            if (userProjects.length === 0 && allProjects?.length > 0) {
+                userProjects = allProjects;
+            }
+            setMyProjects(userProjects);
+            if (userProjects.length > 0) {
+                setNewBlocker(prev => ({ ...prev, projectId: userProjects[0].id }));
             }
             fetchBlockers();
+        } else if (allProjects?.length > 0) {
+            setMyProjects(allProjects);
+            setNewBlocker(prev => ({ ...prev, projectId: allProjects[0].id }));
+            fetchBlockers();
         }
-    }, [currentUser, getProjectsByUser]);
+    }, [currentUser, getProjectsByUser, allProjects]);
 
     const fetchBlockers = async () => {
         try {
@@ -230,7 +238,7 @@ const Blockers = () => {
                                     style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 >
                                     {myProjects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.projectName}</option>
+                                        <option key={p.id} value={p.id}>{p.name || p.projectName}</option>
                                     ))}
                                 </select>
                             </div>
