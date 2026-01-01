@@ -100,7 +100,7 @@ const DeveloperDeliverables = () => {
                         });
                         const deliverables = delivResponse.data?.data || delivResponse.data || [];
                         alreadySubmitted = deliverables.some(d =>
-                            d.status === 'pending' || d.status === 'approved' || d.status === 'Pending Approval'
+                            d.status === 'In Review' || d.status === 'Approved' || d.status === 'Pending Approval' || d.status === 'pending'
                         );
                     } catch (err) {
                         // If 404 or empty, it means no deliverables, so not submitted
@@ -157,13 +157,12 @@ const DeveloperDeliverables = () => {
         try {
             const deliverableData = {
                 projectId: selectedProject.id,
-                phase: 'Development', // Capitalized to match Enum
+                phase: 'Development',
                 name: submitData.title || `Development Deliverable - ${selectedProject.projectName || selectedProject.name}`,
                 description: submitData.description,
                 notes: submitData.notes,
-                status: 'Pending Approval', // Matched to Database Enum
-                type: 'Code', // Enum value
-                // Adding required fields for model validation
+                status: 'In Review', // Fixed: Must match DB Enum ('In Review', not 'Pending Approval')
+                type: 'Code',
                 fileUrl: submitData.repositoryUrl || '#repository',
                 fileName: 'Repository Code',
                 fileSize: 0,
@@ -184,12 +183,14 @@ const DeveloperDeliverables = () => {
             }
         } catch (error) {
             console.error('Error submitting deliverable:', error);
-            toast.error('Failed to submit deliverable');
+            const errMsg = error.response?.data?.message || 'Failed to submit deliverable';
+            toast.error(errMsg);
         }
     };
 
     const getStatusColor = (status) => {
         const colors = {
+            'In Review': '#f59e0b',
             'Pending Approval': '#f59e0b', // Specific match
             pending: '#f59e0b',
             approved: '#10b981',
@@ -222,7 +223,7 @@ const DeveloperDeliverables = () => {
                 <div style={{ background: '#fff3cd', padding: '20px', borderRadius: '12px', border: '2px solid #f59e0b' }}>
                     <div style={{ color: '#856404', fontSize: '14px', marginBottom: '8px' }}>Pending Review</div>
                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>
-                        {submittedDeliverables.filter(d => d.status === 'pending' || d.status === 'Pending Approval').length}
+                        {submittedDeliverables.filter(d => d.status === 'pending' || d.status === 'Pending Approval' || d.status === 'In Review').length}
                     </div>
                 </div>
                 <div style={{ background: '#d1f2eb', padding: '20px', borderRadius: '12px', border: '2px solid #10b981' }}>
@@ -350,7 +351,7 @@ const DeveloperDeliverables = () => {
                                             gap: '4px'
                                         }}
                                     >
-                                        {(deliverable.status === 'pending' || deliverable.status === 'Pending Approval') && <FiClock />}
+                                        {(deliverable.status === 'pending' || deliverable.status === 'In Review' || deliverable.status === 'Pending Approval') && <FiClock />}
                                         {(deliverable.status === 'approved' || deliverable.status === 'Approved') && <FiCheck />}
                                         {deliverable.status}
                                     </span>
