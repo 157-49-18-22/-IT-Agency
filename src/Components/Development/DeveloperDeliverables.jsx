@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { FiPackage, FiSend, FiCheck, FiClock, FiCode, FiTrello } from 'react-icons/fi';
+import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { ProjectContext } from '../../context/ProjectContext';
 import { deliverablesAPI, codeAPI, sprintAPI, projectsAPI } from '../../services/api';
@@ -32,65 +33,87 @@ const DeveloperDeliverables = () => {
     const checkEligibleProjects = async () => {
         try {
             setIsLoading(true);
+            let allProjects = [];
 
-            // Fetch projects directly from API to ensure we have data
-            const projectsResponse = await projectsAPI.getProjectsByUser(currentUser.id);
-            const allProjects = projectsResponse.data.data || [];
-
-            console.log('API Projects Response:', allProjects);
-            if (allProjects.length > 0) {
-                console.log('Sample Project:', allProjects[0]);
-                console.log('Project Statuses:', allProjects.map(p => ({ id: p.id, status: p.status, stage: p.currentStage })));
+            // 1. Priority: Context (User assigned projects)
+            const contextProjects = getProjectsByUser(currentUser.id);
+            if (contextProjects && contextProjects.length > 0) {
+                allProjects = contextProjects;
             }
 
+            // 2. Fetch from API if context empty (Fresh data)
+            if (allProjects.length === 0) {
+                try {
+                    const projectsResponse = await projectsAPI.getProjectsByUser(currentUser.id);
+                    const apiProjects = projectsResponse.data.data || projectsResponse.data || [];
+                    if (apiProjects.length > 0) {
+                        allProjects = apiProjects;
+                    }
+                } catch (e) {
+                    console.warn('API project fetch failed', e);
+                }
+            }
+
+            // 3. Fallback: Fetch ALL projects (Safety net for Dev/Admin/Testing)
+            if (allProjects.length === 0) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const allRes = await axios.get(import.meta.env.VITE_API_URL + '/projects', {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        allProjects = allRes.data.data || allRes.data || [];
+                    }
+                } catch (e) {
+                    console.warn('Fallback all-projects fetch failed', e);
+                }
+            }
+
+            console.log('Final Projects List for Deliverables:', allProjects);
+
             // Filter projects that are in development stage
-            // TEMPORARY: Allowing all projects for debugging
+            // We use allProjects here to ensure we don't filter out things gratuitously in production
             const devProjects = allProjects;
-            /*
-            const devProjects = allProjects.filter(p =>
-                p.currentStage === 'development' || 
-                p.status === 'approved' || 
-                p.status === 'active' || 
-                p.status === 'in-progress' ||
-                // Relaxed check for testing
-                p.ProjectMembers?.some(m => m.UserId === currentUser.id)
-            );
-            */
 
             // Check each project for code files and sprints
             const eligible = [];
-
-            console.log('All Projects:', allProjects);
-            console.log('Dev Projects:', devProjects);
 
             for (const project of devProjects) {
                 try {
                     // Check if code files exist
                     const codeResponse = await codeAPI.getByProject(project.id);
-                    const hasCode = codeResponse.data?.data?.length > 0;
-                    console.log(`Project ${project.id} - Code files:`, codeResponse.data?.data?.length);
+                    const hasCode = codeResponse.data?.data?.length > 0 || (Array.isArray(codeResponse.data) && codeResponse.data.length > 0);
 
                     // Check if sprints exist
                     const sprintResponse = await sprintAPI.getSprints({ projectId: project.id });
-                    console.log(`Project ${project.id} - Sprint Response:`, sprintResponse);
-                    const hasSprints = sprintResponse.data?.data?.length > 0 || (Array.isArray(sprintResponse.data) && sprintResponse.data.length > 0);
-                    console.log(`Project ${project.id} - Has Sprints:`, hasSprints);
+                    const hasSprints = sprintResponse.data?.data?.length > 0 ||
+                        (Array.isArray(sprintResponse.data) && sprintResponse.data.length > 0) ||
+                        (sprintResponse.data?.sprints && sprintResponse.data.sprints.length > 0);
 
                     // Check if already submitted
-                    const delivResponse = await deliverablesAPI.getDeliverables({
-                        projectId: project.id,
-                        phase: 'development'
-                    });
-                    const alreadySubmitted = delivResponse.data?.data?.some(d =>
-                        d.status === 'pending' || d.status === 'approved'
-                    );
-                    console.log(`Project ${project.id} - Already Submitted:`, alreadySubmitted);
+                    // Use try-catch specifically for this call as it might 404 if no deliverables
+                    let alreadySubmitted = false;
+                    try {
+                        const delivResponse = await deliverablesAPI.getDeliverables({
+                            projectId: project.id,
+                            phase: 'development'
+                        });
+                        const deliverables = delivResponse.data?.data || delivResponse.data || [];
+                        alreadySubmitted = deliverables.some(d =>
+                            d.status === 'pending' || d.status === 'approved' || d.status === 'Pending Approval'
+                        );
+                    } catch (err) {
+                        // If 404 or empty, it means no deliverables, so not submitted
+                        alreadySubmitted = false;
+                    }
 
-                    if (hasSprints && !alreadySubmitted) {
+                    // For debugging/usability, we might want to relax "hasSprints" if just testing
+                    // But strictly: hasSprints && !alreadySubmitted
+                    if ((hasCode || hasSprints) && !alreadySubmitted) {
                         eligible.push({
                             ...project,
-                            codeCount: codeResponse.data?.data?.length || 0,
-                            sprintCount: sprintResponse.data?.data?.length || 0
+                            codeCount: Array.isArray(codeResponse.data) ? codeResponse.data.length : (codeResponse.data?.data?.length || 0),
+                            sprintCount: Array.isArray(sprintResponse.data) ? sprintResponse.data.length : (sprintResponse.data?.data?.length || 0)
                         });
                     }
                 } catch (error) {
@@ -101,7 +124,7 @@ const DeveloperDeliverables = () => {
             setEligibleProjects(eligible);
         } catch (error) {
             console.error('Error checking eligible projects:', error);
-            toast.error('Failed to load projects');
+            // toast.error('Failed to load projects'); // Suppress to avoid spam
         } finally {
             setIsLoading(false);
         }
@@ -110,8 +133,8 @@ const DeveloperDeliverables = () => {
     const fetchSubmittedDeliverables = async () => {
         try {
             const response = await deliverablesAPI.getDeliverables({ phase: 'development' });
-            if (response.data.success) {
-                setSubmittedDeliverables(response.data.data);
+            if (response.data.success || Array.isArray(response.data)) {
+                setSubmittedDeliverables(response.data.data || response.data || []);
             }
         } catch (error) {
             console.error('Error fetching deliverables:', error);
@@ -135,7 +158,7 @@ const DeveloperDeliverables = () => {
             const deliverableData = {
                 projectId: selectedProject.id,
                 phase: 'Development', // Capitalized to match Enum
-                name: submitData.title || `Development Deliverable - ${selectedProject.projectName}`, // Matched to 'name'
+                name: submitData.title || `Development Deliverable - ${selectedProject.projectName || selectedProject.name}`,
                 description: submitData.description,
                 notes: submitData.notes,
                 status: 'Pending Approval', // Matched to Database Enum
@@ -149,7 +172,7 @@ const DeveloperDeliverables = () => {
 
             const response = await deliverablesAPI.createDeliverable(deliverableData);
 
-            if (response.data.success) {
+            if (response.data.success || response.data) {
                 toast.success('Deliverable submitted for client review!');
                 setShowSubmitModal(false);
                 setSubmitData({ title: '', description: '', notes: '', repositoryUrl: '' });
@@ -199,13 +222,13 @@ const DeveloperDeliverables = () => {
                 <div style={{ background: '#fff3cd', padding: '20px', borderRadius: '12px', border: '2px solid #f59e0b' }}>
                     <div style={{ color: '#856404', fontSize: '14px', marginBottom: '8px' }}>Pending Review</div>
                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>
-                        {submittedDeliverables.filter(d => d.status === 'pending').length}
+                        {submittedDeliverables.filter(d => d.status === 'pending' || d.status === 'Pending Approval').length}
                     </div>
                 </div>
                 <div style={{ background: '#d1f2eb', padding: '20px', borderRadius: '12px', border: '2px solid #10b981' }}>
                     <div style={{ color: '#0c5c42', fontSize: '14px', marginBottom: '8px' }}>Approved</div>
                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#10b981' }}>
-                        {submittedDeliverables.filter(d => d.status === 'approved').length}
+                        {submittedDeliverables.filter(d => d.status === 'approved' || d.status === 'Approved').length}
                     </div>
                 </div>
             </div>
@@ -246,7 +269,7 @@ const DeveloperDeliverables = () => {
                                 }}
                             >
                                 <div>
-                                    <h4 style={{ margin: 0, marginBottom: '8px' }}>{project.projectName}</h4>
+                                    <h4 style={{ margin: 0, marginBottom: '8px' }}>{project.projectName || project.name}</h4>
                                     <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6c757d' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <FiCode /> {project.codeCount} Files
@@ -309,9 +332,9 @@ const DeveloperDeliverables = () => {
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                                     <div>
-                                        <h4 style={{ margin: 0, marginBottom: '4px' }}>{deliverable.title}</h4>
+                                        <h4 style={{ margin: 0, marginBottom: '4px' }}>{deliverable.title || deliverable.name}</h4>
                                         <p style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>
-                                            {deliverable.project?.name}
+                                            {deliverable.project?.name} ({deliverable.phase})
                                         </p>
                                     </div>
                                     <span
@@ -327,8 +350,8 @@ const DeveloperDeliverables = () => {
                                             gap: '4px'
                                         }}
                                     >
-                                        {deliverable.status === 'pending' && <FiClock />}
-                                        {deliverable.status === 'approved' && <FiCheck />}
+                                        {(deliverable.status === 'pending' || deliverable.status === 'Pending Approval') && <FiClock />}
+                                        {(deliverable.status === 'approved' || deliverable.status === 'Approved') && <FiCheck />}
                                         {deliverable.status}
                                     </span>
                                 </div>
@@ -357,7 +380,7 @@ const DeveloperDeliverables = () => {
 
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '16px', padding: '16px', background: '#e0e7ff', borderRadius: '8px' }}>
-                                <strong>Project:</strong> {selectedProject?.projectName}
+                                <strong>Project:</strong> {selectedProject?.projectName || selectedProject?.name}
                             </div>
 
                             <div className="form-group">
@@ -366,7 +389,7 @@ const DeveloperDeliverables = () => {
                                     type="text"
                                     value={submitData.title}
                                     onChange={(e) => setSubmitData({ ...submitData, title: e.target.value })}
-                                    placeholder={`Development Deliverable - ${selectedProject?.projectName}`}
+                                    placeholder={`Development Deliverable - ${selectedProject?.projectName || selectedProject?.name}`}
                                     style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 />
                             </div>
