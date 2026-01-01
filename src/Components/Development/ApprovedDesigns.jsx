@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiImage, FiLayers, FiSmartphone, FiDownload, FiEye, FiChevronDown, FiX } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../services/api'; // Use centralized api service
 import './ApprovedDesigns.css';
 
 export default function ApprovedDesigns() {
@@ -29,15 +29,9 @@ export default function ApprovedDesigns() {
     const fetchApprovedProjects = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
 
-            const approvalsRes = await axios.get('/api/approvals?status=Approved', config);
+            // Use centralized api to fetch approved projects
+            const approvalsRes = await api.get('/approvals?status=Approved');
             const approvedApprovals = approvalsRes.data?.data || approvalsRes.data || [];
 
             const projectMap = new Map();
@@ -66,18 +60,11 @@ export default function ApprovedDesigns() {
 
     const fetchDesigns = async (projectId) => {
         try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
-
+            // Use centralized api for parallel requests
             const [wireframesRes, mockupsRes, prototypesRes] = await Promise.all([
-                axios.get(`/api/wireframes?projectId=${projectId}`, config),
-                axios.get(`/api/mockups?projectId=${projectId}`, config),
-                axios.get(`/api/prototypes?projectId=${projectId}`, config)
+                api.get(`/wireframes?projectId=${projectId}`),
+                api.get(`/mockups?projectId=${projectId}`),
+                api.get(`/prototypes?projectId=${projectId}`)
             ]);
 
             setDesigns({
