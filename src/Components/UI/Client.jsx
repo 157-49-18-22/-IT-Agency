@@ -32,10 +32,10 @@ const Client = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const clientsPerPage = 10;
-  
+
   // Create axios instance with auth header
   const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -51,9 +51,9 @@ const Client = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-      
+
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
+
       const response = await api.get('/clients', {
         params: {
           page: currentPage,
@@ -63,13 +63,13 @@ const Client = () => {
           search: searchTerm
         }
       });
-      
+
       // Log the response for debugging
       console.log('API Response:', response.data);
-      
+
       // Handle the response based on its structure
       let clientsData = [];
-      
+
       if (Array.isArray(response.data)) {
         // If response.data is an array, use it directly
         clientsData = response.data;
@@ -83,10 +83,10 @@ const Client = () => {
         // If response.data has a data array, use that
         clientsData = response.data.data;
       }
-      
+
       // Ensure we have a valid array
       clientsData = Array.isArray(clientsData) ? clientsData : [];
-      
+
       // Add default values for any missing required fields
       const processedClients = clientsData.map(client => ({
         id: client.id || Date.now() + Math.random(),
@@ -101,9 +101,9 @@ const Client = () => {
         projects: client.projects || 0,
         ...client // Spread any additional properties
       }));
-      
+
       setClients(processedClients);
-      
+
       // Cache the clients data
       try {
         localStorage.setItem('cachedClients', JSON.stringify(processedClients));
@@ -138,7 +138,7 @@ const Client = () => {
       if (editingClient) {
         // Update existing client
         const response = await api.put(`/clients/${editingClient.id}`, formData);
-        setClients(clients.map(client => 
+        setClients(clients.map(client =>
           client.id === editingClient.id ? response.data : client
         ));
         toast.success('Client updated successfully!');
@@ -148,7 +148,7 @@ const Client = () => {
         setClients([response.data, ...clients]);
         toast.success('Client added successfully!');
       }
-      
+
       setShowAddForm(false);
       setEditingClient(null);
       setFormData({
@@ -184,7 +184,8 @@ const Client = () => {
   const handleDelete = async (clientId) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/clients/${clientId}`);
+        const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+        await axios.delete(`${apiUrl}/clients/${clientId}`);
         setClients(clients.filter(client => client.id !== clientId));
         toast.success('Client deleted successfully!');
       } catch (error) {
@@ -204,18 +205,18 @@ const Client = () => {
 
   // Ensure we're always working with an array
   const clientsArray = Array.isArray(clients) ? clients : [];
-  
+
   const filteredClients = clientsArray.filter(client => {
     if (!client || typeof client !== 'object') return false;
-    
+
     const searchTermLower = searchTerm.toLowerCase();
-    const nameMatch = client.name && typeof client.name === 'string' 
+    const nameMatch = client.name && typeof client.name === 'string'
       ? client.name.toLowerCase().includes(searchTermLower)
       : false;
     const emailMatch = client.email && typeof client.email === 'string'
       ? client.email.toLowerCase().includes(searchTermLower)
       : false;
-      
+
     const matchesSearch = nameMatch || emailMatch;
     const matchesStatus = statusFilter === 'All Status' || client.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -245,7 +246,7 @@ const Client = () => {
     <div className="client-container">
       <div className="client-header">
         <h2>Clients</h2>
-        <button 
+        <button
           className="btn-primary"
           onClick={() => setShowAddForm(true)}
         >
@@ -259,7 +260,7 @@ const Client = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>Add New Client</h3>
-              <button 
+              <button
                 className="close-btn"
                 onClick={() => setShowAddForm(false)}
               >
@@ -341,8 +342,8 @@ const Client = () => {
                 ></textarea>
               </div>
               <div className="form-actions">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-secondary"
                   onClick={() => {
                     setShowAddForm(false);
@@ -368,19 +369,19 @@ const Client = () => {
           </div>
         </div>
       )}
-      
+
       <div className="client-toolbar">
         <div className="search-box">
-          <input 
-            type="text" 
-            placeholder="Search clients..." 
+          <input
+            type="text"
+            placeholder="Search clients..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <span>🔍</span>
         </div>
         <div className="filter-group">
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -410,7 +411,7 @@ const Client = () => {
           <div className="no-results-icon">🔍</div>
           <h3>No clients found</h3>
           <p>Try adjusting your search or filter criteria</p>
-          <button 
+          <button
             className="btn-primary"
             onClick={() => {
               setSearchTerm('');
@@ -433,19 +434,19 @@ const Client = () => {
                 </h3>
                 {client.contact && (
                   <p className="client-contact" title="Contact">
-                    <span className="icon">👤</span> 
+                    <span className="icon">👤</span>
                     {client.contact}
                   </p>
                 )}
                 {client.email && (
                   <p className="client-email" title="Email">
-                    <span className="icon">✉️</span> 
+                    <span className="icon">✉️</span>
                     <a href={`mailto:${client.email}`}>{client.email}</a>
                   </p>
                 )}
                 {client.phone && (
                   <p className="client-phone" title="Phone">
-                    <span className="icon">📞</span> 
+                    <span className="icon">📞</span>
                     <a href={`tel:${client.phone.replace(/[^0-9+]/g, '')}`}>
                       {client.phone}
                     </a>
@@ -453,7 +454,7 @@ const Client = () => {
                 )}
                 {client.company && (
                   <p className="client-company" title="Company">
-                    <span className="icon">🏢</span> 
+                    <span className="icon">🏢</span>
                     {client.company}
                   </p>
                 )}
@@ -463,7 +464,7 @@ const Client = () => {
                       📊 {client.projects} {client.projects === 1 ? 'Project' : 'Projects'}
                     </span>
                   )}
-                  <span 
+                  <span
                     className={`status-badge ${(client.status || 'active').toLowerCase()}`}
                     title={`Status: ${client.status || 'Active'}`}
                   >
@@ -472,50 +473,50 @@ const Client = () => {
                 </div>
               </div>
               <div className="client-actions">
-                <button 
-                  className="btn-icon" 
+                <button
+                  className="btn-icon"
                   title="Edit"
                   onClick={() => handleEdit(client)}
                   aria-label={`Edit ${client.name || 'client'}`}
                 >
                   ✏️
                 </button>
-                <button 
-                  className="btn-icon" 
+                <button
+                  className="btn-icon"
                   title="Delete"
                   onClick={() => handleDelete(client.id)}
                   aria-label={`Delete ${client.name || 'client'}`}
                   style={{ color: '#e53e3e' }}
-              >
-                🗑️
-              </button>
-              <button 
-                className="btn-icon" 
-                title="View Projects"
-                onClick={() => {
-                  // Navigate to projects page or show projects modal
-                  toast.info('View projects functionality will be implemented here');
-                }}
-              >
-                👁️
-              </button>
+                >
+                  🗑️
+                </button>
+                <button
+                  className="btn-icon"
+                  title="View Projects"
+                  onClick={() => {
+                    // Navigate to projects page or show projects modal
+                    toast.info('View projects functionality will be implemented here');
+                  }}
+                >
+                  👁️
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
-          <button 
-            onClick={() => handlePageChange(currentPage - 1)} 
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="pagination-button"
           >
             Previous
           </button>
-          
+
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
             <button
               key={number}
@@ -525,8 +526,8 @@ const Client = () => {
               {number}
             </button>
           ))}
-          
-          <button 
+
+          <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="pagination-button"

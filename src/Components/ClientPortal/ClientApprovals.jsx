@@ -408,7 +408,8 @@ export default function ClientApprovals() {
                       fullUrl = rawUrl;
                     } else if (rawUrl.startsWith('/') || file.type === 'Wireframe' || file.type === 'Mockup' || file.type === 'Prototype') {
                       // It's a local file path
-                      fullUrl = `http://localhost:5000${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+                      const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://itbackend-p8k1.onrender.com';
+                      fullUrl = `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
                     } else {
                       // It might be an external link without http (e.g. github.com/...)
                       fullUrl = `https://${rawUrl}`;

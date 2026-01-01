@@ -296,7 +296,8 @@ const Cases = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/test-cases', {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+      const response = await fetch(`${apiBaseUrl}/test-cases`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -375,7 +376,8 @@ const Cases = () => {
       };
 
       // Send the request to the backend
-      const response = await fetch('http://localhost:5000/api/test-cases', {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+      const response = await fetch(`${apiBaseUrl}/test-cases`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -428,7 +430,8 @@ const Cases = () => {
         )
       );
 
-      const response = await fetch(`http://localhost:5000/api/test-cases/${id}`, {
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+      const response = await fetch(`${apiBaseUrl}/test-cases/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

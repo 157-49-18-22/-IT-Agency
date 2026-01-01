@@ -129,7 +129,8 @@ export default function DesignDeliverables() {
         const url = design.imageUrl || design.image_url;
         if (!url) return null;
         if (url.startsWith('http')) return url;
-        return `http://localhost:5000${url}`;
+        const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://itbackend-p8k1.onrender.com';
+        return `${baseUrl}${url}`;
     };
 
     const handleViewDetails = (project) => {

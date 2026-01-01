@@ -6,7 +6,8 @@ import axios from 'axios';
 import './Mockups.css';
 
 // API Configuration
-const API_URL = 'http://localhost:5000/api';
+import { API_URL } from '../../config/endpoints';
+const ASSET_URL = API_URL.replace('/api', '');
 
 const Mockups = () => {
   const navigate = useNavigate();
@@ -316,7 +317,7 @@ const Mockups = () => {
                 <div className="mockup-thumbnail">
                   {mockup.image_url ? (
                     <img
-                      src={`http://localhost:5000${mockup.image_url}`}
+                      src={`${ASSET_URL}${mockup.image_url}`}
                       alt={mockup.title || 'Mockup'}
                       onError={(e) => {
                         const target = e.target;
@@ -544,7 +545,7 @@ const Mockups = () => {
               <div className="details-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {selectedMockup.image_url && (
                   <div className="details-image-section" style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', overflow: 'hidden' }}>
-                    <img src={`http://localhost:5000${selectedMockup.image_url}`} alt={selectedMockup.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                    <img src={`${ASSET_URL}${selectedMockup.image_url}`} alt={selectedMockup.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
                   </div>
                 )}
                 <div className="details-info-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

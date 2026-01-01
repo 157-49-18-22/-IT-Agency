@@ -10,7 +10,7 @@ function fmtHMS(totalSeconds) {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 export default function Tracking() {
@@ -33,12 +33,12 @@ export default function Tracking() {
 
   // Timer state
   const [running, setRunning] = useState(false);
-  const [current, setCurrent] = useState({ 
-    projectId: '', 
+  const [current, setCurrent] = useState({
+    projectId: '',
     projectName: '',
-    task: '', 
-    member: '', 
-    notes: '' 
+    task: '',
+    member: '',
+    notes: ''
   });
   const [seconds, setSeconds] = useState(0);
   const [activeTimer, setActiveTimer] = useState(null);
@@ -47,14 +47,14 @@ export default function Tracking() {
   // Modal for add/edit manual entry
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ 
-    date: new Date().toISOString().split('T')[0], 
-    project: '', 
-    task: '', 
-    member: '', 
-    notes: '', 
-    hours: 0, 
-    minutes: 30 
+  const [form, setForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    project: '',
+    task: '',
+    member: '',
+    notes: '',
+    hours: 0,
+    minutes: 30
   });
 
   const [loading, setLoading] = useState(true);
@@ -64,53 +64,53 @@ export default function Tracking() {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        
+
         // Default projects in case API call fails
         const defaultProjects = [
           { id: '1', name: 'Website Project' },
           { id: '2', name: 'Mobile App' },
           { id: '3', name: 'API Development' }
         ];
-        
+
         let projectsData = [];
         let membersData = [];
         let timeEntries = [];
-        
+
         // Fetch projects
         try {
           console.log('Fetching projects...');
           const projectsResponse = await projectAPI.getAll();
           console.log('Projects response:', projectsResponse);
-          
+
           // Handle different response structures
-          projectsData = Array.isArray(projectsResponse) 
-            ? projectsResponse 
+          projectsData = Array.isArray(projectsResponse)
+            ? projectsResponse
             : (projectsResponse?.data || []);
-            
+
           if (!Array.isArray(projectsData)) {
             console.warn('Unexpected projects data format, using default projects');
             projectsData = [];
           }
-          
+
         } catch (error) {
           console.error('Error fetching projects:', error);
           toast.error('Failed to load projects. Using default data.');
           projectsData = [];
         }
-        
+
         // If no projects from API, use defaults
         if (projectsData.length === 0) {
           projectsData = defaultProjects;
         }
-        
+
         setProjects(projectsData);
-        
+
         // Fetch time entries
         try {
           console.log('Fetching time entries...');
           const entriesResponse = await timeTrackingAPI.getAll();
-          timeEntries = Array.isArray(entriesResponse) 
-            ? entriesResponse 
+          timeEntries = Array.isArray(entriesResponse)
+            ? entriesResponse
             : (entriesResponse?.data || []);
           console.log('Time entries loaded:', timeEntries.length);
         } catch (error) {
@@ -118,17 +118,18 @@ export default function Tracking() {
           toast.error('Failed to load time entries. Some data may be missing.');
           timeEntries = [];
         }
-        
+
         setEntries(timeEntries);
-        
+
         // Fetch members
         try {
           console.log('Fetching members...');
-          const membersResponse = await fetch('http://localhost:5000/api/users?role=member');
-          
+          const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+          const membersResponse = await fetch(`${apiBaseUrl}/users?role=member`);
+
           if (membersResponse.ok) {
             const data = await membersResponse.json();
-            membersData = Array.isArray(data) 
+            membersData = Array.isArray(data)
               ? data.map(user => user.name || user.username || user.email || user)
               : [];
           } else {
@@ -145,9 +146,9 @@ export default function Tracking() {
             'Mike Brown (DevOps)'
           ];
         }
-        
+
         setMembers(membersData);
-        
+
         // Set default values will be handled after projects and members are loaded
         setCurrent({
           projectId: defaultProject?.id || '',
@@ -156,13 +157,13 @@ export default function Tracking() {
           member: defaultMember,
           notes: ''
         });
-        
+
         setForm(prev => ({
           ...prev,
           project: defaultProject,
           member: defaultMember
         }));
-        
+
         // Check for active timer
         try {
           const activeTimerResponse = await timeTrackingAPI.getActive();
@@ -179,13 +180,14 @@ export default function Tracking() {
 
         // Try to fetch members from API with fallback
         try {
-          const membersResponse = await fetch('http://localhost:5000/api/users?role=member');
+          const apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api';
+          const membersResponse = await fetch(`${apiBaseUrl}/users?role=member`);
           if (membersResponse.ok) {
             const membersData = await membersResponse.json();
             const memberNames = Array.isArray(membersData)
               ? membersData.map(user => user.name || user.username || user.email || user)
               : [];
-            
+
             // If no members from API, use our default members
             if (memberNames.length === 0) {
               console.log('No members from API, using default members');
@@ -223,18 +225,18 @@ export default function Tracking() {
         // Debug logging
         console.log('Projects:', projects);
         console.log('Members:', members);
-        
+
         // Ensure projects and members are arrays
         const safeProjects = Array.isArray(projects) ? projects : [];
         const safeMembers = Array.isArray(members) ? members : [];
-        
+
         // Set default values after loading projects and members
         const defaultProject = safeProjects.length > 0 ? safeProjects[0] : null;
         const defaultMember = safeMembers.length > 0 ? safeMembers[0] : '';
-        
+
         console.log('Default Project:', defaultProject);
         console.log('Default Member:', defaultMember);
-        
+
         setCurrent({
           projectId: defaultProject ? defaultProject.id : '',
           projectName: defaultProject ? defaultProject.name : '',
@@ -242,7 +244,7 @@ export default function Tracking() {
           member: defaultMember,
           notes: ''
         });
-        
+
         setForm(prev => ({
           ...prev,
           project: defaultProject,
@@ -316,7 +318,7 @@ export default function Tracking() {
         description: current.notes,
         startTime: new Date()
       });
-      
+
       setActiveTimer(response.data);
       start();
       toast.success('Timer started');
@@ -329,15 +331,15 @@ export default function Tracking() {
   const handleStopTimer = async () => {
     try {
       if (!activeTimer) return;
-      
+
       await timeTrackingAPI.stop(activeTimer.id);
       setActiveTimer(null);
       reset();
-      
+
       // Refresh entries
       const response = await timeTrackingAPI.getAll();
       setEntries(response.data || []);
-      
+
       toast.success('Timer stopped and time logged');
     } catch (error) {
       console.error('Error stopping timer:', error);
@@ -351,15 +353,15 @@ export default function Tracking() {
     timerRef.current = setInterval(() => setSeconds(prev => prev + 1), 1000);
   };
 
-  const pause = () => { 
-    setRunning(false); 
+  const pause = () => {
+    setRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const reset = () => { 
-    setRunning(false); 
-    if (timerRef.current) clearInterval(timerRef.current); 
-    setSeconds(0); 
+  const reset = () => {
+    setRunning(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setSeconds(0);
     setCurrent(prev => ({
       ...prev,
       task: '',
@@ -372,11 +374,11 @@ export default function Tracking() {
       toast.info('No time to log');
       return;
     }
-    
+
     try {
       const now = new Date();
       const startTime = new Date(now.getTime() - (seconds * 1000));
-      
+
       // Get user ID from localStorage or auth context
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user || !user.id) {
@@ -393,7 +395,7 @@ export default function Tracking() {
         toast.error('Please select a project before saving time entry');
         return;
       }
-      
+
       // Create the time entry with only the required fields
       // Let the backend handle defaults and calculations
       const timeEntry = {
@@ -411,18 +413,18 @@ export default function Tracking() {
         startTime: timeEntry.startTime.toISOString(),
         endTime: timeEntry.endTime.toISOString()
       });
-      
+
       // Show loading state
       const toastId = toast.loading('Saving time entry...');
-      
+
       try {
         const response = await timeTrackingAPI.create(timeEntry);
         console.log('Time entry created successfully:', response.data);
-        
+
         // Refresh entries
         const entriesResponse = await timeTrackingAPI.getAll();
         setEntries(entriesResponse.data || []);
-        
+
         reset();
         toast.update(toastId, {
           render: 'Time entry saved successfully',
@@ -450,7 +452,7 @@ export default function Tracking() {
 
   // Ensure entries is always an array and handle potential undefined/null values
   const safeEntries = Array.isArray(entries) ? entries : [];
-  
+
   const totalSeconds = useMemo(() => {
     try {
       return safeEntries.reduce((sum, e) => {
@@ -466,7 +468,7 @@ export default function Tracking() {
 
   const todayKey = useMemo(() => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
 
   const todaySeconds = useMemo(() => {
@@ -505,40 +507,40 @@ export default function Tracking() {
       if (!map.has(e.date)) map.set(e.date, []);
       map.get(e.date).push(e);
     });
-    return Array.from(map.entries()).sort((a,b) => b[0].localeCompare(a[0]));
+    return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]));
   }, [filtered]);
 
   const openAdd = (entry) => {
     if (entry) {
       setEditingId(entry.id);
-      const hours = Math.floor(entry.seconds/3600);
-      const minutes = Math.round((entry.seconds%3600)/60);
-      setForm({ 
-        date: entry.date, 
-        project: entry.project, 
-        task: entry.task, 
-        member: entry.member, 
-        notes: entry.notes, 
-        hours, 
-        minutes 
+      const hours = Math.floor(entry.seconds / 3600);
+      const minutes = Math.round((entry.seconds % 3600) / 60);
+      setForm({
+        date: entry.date,
+        project: entry.project,
+        task: entry.task,
+        member: entry.member,
+        notes: entry.notes,
+        hours,
+        minutes
       });
     } else {
       setEditingId(null);
-      setForm({ 
-        date: new Date().toISOString().split('T')[0], 
-        project: projects[0] ? projects[0].id : '', 
-        task: '', 
-        member: members[0] || '', 
-        notes: '', 
-        hours: 0, 
-        minutes: 30 
+      setForm({
+        date: new Date().toISOString().split('T')[0],
+        project: projects[0] ? projects[0].id : '',
+        task: '',
+        member: members[0] || '',
+        notes: '',
+        hours: 0,
+        minutes: 30
       });
     }
     setShowModal(true);
   };
 
   const saveEntry = async () => {
-    const secs = (Number(form.hours)||0)*3600 + (Number(form.minutes)||0)*60;
+    const secs = (Number(form.hours) || 0) * 3600 + (Number(form.minutes) || 0) * 60;
     if (!form.date || secs <= 0) {
       toast.error('Please enter a valid date and time');
       return;
@@ -548,7 +550,7 @@ export default function Tracking() {
       // Parse the date and calculate start/end times
       const startTime = new Date(form.date);
       const endTime = new Date(startTime.getTime() + (secs * 1000));
-      
+
       // Get user ID from localStorage
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user || !user.id) {
@@ -593,14 +595,14 @@ export default function Tracking() {
 
   const deleteEntry = async (id) => {
     if (!window.confirm('Are you sure you want to delete this entry?')) return;
-    
+
     try {
       await timeTrackingAPI.delete(id);
-      
+
       // Refresh entries
       const response = await timeTrackingAPI.getAll();
       setEntries(response.data || []);
-      
+
       toast.success('Time entry deleted successfully');
     } catch (error) {
       console.error('Error deleting time entry:', error);
@@ -616,39 +618,39 @@ export default function Tracking() {
           <p>Track time with a live timer, manage timesheets, and view daily/weekly totals.</p>
         </div>
         <div className="header-actions">
-          <button className="primary-btn" onClick={() => openAdd(null)}><FiPlus/> Add Entry</button>
+          <button className="primary-btn" onClick={() => openAdd(null)}><FiPlus /> Add Entry</button>
         </div>
       </div>
 
       {/* Timer */}
       <div className="timer-card">
         <div className="timer-left">
-          <div className="hms"><FiClock/> {fmtHMS(seconds)}</div>
+          <div className="hms"><FiClock /> {fmtHMS(seconds)}</div>
           <div className="timer-controls">
             {!running ? (
-              <button 
-                className="btn success" 
+              <button
+                className="btn success"
                 onClick={handleStartTimer}
                 disabled={!current.projectId || !current.member}
               >
-                <FiPlay/> {activeTimer ? 'Resume' : 'Start'}
+                <FiPlay /> {activeTimer ? 'Resume' : 'Start'}
               </button>
             ) : (
-              <button className="btn warning" onClick={pause}><FiPause/> Pause</button>
+              <button className="btn warning" onClick={pause}><FiPause /> Pause</button>
             )}
-            <button 
-              className="btn" 
+            <button
+              className="btn"
               onClick={reset}
               disabled={!running && seconds === 0}
             >
-              <FiStopCircle/> Reset
+              <FiStopCircle /> Reset
             </button>
-            <button 
-              className="btn primary" 
-              onClick={activeTimer ? handleStopTimer : stopAndLog} 
+            <button
+              className="btn primary"
+              onClick={activeTimer ? handleStopTimer : stopAndLog}
               disabled={!running && seconds === 0}
             >
-              <FiTag/> {activeTimer ? 'Stop & Save' : 'Log Time'}
+              <FiTag /> {activeTimer ? 'Stop & Save' : 'Log Time'}
             </button>
           </div>
         </div>
@@ -657,7 +659,7 @@ export default function Tracking() {
             <div className="form-group">
               <label>Project *</label>
               <div className="custom-select">
-                <select 
+                <select
                   value={current.projectId || ''}
                   onChange={e => {
                     const projectId = e.target.value;
@@ -693,10 +695,10 @@ export default function Tracking() {
                     {projects.length > 0 ? 'Select Project' : 'Loading projects...'}
                   </option>
                   {Array.isArray(projects) && projects.map((project) => (
-                    <option 
-                      key={project.id} 
+                    <option
+                      key={project.id}
                       value={project.id}
-                      style={{ 
+                      style={{
                         padding: '10px 15px',
                         background: '#fff',
                         color: '#111',
@@ -711,14 +713,14 @@ export default function Tracking() {
             </div>
             <div className="form-group">
               <label>Task</label>
-              <input value={current.task} onChange={e=>setCurrent({...current, task:e.target.value})} placeholder="What are you doing?"/>
+              <input value={current.task} onChange={e => setCurrent({ ...current, task: e.target.value })} placeholder="What are you doing?" />
             </div>
             <div className="form-group">
               <label>Member *</label>
               <div className="custom-select">
-                <select 
-                  value={current.member || ''} 
-                  onChange={e => setCurrent({...current, member: e.target.value})}
+                <select
+                  value={current.member || ''}
+                  onChange={e => setCurrent({ ...current, member: e.target.value })}
                   className="form-control select-dropdown"
                   required
                   style={{
@@ -736,10 +738,10 @@ export default function Tracking() {
                 >
                   <option value="" style={{ padding: '10px', background: '#fff', color: '#111' }}>Select Member</option>
                   {Array.isArray(members) && members.map((m, i) => (
-                    <option 
-                      key={i} 
+                    <option
+                      key={i}
                       value={m}
-                      style={{ 
+                      style={{
                         padding: '10px 15px',
                         background: '#fff',
                         color: '#111',
@@ -755,7 +757,7 @@ export default function Tracking() {
           </div>
           <div className="form-group">
             <label>Notes</label>
-            <input value={current.notes} onChange={e=>setCurrent({...current, notes:e.target.value})} placeholder="Optional notes"/>
+            <input value={current.notes} onChange={e => setCurrent({ ...current, notes: e.target.value })} placeholder="Optional notes" />
           </div>
         </div>
         <div className="timer-summary">
@@ -773,10 +775,10 @@ export default function Tracking() {
       {/* Filters */}
       <div className="filters">
         <div className="filter">
-          <FiFilter className="icon"/>
+          <FiFilter className="icon" />
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-            <select 
+            <select
               value={filterProject}
               onChange={e => setFilterProject(e.target.value)}
               className="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
@@ -790,20 +792,20 @@ export default function Tracking() {
               ))}
             </select>
           </div>
-          <FiChevronDown className="chev"/>
+          <FiChevronDown className="chev" />
         </div>
         <div className="filter">
-          <select value={filterMember} onChange={e=>setFilterMember(e.target.value)}>
+          <select value={filterMember} onChange={e => setFilterMember(e.target.value)}>
             <option value="all">All Members</option>
             {members.map((m, index) => <option key={index} value={m}>{m}</option>)}
           </select>
-          <FiChevronDown className="chev"/>
+          <FiChevronDown className="chev" />
         </div>
         <div className="daterange">
-          <FiCalendar className="icon"/>
-          <input type="date" value={range.from} onChange={e=>setRange(r=>({...r, from:e.target.value}))}/>
+          <FiCalendar className="icon" />
+          <input type="date" value={range.from} onChange={e => setRange(r => ({ ...r, from: e.target.value }))} />
           <span>to</span>
-          <input type="date" value={range.to} onChange={e=>setRange(r=>({...r, to:e.target.value}))}/>
+          <input type="date" value={range.to} onChange={e => setRange(r => ({ ...r, to: e.target.value }))} />
         </div>
       </div>
 
@@ -821,7 +823,7 @@ export default function Tracking() {
         <div className="sheet-body">
           {groupedByDate.map(([date, items]) => (
             <div key={date} className="date-group">
-              <div className="date-row"><span>{date}</span><span className="total">{fmtHMS(items.reduce((s,e)=>s+e.seconds,0))}</span></div>
+              <div className="date-row"><span>{date}</span><span className="total">{fmtHMS(items.reduce((s, e) => s + e.seconds, 0))}</span></div>
               {items.map(e => (
                 <div key={e.id} className="sheet-row">
                   <div>{e.date}</div>
@@ -831,8 +833,8 @@ export default function Tracking() {
                   <div className="truncate" title={e.notes}>{e.notes || '—'}</div>
                   <div className="right mono">{fmtHMS(e.seconds)}</div>
                   <div className="right actions">
-                    <button className="icon-btn" title="Edit" onClick={()=>openAdd(e)}><FiEdit2/></button>
-                    <button className="icon-btn" title="Delete" onClick={()=>deleteEntry(e.id)}><FiTrash2/></button>
+                    <button className="icon-btn" title="Edit" onClick={() => openAdd(e)}><FiEdit2 /></button>
+                    <button className="icon-btn" title="Delete" onClick={() => deleteEntry(e.id)}><FiTrash2 /></button>
                   </div>
                 </div>
               ))}
@@ -842,21 +844,21 @@ export default function Tracking() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
-          <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingId ? 'Edit Entry' : 'Add Entry'}</h3>
-              <button className="close" onClick={()=>setShowModal(false)}>×</button>
+              <button className="close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="form-row">
                 <div className="form-group">
                   <label>Date *</label>
                   <div className="date-input">
-                    <input 
-                      type="date" 
-                      value={form.date} 
-                      onChange={e => setForm({...form, date: e.target.value})} 
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={e => setForm({ ...form, date: e.target.value })}
                       required
                       max={new Date().toISOString().split('T')[0]}
                     />
@@ -865,9 +867,9 @@ export default function Tracking() {
                 </div>
                 <div className="form-group">
                   <label>Project</label>
-                  <select 
-                    value={form.project} 
-                    onChange={e => setForm({...form, project: e.target.value})}
+                  <select
+                    value={form.project}
+                    onChange={e => setForm({ ...form, project: e.target.value })}
                   >
                     {projects.map(project => (
                       <option key={project.id} value={project.id}>
@@ -880,13 +882,13 @@ export default function Tracking() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Task</label>
-                  <input value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Task name"/>
+                  <input value={form.task} onChange={e => setForm({ ...form, task: e.target.value })} placeholder="Task name" />
                 </div>
                 <div className="form-group">
                   <label>Member *</label>
-                  <select 
-                    value={form.member} 
-                    onChange={e => setForm({...form, member: e.target.value})}
+                  <select
+                    value={form.member}
+                    onChange={e => setForm({ ...form, member: e.target.value })}
                     required
                   >
                     <option value="">Select Member</option>
@@ -900,28 +902,28 @@ export default function Tracking() {
               </div>
               <div className="form-group">
                 <label>Notes</label>
-                <input value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} placeholder="Optional"/>
+                <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional" />
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Time Spent *</label>
                   <div className="time-inputs">
-                    <input 
-                      type="number" 
-                      min="0" 
+                    <input
+                      type="number"
+                      min="0"
                       max="24"
-                      value={form.hours} 
-                      onChange={e => setForm({...form, hours: Math.min(24, Math.max(0, parseInt(e.target.value) || 0))})} 
+                      value={form.hours}
+                      onChange={e => setForm({ ...form, hours: Math.min(24, Math.max(0, parseInt(e.target.value) || 0)) })}
                       placeholder="Hours"
                       required
                     />
                     <span>:</span>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      max="59" 
-                      value={form.minutes} 
-                      onChange={e => setForm({...form, minutes: Math.min(59, Math.max(0, parseInt(e.target.value) || 0))})} 
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={form.minutes}
+                      onChange={e => setForm({ ...form, minutes: Math.min(59, Math.max(0, parseInt(e.target.value) || 0)) })}
                       placeholder="Minutes"
                       required
                     />
@@ -933,9 +935,9 @@ export default function Tracking() {
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={()=>setShowModal(false)}>Cancel</button>
-              <button 
-                className="btn primary" 
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+              <button
+                className="btn primary"
                 onClick={saveEntry}
                 disabled={!form.date || !form.project || !form.member || (form.hours === 0 && form.minutes === 0)}
               >

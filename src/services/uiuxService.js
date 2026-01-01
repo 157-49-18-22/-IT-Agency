@@ -2,7 +2,8 @@ import axios from 'axios';
 import authHeader from './auth-header';
 import { toast } from 'react-toastify';
 
-const API_URL = 'http://localhost:5000/api/uiux';
+const BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api');
+const API_URL = `${BASE_URL}/uiux`;
 
 // Create axios instance with default config
 const api = axios.create({
@@ -74,7 +75,9 @@ class WebSocketService {
   connect(token) {
     if (this.socket) return;
 
-    this.socket = new WebSocket(`ws://localhost:5000?token=${token}`);
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.hostname === 'localhost' ? 'localhost:5000' : 'itbackend-p8k1.onrender.com';
+    this.socket = new WebSocket(`${wsProtocol}//${wsHost}?token=${token}`);
 
     this.socket.onopen = () => {
       console.log('WebSocket connected');

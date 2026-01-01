@@ -1,14 +1,15 @@
-const API_URL = 'http://localhost:5000/api/test-cases';
+const BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api');
+const API_URL = `${BASE_URL}/test-cases`;
 
 // Helper function to handle API calls
 const apiRequest = async (url, options = {}) => {
   const token = localStorage.getItem('token');
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -43,7 +44,7 @@ export const createTestCase = async (testCaseData) => {
 // Get all test cases
 export const getTestCases = async (filters = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   // Add filters to query params if they exist
   Object.entries(filters).forEach(([key, value]) => {
     if (value && value !== 'all') {
