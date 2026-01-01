@@ -156,7 +156,7 @@ const DeveloperDeliverables = () => {
                 name: submitData.title || `Development Deliverable - ${selectedProject.projectName || selectedProject.name}`,
                 description: submitData.description,
                 notes: submitData.notes,
-                status: 'Draft', // Using 'Draft' as safe default to avoid enum mismatches
+                status: 'In Review', // Set to 'In Review' so it appears for the client
                 type: 'Code',
                 fileUrl: submitData.repositoryUrl || '#repository',
                 fileName: 'Repository Code',

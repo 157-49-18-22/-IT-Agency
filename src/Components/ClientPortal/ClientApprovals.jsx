@@ -283,14 +283,14 @@ export default function ClientApprovals() {
   const filteredApprovals = approvals.filter(app => {
     const statusMatch = filter === 'All' ||
       app.status.includes(filter) ||
-      (filter === 'Pending' && app.status === 'Pending Approval') ||
+      (filter === 'Pending' && (app.status === 'Pending Approval' || app.status === 'In Review')) ||
       (filter === 'Completed' && app.status === 'Completed');
     const categoryMatch = categoryFilter === 'All' || getCategory(app) === categoryFilter;
     return statusMatch && categoryMatch;
   });
 
   const counts = {
-    Pending: approvals.filter(a => a.status.includes('Pending')).length,
+    Pending: approvals.filter(a => a.status.includes('Pending') || a.status === 'In Review').length,
     Approved: approvals.filter(a => a.status.includes('Approved') && a.status !== 'Completed').length,
     Rejected: approvals.filter(a => a.status.includes('Rejected')).length,
     Completed: approvals.filter(a => a.status === 'Completed').length
