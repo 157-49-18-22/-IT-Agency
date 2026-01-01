@@ -47,10 +47,9 @@ import {
   FiMessageSquare
 } from 'react-icons/fi';
 import './Uat.css';
-import uatAPI from '../../services/uatAPI';
+import { uatAPI, projectsAPI } from '../../services/api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { projectsAPI } from '../../services/api';
 
 const statusOptions = [
   { value: 'all', label: 'All Statuses' },
@@ -134,8 +133,8 @@ const Uat = () => {
   const fetchTests = async () => {
     try {
       setIsLoading(true);
-      const tests = await uatAPI.getAllTests();
-      setUatTests(tests);
+      const response = await uatAPI.getUATs();
+      setUatTests(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching UAT tests:', err);
       toast.error('Failed to load UAT tests');
@@ -195,10 +194,10 @@ const Uat = () => {
       };
 
       if (isEditing) {
-        await uatAPI.updateTest(currentTest._id, testData);
+        await uatAPI.updateUAT(currentTest.id || currentTest._id, testData);
         toast.success('Test case updated successfully!');
       } else {
-        await uatAPI.createTest(testData);
+        await uatAPI.createUAT(testData);
         toast.success('Test case created successfully!');
       }
 
@@ -238,7 +237,7 @@ const Uat = () => {
     setFormData({
       title: test.title,
       description: test.description,
-      testSteps: test.testSteps,
+      testSteps: test.testSteps || test.steps || [],
       expectedResult: test.expectedResult,
       actualResult: test.actualResult,
       status: test.status,
@@ -261,7 +260,7 @@ const Uat = () => {
     }
 
     try {
-      await uatAPI.deleteTest(id);
+      await uatAPI.deleteUAT(id);
       toast.success('Test case deleted successfully!');
       fetchTests();
     } catch (err) {
@@ -277,7 +276,7 @@ const Uat = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await uatAPI.updateTestStatus(id, status);
+      await uatAPI.updateStatus(id, status);
       toast.success(`Test case marked as ${status}`);
       fetchTests();
     } catch (err) {
@@ -560,16 +559,16 @@ const Uat = () => {
               <h3>{test.title}</h3>
               <p className="test-description">{test.description}</p>
 
-              {test.steps && test.steps.length > 0 && (
+              {(test.steps && test.steps.length > 0) || (test.testSteps && test.testSteps.length > 0) ? (
                 <div className="test-steps">
                   <h4>Test Steps:</h4>
                   <ol>
-                    {test.steps.map((step, index) => (
+                    {(test.steps || test.testSteps).map((step, index) => (
                       <li key={index}>{step}</li>
                     ))}
                   </ol>
                 </div>
-              )}
+              ) : null}
 
               <div className="test-actions d-flex justify-content-between align-items-center w-100">
                 <div className="status-actions d-flex gap-2">
