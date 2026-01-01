@@ -187,6 +187,7 @@ const Uat = () => {
     try {
       const testData = {
         ...formData,
+        description: formData.description || 'No description provided',
         testSteps: formData.testSteps.filter(step => step.trim() !== ''),
         lastUpdated: new Date().toISOString(),
         comments: 0,
