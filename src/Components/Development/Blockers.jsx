@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FaExclamationTriangle, FaPlus, FaCheckCircle, FaTrash } from 'react-icons/fa';
+import { FaExclamationTriangle, FaPlus, FaCheckCircle, FaTrash, FaClock, FaUser, FaProjectDiagram } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { blockerAPI } from '../../services/api';
 import { ProjectContext } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
-import './TaskPages.css';
+import './Blockers.css';
 
 const Blockers = () => {
     const { currentUser } = useAuth();
@@ -27,17 +27,14 @@ const Blockers = () => {
         const fetchProjects = async () => {
             let availableProjects = [];
 
-            // 1. Try getting projects from Context (User specific)
             if (currentUser?.id) {
                 availableProjects = getProjectsByUser(currentUser.id);
             }
 
-            // 2. Fallback to All Context Projects
             if ((!availableProjects || availableProjects.length === 0) && allProjects?.length > 0) {
                 availableProjects = allProjects;
             }
 
-            // 3. Final Fallback: Fetch directly from API
             if (!availableProjects || availableProjects.length === 0) {
                 try {
                     const token = localStorage.getItem('token');
@@ -61,7 +58,6 @@ const Blockers = () => {
 
             setMyProjects(availableProjects || []);
 
-            // Set default selection
             if (availableProjects && availableProjects.length > 0) {
                 setNewBlocker(prev => ({
                     ...prev,
@@ -144,44 +140,39 @@ const Blockers = () => {
 
     if (isLoading) {
         return (
-            <div className="task-page-container">
+            <div className="blocker-page-wrapper">
                 <div className="loading-spinner">
                     <div className="spinner"></div>
-                    <p>Loading blockers...</p>
+                    <p style={{ color: '#64748b' }}>Loading blockers...</p>
                 </div>
             </div>
         );
     }
 
+    const activeCount = blockers.filter(b => b.status === 'open').length;
+
     return (
-        <div className="task-page-container">
-            <div className="page-header">
-                <div className="header-content">
+        <div className="blocker-page-wrapper">
+            <div className="blocker-header">
+                <div className="header-title-section">
                     <h1>Blockers</h1>
-                    <p>Track and resolve issues blocking your progress</p>
+                    <p>Track and resolve critical issues blocking development</p>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div className="header-stats">
-                        <div className="stat-badge" style={{ background: 'linear-gradient(135deg, #dc3545, #c82333)' }}>
-                            <span className="stat-number">{blockers.filter(b => b.status === 'open').length}</span>
-                            <span className="stat-label">Active Blockers</span>
+
+                <div className="stats-container">
+                    <div className="stat-card">
+                        <div className="stat-icon-wrapper">
+                            <FaExclamationTriangle size={18} />
+                        </div>
+                        <div className="stat-info">
+                            <span className="count">{activeCount}</span>
+                            <span className="label">Active Issues</span>
                         </div>
                     </div>
+
                     <button
-                        className="action-btn primary"
+                        className="add-blocker-btn"
                         onClick={() => setShowAddModal(true)}
-                        style={{
-                            background: '#dc3545',
-                            color: 'white',
-                            height: '50px',
-                            width: '50px',
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: 0,
-                            boxShadow: '0 4px 6px rgba(220, 53, 69, 0.2)'
-                        }}
                         title="Report New Blocker"
                     >
                         <FaPlus size={20} />
@@ -189,132 +180,149 @@ const Blockers = () => {
                 </div>
             </div>
 
-            <div className="tasks-grid">
+            <div className="blockers-grid">
                 {blockers.length > 0 ? (
                     blockers.map((blocker) => (
-                        <div key={blocker.id} className="task-card" style={{ borderLeft: `4px solid ${blocker.status === 'resolved' ? '#28a745' : '#dc3545'}` }}>
-                            <div className="task-header">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div key={blocker.id} className={`blocker-card status-${blocker.status}`}>
+                            <div className="blocker-card-header">
+                                <div className="blocker-main-info">
+                                    <div className="project-tag">
+                                        <FaProjectDiagram size={10} style={{ marginRight: '5px' }} />
+                                        {blocker.project?.projectName || blocker.project?.name || 'Unnamed Project'}
+                                    </div>
                                     <h3>{blocker.title}</h3>
-                                    {blocker.project && (
-                                        <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '4px', background: '#f0f0f0', color: '#666' }}>
-                                            {blocker.project.name}
-                                        </span>
-                                    )}
                                 </div>
-                                <span className="status-badge" style={{ background: blocker.status === 'resolved' ? '#28a745' : '#dc3545' }}>
-                                    {blocker.status === 'resolved' ? <FaCheckCircle /> : <FaExclamationTriangle />}
-                                    {blocker.status}
-                                </span>
-                            </div>
-
-                            <div className="task-description">
-                                <p>{blocker.description}</p>
-                            </div>
-
-                            <div className="task-meta">
-                                <div className="meta-item">
-                                    <FaExclamationTriangle />
-                                    <span>Priority: {blocker.priority}</span>
-                                </div>
-                                <div className="meta-item">
-                                    <span>Reported by: {blocker.reporter?.name || 'Unknown'}</span>
+                                <div className={`priority-tag priority-${blocker.priority}`}>
+                                    {blocker.priority}
                                 </div>
                             </div>
 
-                            <div className="task-actions">
-                                {blocker.status !== 'resolved' && (
+                            <p className="blocker-body">{blocker.description}</p>
+
+                            <div className="blocker-meta-grid">
+                                <div className="meta-box">
+                                    <span className="meta-label">Reported By</span>
+                                    <div className="meta-value">
+                                        <div className="reporter-avatar">
+                                            {blocker.reporter?.name?.charAt(0) || <FaUser size={8} />}
+                                        </div>
+                                        {blocker.reporter?.name || 'Unknown'}
+                                    </div>
+                                </div>
+                                <div className="meta-box">
+                                    <span className="meta-label">Reported On</span>
+                                    <div className="meta-value">
+                                        <FaClock size={12} style={{ color: '#94a3b8' }} />
+                                        {new Date(blocker.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="blocker-footer">
+                                {blocker.status === 'resolved' ? (
+                                    <div className="resolved-badge">
+                                        <FaCheckCircle /> Resolved
+                                    </div>
+                                ) : (
                                     <button
-                                        className="action-btn success"
+                                        className="resolve-btn"
                                         onClick={() => handleResolve(blocker.id)}
                                     >
-                                        <FaCheckCircle /> Mark Resolved
+                                        <FaCheckCircle size={14} /> Mark Resolved
                                     </button>
                                 )}
+
                                 {(currentUser?.id === blocker.reportedBy || currentUser?.role === 'admin') && (
                                     <button
-                                        className="action-btn delete"
+                                        className="delete-btn"
                                         onClick={() => handleDelete(blocker.id)}
-                                        style={{ background: 'none', color: '#dc3545', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}
+                                        title="Delete Blocker"
                                     >
-                                        <FaTrash />
+                                        <FaTrash size={14} />
                                     </button>
                                 )}
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="empty-state">
-                        <FaCheckCircle size={64} style={{ color: '#28a745' }} />
-                        <h3>No blockers! 🎉</h3>
-                        <p>All tasks are progressing smoothly</p>
+                    <div className="modern-empty-state">
+                        <div className="empty-icon-box">
+                            <FaCheckCircle />
+                        </div>
+                        <h3>All Clear! 🎉</h3>
+                        <p>No active blockers reported. Development is cruising!</p>
                     </div>
                 )}
             </div>
 
-            {/* Add Blocker Modal */}
+            {/* Premium Add Blocker Modal */}
             {showAddModal && (
                 <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-                        <div className="modal-header">
-                            <h2>Report Blocker</h2>
-                            <button className="modal-close" onClick={() => setShowAddModal(false)}>✕</button>
+                    <div className="blocker-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
+                        <div className="modal-header-gradient">
+                            <h2>Report New Blocker</h2>
+                            <button className="close-modal-btn" onClick={() => setShowAddModal(false)}>✕</button>
                         </div>
 
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Project *</label>
+                        <form onSubmit={handleSubmit} className="blocker-form">
+                            <div className="form-field">
+                                <label>Target Project</label>
                                 <select
                                     value={newBlocker.projectId}
                                     onChange={(e) => setNewBlocker({ ...newBlocker, projectId: e.target.value })}
                                     required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 >
+                                    <option value="">Select Project</option>
                                     {myProjects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name || p.projectName}</option>
+                                        <option key={p.id} value={p.id}>{p.projectName || p.name}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label>Blocker Title *</label>
+                            <div className="form-field">
+                                <label>Blocker Title</label>
                                 <input
                                     type="text"
+                                    placeholder="Briefly describe the issue..."
                                     value={newBlocker.title}
                                     onChange={(e) => setNewBlocker({ ...newBlocker, title: e.target.value })}
                                     required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label>Description *</label>
+                            <div className="form-field">
+                                <label>Detailed Description</label>
                                 <textarea
+                                    placeholder="What exactly is holding you up?"
                                     value={newBlocker.description}
                                     onChange={(e) => setNewBlocker({ ...newBlocker, description: e.target.value })}
                                     rows="4"
                                     required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label>Priority</label>
-                                <select
-                                    value={newBlocker.priority}
-                                    onChange={(e) => setNewBlocker({ ...newBlocker, priority: e.target.value })}
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                    <option value="critical">Critical</option>
-                                </select>
+                            <div className="form-row">
+                                <div className="form-field">
+                                    <label>Priority Level</label>
+                                    <select
+                                        value={newBlocker.priority}
+                                        onChange={(e) => setNewBlocker({ ...newBlocker, priority: e.target.value })}
+                                    >
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                                <div className="form-field">
+                                    <label>Estimated Delay (Optional)</label>
+                                    <input type="text" placeholder="e.g. 2 days" />
+                                </div>
                             </div>
 
-                            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary">Cancel</button>
-                                <button type="submit" className="btn-primary" style={{ background: '#dc3545', color: 'white' }}>Report Blocker</button>
+                            <div className="modal-footer">
+                                <button type="button" onClick={() => setShowAddModal(false)} className="btn-ghost">Discard</button>
+                                <button type="submit" className="btn-report">Report Blocker</button>
                             </div>
                         </form>
                     </div>
@@ -323,5 +331,6 @@ const Blockers = () => {
         </div>
     );
 };
+
 
 export default Blockers;
