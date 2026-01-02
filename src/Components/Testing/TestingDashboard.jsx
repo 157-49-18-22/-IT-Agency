@@ -87,7 +87,7 @@ const TestingDashboard = () => {
         plugins: {
             legend: {
                 position: 'bottom',
-                labels: { color: 'rgba(255, 255, 255, 0.7)' }
+                labels: { color: '#1e293b' }
             },
             title: {
                 display: false,
@@ -104,11 +104,11 @@ const TestingDashboard = () => {
         scales: {
             x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                ticks: { color: '#64748b' }
             },
             y: {
-                grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false },
-                ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                grid: { color: '#e2e8f0', drawBorder: false },
+                ticks: { color: '#64748b' }
             }
         }
     };

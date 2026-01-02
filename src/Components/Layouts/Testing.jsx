@@ -1162,6 +1162,16 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
           </button>
         </div>
 
+        <div className="user-profile" style={{ padding: '0 1.5rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1rem' }}>
+          <div className="user-avatar">
+            <span>T</span>
+          </div>
+          <div className="user-info">
+            <h4>Tester Name</h4>
+            <p>QA Tester</p>
+          </div>
+        </div>
+
         <nav className="sidebar-nav">
           <ul>
             <li className={isActive('/testing/dashboard')}>
@@ -1221,12 +1231,7 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
               </Link>
             </li>
 
-            <li className={isActive('/testing/deliverables')}>
-              <Link to="/testing/deliverables">
-                <FaClipboardCheck className="nav-icon" />
-                <span className="nav-text">Testing Deliverables</span>
-              </Link>
-            </li>
+
 
             <li className={isActive('/testing/submit')}>
               <Link to="/testing/submit">
@@ -1238,15 +1243,7 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-profile">
-            <div className="user-avatar">
-              <span>T</span>
-            </div>
-            <div className="user-info">
-              <h4>Tester Name</h4>
-              <p>QA Tester</p>
-            </div>
-          </div>
+
           <button
             className="btn btn-link sign-out"
             onClick={() => {
@@ -1254,7 +1251,7 @@ const Testing = ({ projectId, onComplete, isClientView = false }) => {
               navigate('/login');
             }}
           >
-            <FaSignOutAlt className="mr-2" /> Sign Out
+            <FaSignOutAlt className="mr-2" /> Log Out
           </button>
         </div>
       </div>

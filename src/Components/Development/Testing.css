@@ -1,17 +1,19 @@
 .testing-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+    background: #f8fafc;
+    /* Light background */
     padding: 2rem;
+    color: #1e293b;
+    /* Dark text */
 }
 
 .testing-header {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 20px;
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .header-content {
@@ -31,7 +33,7 @@
     justify-content: center;
     font-size: 2rem;
     color: white;
-    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.2);
 }
 
 .header-text h1 {
@@ -39,12 +41,13 @@
     font-weight: 700;
     background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 0 0.5rem 0;
 }
 
 .header-text p {
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     font-size: 1.1rem;
     margin: 0;
 }
@@ -57,20 +60,21 @@
 
 .stat-card {
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card.success {
-    border-color: rgba(16, 185, 129, 0.3);
-    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
 }
 
 .stat-card.error {
-    border-color: rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
 }
 
 .stat-value {
@@ -78,6 +82,7 @@
     font-weight: 700;
     background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
 }
@@ -85,20 +90,23 @@
 .stat-card.success .stat-value {
     background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .stat-card.error .stat-value {
     background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .stat-label {
-    color: rgb(54, 54, 54);
+    color: #64748b;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
 .test-categories {
@@ -113,26 +121,28 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 1.5rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 1rem;
     font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .category-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
 }
 
 .category-btn.active {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+    background: #ffffff;
     border-color: #8b5cf6;
-    color: white;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
 }
 
 .category-btn svg {
@@ -146,17 +156,18 @@
 }
 
 .test-suite-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
     overflow: hidden;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .test-suite-card:hover {
-    border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.1);
+    border-color: #8b5cf6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    transform: translateY(-2px);
 }
 
 .suite-header {
@@ -166,21 +177,22 @@
     padding: 1.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    background: #ffffff;
 }
 
 .suite-header:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: #f8fafc;
 }
 
 .suite-info h3 {
-    color: white;
+    color: #1e293b;
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0 0 0.5rem 0;
 }
 
 .suite-info p {
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     margin: 0;
     font-size: 0.95rem;
 }
@@ -195,8 +207,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .stat-item svg {
@@ -205,32 +218,34 @@
 
 .suite-tests {
     padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
 .test-item {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 1.25rem;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .test-item:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(139, 92, 246, 0.2);
+    background: #ffffff;
+    border-color: #8b5cf6;
+    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1);
 }
 
 .test-item.passed {
-    border-left: 3px solid #10b981;
+    border-left: 4px solid #10b981;
 }
 
 .test-item.failed {
-    border-left: 3px solid #ef4444;
+    border-left: 4px solid #ef4444;
 }
 
 .test-header {
@@ -256,17 +271,18 @@
     justify-content: center;
     color: white;
     font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .test-info h4 {
-    color: white;
+    color: #1e293b;
     font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 0.25rem 0;
 }
 
 .test-duration {
-    color: rgba(255, 255, 255, 0.6);
+    color: #94a3b8;
     font-size: 0.85rem;
 }
 
@@ -275,17 +291,19 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: rgba(139, 92, 246, 0.2);
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    color: white;
+    color: #64748b;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .copy-btn:hover {
-    background: rgba(139, 92, 246, 0.3);
+    background: #e2e8f0;
+    color: #8b5cf6;
     border-color: #8b5cf6;
 }
 
@@ -294,8 +312,8 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: #fef2f2;
+    border: 1px solid #fecaca;
     border-radius: 8px;
     color: #ef4444;
     margin-bottom: 1rem;
@@ -308,10 +326,12 @@
 }
 
 .test-code {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #1e293b;
+    /* Keep dark for code readibility */
+    border: 1px solid #334155;
     border-radius: 10px;
     overflow: hidden;
+    position: relative;
 }
 
 .test-code pre {
@@ -321,7 +341,7 @@
 }
 
 .test-code code {
-    font-family: 'Fira Code', monospace;
+    font-family: 'Fira Code', 'Courier New', monospace;
     font-size: 0.9rem;
     line-height: 1.6;
     color: #e2e8f0;
@@ -333,16 +353,16 @@
 }
 
 .test-code pre::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: #334155;
 }
 
 .test-code pre::-webkit-scrollbar-thumb {
-    background: rgba(139, 92, 246, 0.5);
+    background: #475569;
     border-radius: 3px;
 }
 
 .test-code pre::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.7);
+    background: #64748b;
 }
 
 /* Responsive Design */
@@ -377,6 +397,7 @@
     .suite-stats {
         flex-wrap: wrap;
         width: 100%;
+        gap: 1rem;
     }
 
     .test-header {

@@ -250,10 +250,27 @@ export default function Messages() {
         <div className="messages">
             <aside className="left">
                 <div className="left-head">
-                    <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div className="title">Messages</div>
-                        <button className="new-chat-btn" onClick={() => setShowModal(true)} title="New Message">
-                            <FiPlus />
+                    <div className="header-row" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="title">Messages</div>
+                        </div>
+                        <button className="new-chat-btn-large" onClick={() => setShowModal(true)} style={{
+                            background: '#4f46e5',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            fontWeight: '500',
+                            fontSize: '0.95rem',
+                            transition: 'background 0.2s',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                            <FiPlus size={18} /> Start New Chat
                         </button>
                     </div>
                     <div className="search">

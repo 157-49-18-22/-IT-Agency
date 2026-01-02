@@ -1,11 +1,13 @@
-/* Testing Pages - Premium Dark Theme */
+/* Testing Pages - Light Theme */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .testing-page-container {
     padding: 2rem;
     min-height: 100vh;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-    color: #e2e8f0;
+    background: #f8fafc;
+    /* Light background */
+    color: #1e293b;
+    /* Dark text */
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
     /* Prevent horizontal scroll */
@@ -30,7 +32,7 @@
 .spinner {
     width: 60px;
     height: 60px;
-    border: 4px solid rgba(255, 255, 255, 0.1);
+    border: 4px solid rgba(59, 130, 246, 0.2);
     border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -43,23 +45,21 @@
     }
 }
 
-/* Premium Glassmorphism */
+/* Premium Light Panel */
 .glass-panel {
-    background: rgba(30, 41, 59, 0.7);
-    /* Darker semi-transparent background */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #ffffff;
+    /* Solid white background */
+    border: 1px solid #e2e8f0;
     border-radius: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     overflow: hidden;
 }
 
 .glass-panel:hover {
     transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border-color: #8b5cf6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
 }
 
 /* Welcome Banner */
@@ -67,14 +67,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 24px;
     padding: 3rem;
     margin-bottom: 2.5rem;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .welcome-banner::after {
@@ -84,7 +84,7 @@
     right: 0;
     bottom: 0;
     width: 40%;
-    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
     pointer-events: none;
 }
 
@@ -92,12 +92,12 @@
     font-size: 2.2rem;
     font-weight: 800;
     margin-bottom: 0.75rem;
-    color: white;
+    color: #1e293b;
     letter-spacing: -0.5px;
 }
 
 .welcome-text p {
-    color: #cbd5e1;
+    color: #64748b;
     font-size: 1.1rem;
     max-width: 600px;
 }
@@ -120,16 +120,16 @@
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-weight: 600;
-    color: #94a3b8;
+    color: #64748b;
     margin-bottom: 0.5rem;
 }
 
 .banner-stat .value {
     font-size: 2.75rem;
     font-weight: 800;
-    color: #fff;
+    color: #1e293b;
     line-height: 1;
-    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
 }
 
 /* Dashboard Grid Layout */
@@ -146,13 +146,13 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .card-header h3 {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #fff;
+    color: #1e293b;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -161,28 +161,28 @@
 
 /* Icons */
 .icon-blue {
-    color: #60a5fa;
-    filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
+    color: #3b82f6;
+    filter: none;
 }
 
 .icon-purple {
-    color: #c084fc;
-    filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.5));
+    color: #8b5cf6;
+    filter: none;
 }
 
 .icon-red {
-    color: #f87171;
-    filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.5));
+    color: #ef4444;
+    filter: none;
 }
 
 .icon-yellow {
-    color: #facc15;
-    filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.5));
+    color: #f59e0b;
+    filter: none;
 }
 
 .icon-green {
-    color: #4ade80;
-    filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.5));
+    color: #10b981;
+    filter: none;
 }
 
 /* Overview Card Metrics */
@@ -207,20 +207,20 @@
 .metric-separator {
     width: 1px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.1);
+    background: #e2e8f0;
     flex-shrink: 0;
 }
 
 .metric-value {
     font-size: 2rem;
     font-weight: 700;
-    color: #fff;
+    color: #1e293b;
     line-height: 1.2;
 }
 
 .metric-label {
     font-size: 0.8rem;
-    color: #94a3b8;
+    color: #64748b;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -257,15 +257,17 @@
     align-items: flex-start;
     gap: 1.25rem;
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: #ffffff;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid #e2e8f0;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .activity-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: #f8fafc;
     transform: translateX(5px);
+    border-color: #cbd5e1;
 }
 
 .activity-icon-wrapper {
@@ -280,18 +282,18 @@
 }
 
 .activity-icon-wrapper.success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #4ade80;
+    background: #ecfdf5;
+    color: #10b981;
 }
 
 .activity-icon-wrapper.warning {
-    background: rgba(234, 179, 8, 0.15);
-    color: #facc15;
+    background: #fefce8;
+    color: #f59e0b;
 }
 
 .activity-icon-wrapper.info {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: #eff6ff;
+    color: #3b82f6;
 }
 
 .activity-content {
@@ -301,7 +303,7 @@
 }
 
 .activity-msg {
-    color: #f1f5f9;
+    color: #1e293b;
     font-weight: 500;
     font-size: 1rem;
     line-height: 1.4;
@@ -323,7 +325,7 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .focus-item:first-child {
@@ -337,7 +339,7 @@
 .check-ring {
     width: 22px;
     height: 22px;
-    border: 2px solid #64748b;
+    border: 2px solid #cbd5e1;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s;
@@ -347,12 +349,12 @@
 
 .check-ring:hover {
     border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.15);
+    background: #eff6ff;
 }
 
 .focus-item span:first-of-type {
     flex: 1;
-    color: #e2e8f0;
+    color: #334155;
     font-size: 0.95rem;
     font-weight: 500;
 }
@@ -401,6 +403,6 @@
     .metric-separator {
         width: 100%;
         height: 1px;
-        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+        background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
     }
 }
