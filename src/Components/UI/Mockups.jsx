@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
 import { API_URL } from '../../config/endpoints';
+import { getFullUrl } from '../../utils/urlHelper';
 import './Mockups.css';
 
 const Mockups = () => {
@@ -84,19 +85,6 @@ const Mockups = () => {
     fetchProjects();
   }, [projectId]);
 
-  // Helper to construct full image URL
-  const getFullUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('https') || path.startsWith('data:')) return path;
-
-    // Remove '/api' from the end of API_URL to get the base URL
-    const baseUrl = API_URL.replace(/\/api$/, '');
-
-    // Ensure path starts with / if needed, or join correctly
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-
-    return `${baseUrl}${cleanPath}`;
-  };
 
   // Handle file selection
   const handleFileChange = (e) => {

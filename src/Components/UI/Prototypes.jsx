@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV, FaLink } from 'react-icons/fa';
 import api from '../../services/api';
+import { getFullUrl } from '../../utils/urlHelper';
 import './Prototypes.css';
 
 const Prototypes = () => {
@@ -285,7 +286,7 @@ const Prototypes = () => {
             >
               <div className="prototype-thumbnail">
                 {prototype.imageUrl ? (
-                  <img src={prototype.imageUrl} alt={prototype.title} className="prototype-image" />
+                  <img src={getFullUrl(prototype.imageUrl)} alt={prototype.title} className="prototype-image" />
                 ) : (
                   <div className="image-placeholder">
                     <FaImage size={32} />
@@ -536,7 +537,7 @@ const Prototypes = () => {
               <div className="details-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {selectedPrototype.imageUrl && (
                   <div className="details-image-section" style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', overflow: 'hidden', background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src={selectedPrototype.imageUrl} alt={selectedPrototype.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                    <img src={getFullUrl(selectedPrototype.imageUrl)} alt={selectedPrototype.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
                   </div>
                 )}
                 <div className="details-info-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

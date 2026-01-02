@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiSend, FiCheck, FiClock, FiEye, FiImage, FiLayers, FiSmartphone, FiX, FiCalendar, FiUser } from 'react-icons/fi';
 import api from '../../services/api';
 import { API_URL } from '../../config/endpoints';
+import { getFullUrl } from '../../utils/urlHelper';
 import './DesignDeliverables.css';
 
 export default function DesignDeliverables() {
@@ -112,15 +113,6 @@ export default function DesignDeliverables() {
         }
     };
 
-    const getImageUrl = (design) => {
-        const url = design.imageUrl || design.image_url;
-        if (!url) return null;
-        if (url.startsWith('http')) return url;
-
-        // Use API_URL from config and strip /api to get base URL
-        const baseUrl = API_URL.replace('/api', '');
-        return `${baseUrl}${url}`;
-    };
 
     const handleViewDetails = (project) => {
         console.log('Project data:', project);
@@ -223,8 +215,8 @@ export default function DesignDeliverables() {
                                         .slice(0, 3)
                                         .map((design, idx) => (
                                             <div key={idx} className="thumbnail">
-                                                {design.imageUrl ? (
-                                                    <img src={design.imageUrl} alt={design.title} />
+                                                {design.imageUrl || design.image_url ? (
+                                                    <img src={getFullUrl(design.imageUrl || design.image_url)} alt={design.title} />
                                                 ) : (
                                                     <div className="thumbnail-placeholder">
                                                         <FiImage />
@@ -300,9 +292,9 @@ export default function DesignDeliverables() {
                                         {selectedProject.wireframes.map((wireframe) => (
                                             <div key={wireframe.id} className="design-item" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s' }}>
                                                 <div className="design-image" style={{ height: '180px', background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                                    {getImageUrl(wireframe) ? (
+                                                    {getFullUrl(wireframe.imageUrl || wireframe.image_url) ? (
                                                         <img
-                                                            src={getImageUrl(wireframe)}
+                                                            src={getFullUrl(wireframe.imageUrl || wireframe.image_url)}
                                                             alt={wireframe.title}
                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             onError={(e) => {
@@ -343,8 +335,8 @@ export default function DesignDeliverables() {
                                         {selectedProject.mockups.map((mockup) => (
                                             <div key={mockup.id} className="design-item" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s' }}>
                                                 <div className="design-image" style={{ height: '180px', background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                                    {getImageUrl(mockup) ? (
-                                                        <img src={getImageUrl(mockup)} alt={mockup.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { console.error('Failed to load mockup image:', mockup); e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'; }} />
+                                                    {getFullUrl(mockup.imageUrl || mockup.image_url) ? (
+                                                        <img src={getFullUrl(mockup.imageUrl || mockup.image_url)} alt={mockup.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { console.error('Failed to load mockup image:', mockup); e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'; }} />
                                                     ) : (
                                                         <FiImage size={48} style={{ color: '#cbd5e0' }} />
                                                     )}
@@ -377,9 +369,9 @@ export default function DesignDeliverables() {
                                         {selectedProject.prototypes.map((prototype) => (
                                             <div key={prototype.id} className="design-item" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', transition: 'all 0.3s' }}>
                                                 <div className="design-image" style={{ height: '180px', background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                                    {getImageUrl(prototype) ? (
+                                                    {getFullUrl(prototype.imageUrl || prototype.image_url) ? (
                                                         <img
-                                                            src={getImageUrl(prototype)}
+                                                            src={getFullUrl(prototype.imageUrl || prototype.image_url)}
                                                             alt={prototype.title}
                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             onError={(e) => {

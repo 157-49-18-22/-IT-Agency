@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useEffect, useContext, useCallback } from 'react';
-import { 
-  FiCheck, 
-  FiX, 
-  FiSearch, 
-  FiFilter, 
-  FiChevronRight, 
-  FiClock, 
-  FiFile, 
-  FiUser, 
+import {
+  FiCheck,
+  FiX,
+  FiSearch,
+  FiFilter,
+  FiChevronRight,
+  FiClock,
+  FiFile,
+  FiUser,
   FiCalendar,
   FiAlertCircle,
   FiCheckCircle,
@@ -24,6 +24,7 @@ import {
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Approvals.css';
+import { getFullUrl } from '../utils/urlHelper';
 import { AuthContext } from '../context/AuthContext';
 import { approvalAPI } from '../services/api';
 
@@ -58,7 +59,7 @@ const Approvals = () => {
     try {
       if (!refreshing) setLoading(true);
       setError(null);
-      
+
       const params = {
         status: activeTab === 'All' ? undefined : activeTab,
         search: searchQuery || undefined,
@@ -72,7 +73,7 @@ const Approvals = () => {
       };
 
       const response = await approvalAPI.getAll(params);
-      
+
       if (response && response.data) {
         setApprovals(response.data.items || []);
         setPagination(prev => ({
@@ -83,7 +84,7 @@ const Approvals = () => {
       } else {
         throw new Error('Invalid response format from server');
       }
-      
+
     } catch (err) {
       console.error('Error fetching approvals:', err);
       const errorMessage = err.response?.data?.message || 'Failed to load approvals. Please try again.';
@@ -107,7 +108,7 @@ const Approvals = () => {
         throw new Error('User not authenticated');
       }
 
-      const approvalData = { 
+      const approvalData = {
         approvedBy: user.id,
         approvedAt: new Date().toISOString(),
         notes: notes || `Approved by ${user.name || user.email}`,
@@ -115,38 +116,38 @@ const Approvals = () => {
       };
 
       // Optimistic update
-      setApprovals(prev => 
-        prev.map(item => 
-          item.id === id 
+      setApprovals(prev =>
+        prev.map(item =>
+          item.id === id
             ? { ...item, status: 'Approved', ...approvalData }
             : item
         )
       );
-      
+
       // Remove from selected
       setSelected(prev => prev.filter(itemId => itemId !== id));
-      
+
       // Make API call
       await approvalAPI.approve(id, approvalData);
-      
+
       toast.success('Approval completed successfully');
-      
+
       // Refresh the list if we're running low on items
       if (approvals.length <= 2) {
         fetchApprovals();
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error approving:', error);
-      
+
       // Revert optimistic update on error
       fetchApprovals();
-      
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
-                         'Failed to approve. Please try again.';
-      
+
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        'Failed to approve. Please try again.';
+
       toast.error(errorMessage);
       return false;
     }
@@ -161,13 +162,13 @@ const Approvals = () => {
       }
       reason = userReason;
     }
-    
+
     try {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      const rejectionData = { 
+      const rejectionData = {
         rejectedBy: user.id,
         rejectedAt: new Date().toISOString(),
         reason,
@@ -175,38 +176,38 @@ const Approvals = () => {
       };
 
       // Optimistic update
-      setApprovals(prev => 
-        prev.map(item => 
-          item.id === id 
+      setApprovals(prev =>
+        prev.map(item =>
+          item.id === id
             ? { ...item, status: 'Rejected', ...rejectionData }
             : item
         )
       );
-      
+
       // Remove from selected
       setSelected(prev => prev.filter(itemId => itemId !== id));
-      
+
       // Make API call
       await approvalAPI.reject(id, rejectionData);
-      
+
       toast.success('Rejection completed successfully');
-      
+
       // Refresh the list if we're running low on items
       if (approvals.length <= 2) {
         fetchApprovals();
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error rejecting:', error);
-      
+
       // Revert optimistic update on error
       fetchApprovals();
-      
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
-                         'Failed to reject. Please try again.';
-      
+
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        'Failed to reject. Please try again.';
+
       toast.error(errorMessage);
       return false;
     }
@@ -253,11 +254,11 @@ const Approvals = () => {
 
   // Calculate counts for tabs
   const counts = useMemo(() => {
-    return approvals.reduce((acc, it) => { 
+    return approvals.reduce((acc, it) => {
       if (it.status) {
-        acc[it.status] = (acc[it.status] || 0) + 1; 
+        acc[it.status] = (acc[it.status] || 0) + 1;
       }
-      return acc; 
+      return acc;
     }, { Pending: 0, Approved: 0, Rejected: 0 });
   }, [approvals]);
 
@@ -265,12 +266,12 @@ const Approvals = () => {
   const filterOptions = useMemo(() => {
     const priorities = new Set();
     const types = new Set();
-    
+
     approvals.forEach(item => {
       if (item.priority) priorities.add(item.priority);
       if (item.type) types.add(item.type);
     });
-    
+
     return {
       priorities: ['All', ...Array.from(priorities).sort()],
       types: ['All', ...Array.from(types).sort()]
@@ -282,9 +283,9 @@ const Approvals = () => {
     return [...approvals]
       .filter(approval => {
         if (!approval) return false;
-        
+
         // Search across all string fields
-        const matchesSearch = !searchQuery || 
+        const matchesSearch = !searchQuery ||
           Object.entries(approval).some(([key, value]) => {
             if (typeof value === 'string') {
               return value.toLowerCase().includes(searchQuery.toLowerCase());
@@ -293,41 +294,41 @@ const Approvals = () => {
             }
             return false;
           });
-        
+
         // Filter by type
         const matchesType = typeFilter === 'All' || approval.type === typeFilter;
-        
+
         // Filter by priority
         const matchesPriority = priorityFilter === 'All' || approval.priority === priorityFilter;
-        
+
         // Filter by status
         const matchesStatus = activeTab === 'All' || approval.status === activeTab;
-        
+
         return matchesSearch && matchesType && matchesPriority && matchesStatus;
       })
       .sort((a, b) => {
         // Handle sorting
         const { sortField, sortOrder } = pagination;
         if (!sortField) return 0;
-        
+
         let aValue = a[sortField];
         let bValue = b[sortField];
-        
+
         // Handle date fields
         if (sortField.includes('Date') || sortField.includes('At')) {
           aValue = new Date(aValue).getTime();
           bValue = new Date(bValue).getTime();
         }
-        
+
         // Handle string comparison
         if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return sortOrder === 'asc' 
+          return sortOrder === 'asc'
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
-        
+
         // Handle number comparison
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? (aValue || 0) - (bValue || 0)
           : (bValue || 0) - (aValue || 0);
       });
@@ -349,8 +350,8 @@ const Approvals = () => {
         <FiInfo className="empty-icon" />
         <h3>No approvals found</h3>
         <p>There are no pending approvals at the moment.</p>
-        <button 
-          className="btn primary" 
+        <button
+          className="btn primary"
           onClick={refreshApprovals}
           disabled={refreshing}
         >
@@ -367,8 +368,8 @@ const Approvals = () => {
         <FiAlertCircle className="error-icon" />
         <h3>Error loading approvals</h3>
         <p>{error}</p>
-        <button 
-          className="btn primary" 
+        <button
+          className="btn primary"
           onClick={refreshApprovals}
           disabled={refreshing}
         >
@@ -379,9 +380,9 @@ const Approvals = () => {
   }
 
   const toggleSelect = useCallback((id) => {
-    setSelected(prev => 
-      prev.includes(id) 
-        ? prev.filter(x => x !== id) 
+    setSelected(prev =>
+      prev.includes(id)
+        ? prev.filter(x => x !== id)
         : [...prev, id]
     );
   }, []);
@@ -393,7 +394,7 @@ const Approvals = () => {
         pagination.page * pagination.limit
       )
       .map(item => item.id);
-    
+
     // If all current page items are selected, deselect all
     if (currentPageItems.every(id => selected.includes(id))) {
       setSelected(prev => prev.filter(id => !currentPageItems.includes(id)));
@@ -425,13 +426,13 @@ const Approvals = () => {
       'Approved': { color: 'var(--success)', icon: <FiCheckCircle /> },
       'Rejected': { color: 'var(--danger)', icon: <FiXCircle /> }
     };
-    
+
     const statusInfo = statusMap[status] || { color: 'var(--gray)', icon: <FiInfo /> };
-    
+
     return (
-      <span 
-        className="status-badge" 
-        style={{ 
+      <span
+        className="status-badge"
+        style={{
           backgroundColor: `${statusInfo.color}15`,
           color: statusInfo.color,
           borderColor: statusInfo.color
@@ -442,61 +443,61 @@ const Approvals = () => {
       </span>
     );
   };
-  
+
   const renderPriorityBadge = (priority) => {
     const priorityMap = {
       'High': 'danger',
       'Medium': 'warning',
       'Low': 'info'
     };
-    
+
     const priorityClass = priorityMap[priority] || 'default';
-    
+
     return (
       <span className={`priority-badge ${priorityClass}`}>
         {priority || 'N/A'}
       </span>
     );
   };
-  
+
   const batchUpdateStatus = useCallback(async (status) => {
     if (!selected.length) {
       toast.warning('Please select at least one approval');
       return;
     }
-    
+
     const action = status.toLowerCase();
     const confirmMessage = `Are you sure you want to ${action} ${selected.length} selected item(s)?`;
-    
+
     if (!window.confirm(confirmMessage)) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       const results = await Promise.allSettled(
-        selected.map(id => 
-          status === 'Approved' 
+        selected.map(id =>
+          status === 'Approved'
             ? handleApprove(id, `Batch approved by ${user?.name || user?.email || 'Admin'} on ${new Date().toLocaleString()}`)
             : handleReject(id, `Batch rejected by ${user?.name || user?.email || 'Admin'} on ${new Date().toLocaleString()}`)
         )
       );
-      
+
       const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
       const failed = results.length - successful;
-      
+
       if (successful > 0) {
         toast.success(`Successfully processed ${successful} item(s)`);
       }
-      
+
       if (failed > 0) {
         toast.error(`Failed to process ${failed} item(s)`);
       }
-      
+
       // Refresh the list
       fetchApprovals();
-      
+
     } catch (error) {
       console.error(`Error ${action}ing items:`, error);
       toast.error(`Error ${action}ing items. Please try again.`);
@@ -527,9 +528,9 @@ const Approvals = () => {
             <span className="badge danger" onClick={() => setActiveTab('Rejected')}>
               <FiXCircle /> Rejected {counts.Rejected || 0}
             </span>
-            <button 
-              className="btn icon" 
-              onClick={refreshApprovals} 
+            <button
+              className="btn icon"
+              onClick={refreshApprovals}
               disabled={refreshing}
               title="Refresh"
             >
@@ -537,17 +538,17 @@ const Approvals = () => {
             </button>
           </div>
         </div>
-        
+
         <div className="header-actions">
-          <button 
-            className={`btn ${showFilters ? 'active' : ''}`} 
+          <button
+            className={`btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <FiFilter /> {showFilters ? 'Hide Filters' : 'Show Filters'}
           </button>
-          
-          <button 
-            className="btn secondary" 
+
+          <button
+            className="btn secondary"
             onClick={resetFilters}
             disabled={!searchQuery && typeFilter === 'All' && priorityFilter === 'All'}
           >
@@ -559,9 +560,9 @@ const Approvals = () => {
       {/* Tabs */}
       <div className="tabs">
         {['Pending', 'Approved', 'Rejected', 'All'].map(tab => (
-          <button 
+          <button
             key={tab}
-            className={`tab ${activeTab === tab ? 'active' : ''}`} 
+            className={`tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => {
               setActiveTab(tab);
               setPagination(prev => ({ ...prev, page: 1 }));
@@ -577,18 +578,18 @@ const Approvals = () => {
         <form onSubmit={handleSearch} className="search-form">
           <div className="search">
             <FiSearch className="search-icon" />
-            <input 
+            <input
               type="text"
-              value={searchQuery} 
+              value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onBlur={handleSearch}
-              placeholder="Search by title, ID, requester..." 
+              placeholder="Search by title, ID, requester..."
               className="search-input"
               aria-label="Search approvals"
             />
             {searchQuery && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="clear-search"
                 onClick={() => {
                   setSearchQuery('');
@@ -600,13 +601,13 @@ const Approvals = () => {
               </button>
             )}
           </div>
-          
+
           <div className="filter-options">
             <div className="filter-group">
               <label htmlFor="type-filter">Type</label>
-              <select 
+              <select
                 id="type-filter"
-                value={typeFilter} 
+                value={typeFilter}
                 onChange={e => {
                   setTypeFilter(e.target.value);
                   handleSearch();
@@ -624,12 +625,12 @@ const Approvals = () => {
                 }
               </select>
             </div>
-            
+
             <div className="filter-group">
               <label htmlFor="priority-filter">Priority</label>
-              <select 
+              <select
                 id="priority-filter"
-                value={priorityFilter} 
+                value={priorityFilter}
                 onChange={e => {
                   setPriorityFilter(e.target.value);
                   handleSearch();
@@ -647,10 +648,10 @@ const Approvals = () => {
                 }
               </select>
             </div>
-            
+
             <div className="filter-group">
               <label>Results per page</label>
-              <select 
+              <select
                 value={pagination.limit}
                 onChange={e => {
                   setPagination(prev => ({
@@ -670,41 +671,41 @@ const Approvals = () => {
           </div>
         </form>
       </div>
-      
+
       {/* Bulk Actions */}
       {selected.length > 0 && (
         <div className="bulk-actions-bar">
           <div className="selected-count">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={selected.length > 0}
               onChange={selectAll}
               aria-label="Select all items"
             />
             <span>{selected.length} item{selected.length !== 1 ? 's' : ''} selected</span>
           </div>
-          
+
           <div className="bulk-buttons">
-            <button 
-              className="btn success" 
+            <button
+              className="btn success"
               onClick={() => batchUpdateStatus('Approved')}
               disabled={loading}
               title="Approve selected items"
             >
               <FiCheckCircle /> Approve Selected
             </button>
-            
-            <button 
-              className="btn danger" 
+
+            <button
+              className="btn danger"
               onClick={() => batchUpdateStatus('Rejected')}
               disabled={loading}
               title="Reject selected items"
             >
               <FiXCircle /> Reject Selected
             </button>
-            
-            <button 
-              className="btn icon" 
+
+            <button
+              className="btn icon"
               onClick={() => setSelected([])}
               title="Clear selection"
             >
@@ -722,14 +723,14 @@ const Approvals = () => {
             <p>Loading approvals...</p>
           </div>
         )}
-        
+
         <div className="list">
           <div className="list-head">
             <div className="cell w-5">
               <label className="checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={selected.length > 0 && 
+                <input
+                  type="checkbox"
+                  checked={selected.length > 0 &&
                     paginatedItems.every(item => selected.includes(item.id))}
                   onChange={selectAll}
                   aria-label={selected.length ? 'Deselect all' : 'Select all'}
@@ -737,8 +738,8 @@ const Approvals = () => {
                 <span></span>
               </label>
             </div>
-            
-            <div 
+
+            <div
               className={`cell w-30 sortable ${pagination.sortField === 'title' ? 'sorted' : ''}`}
               onClick={() => handleSort('title')}
             >
@@ -749,8 +750,8 @@ const Approvals = () => {
                 </span>
               )}
             </div>
-            
-            <div 
+
+            <div
               className={`cell w-20 sortable ${pagination.sortField === 'project' ? 'sorted' : ''}`}
               onClick={() => handleSort('project')}
             >
@@ -761,8 +762,8 @@ const Approvals = () => {
                 </span>
               )}
             </div>
-            
-            <div 
+
+            <div
               className={`cell w-15 sortable ${pagination.sortField === 'priority' ? 'sorted' : ''}`}
               onClick={() => handleSort('priority')}
             >
@@ -773,8 +774,8 @@ const Approvals = () => {
                 </span>
               )}
             </div>
-            
-            <div 
+
+            <div
               className={`cell w-15 sortable ${pagination.sortField === 'requestedBy' ? 'sorted' : ''}`}
               onClick={() => handleSort('requestedBy')}
             >
@@ -785,8 +786,8 @@ const Approvals = () => {
                 </span>
               )}
             </div>
-            
-            <div 
+
+            <div
               className={`cell w-15 sortable ${pagination.sortField === 'createdAt' ? 'sorted' : ''}`}
               onClick={() => handleSort('createdAt')}
             >
@@ -797,7 +798,7 @@ const Approvals = () => {
                 </span>
               )}
             </div>
-            
+
             <div className="cell w-15 right">Status</div>
             <div className="cell w-15 right">Actions</div>
           </div>
@@ -808,9 +809,9 @@ const Approvals = () => {
                 <div key={item.id} className={`row ${item.status.toLowerCase()}`}>
                   <div className="cell w-5">
                     <label className="checkbox">
-                      <input 
-                        type="checkbox" 
-                        checked={selected.includes(item.id)} 
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(item.id)}
                         onChange={() => toggleSelect(item.id)}
                         disabled={item.status !== 'Pending' && activeTab === 'Pending'}
                         aria-label={`Select ${item.title}`}
@@ -818,13 +819,13 @@ const Approvals = () => {
                       <span></span>
                     </label>
                   </div>
-                  
+
                   <div className="cell w-30">
                     <div className="item-meta">
                       <div className="item-title">
                         <FiFile className="item-icon" />
                         <span className="text-ellipsis">{item.title || 'Untitled'}</span>
-                        <span className={`pill ${(item.type || '').replace(/\s/g,'').toLowerCase()}`}>
+                        <span className={`pill ${(item.type || '').replace(/\s/g, '').toLowerCase()}`}>
                           {item.type || 'N/A'}
                         </span>
                       </div>
@@ -841,7 +842,7 @@ const Approvals = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="cell w-20">
                     <div className="project-cell">
                       <span className="text-ellipsis" title={item.project || 'N/A'}>
@@ -849,21 +850,21 @@ const Approvals = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="cell w-15">
                     {renderPriorityBadge(item.priority)}
                   </div>
-                  
+
                   <div className="cell w-15">
                     <div className="requester-info">
                       <div className="requester-avatar">
-                        {item.requestedBy 
+                        {item.requestedBy
                           ? item.requestedBy
-                              .split(' ')
-                              .map(n => n[0])
-                              .join('')
-                              .toUpperCase()
-                              .substring(0, 2)
+                            .split(' ')
+                            .map(n => n[0])
+                            .join('')
+                            .toUpperCase()
+                            .substring(0, 2)
                           : 'NA'}
                       </div>
                       <span className="requester-name text-ellipsis" title={item.requestedBy || 'N/A'}>
@@ -871,24 +872,24 @@ const Approvals = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="cell w-15">
                     <div className="date-cell">
-                      {item.createdAt 
+                      {item.createdAt
                         ? new Date(item.createdAt).toLocaleDateString()
                         : 'N/A'}
                     </div>
                   </div>
-                  
+
                   <div className="cell w-15 right">
                     {renderStatusBadge(item.status)}
                   </div>
-                  
+
                   <div className="cell w-15 right actions">
                     <div className="action-buttons">
                       {item.status === 'Pending' ? (
                         <>
-                          <button 
+                          <button
                             className="btn-icon success"
                             onClick={() => quickApprove(item.id)}
                             disabled={loading}
@@ -897,7 +898,7 @@ const Approvals = () => {
                           >
                             <FiCheck />
                           </button>
-                          <button 
+                          <button
                             className="btn-icon danger"
                             onClick={() => quickReject(item.id)}
                             disabled={loading}
@@ -912,8 +913,8 @@ const Approvals = () => {
                           {item.status} by {item[`${item.status.toLowerCase()}By`] || 'System'}
                         </span>
                       )}
-                      
-                      <button 
+
+                      <button
                         className="btn-icon primary"
                         onClick={() => setDetail(item)}
                         title="View Details"
@@ -921,12 +922,12 @@ const Approvals = () => {
                       >
                         <FiEye />
                       </button>
-                      
+
                       {item.attachmentUrl && (
-                        <a 
-                          href={item.attachmentUrl} 
+                        <a
+                          href={item.attachmentUrl}
                           className="btn-icon"
-                          target="_blank" 
+                          target="_blank"
                           rel="noopener noreferrer"
                           title="Download Attachment"
                           aria-label="Download attachment"
@@ -943,12 +944,12 @@ const Approvals = () => {
                 <FiInfo className="empty-icon" />
                 <h3>No approvals found</h3>
                 <p>
-                  {activeTab !== 'All' 
+                  {activeTab !== 'All'
                     ? `There are no ${activeTab.toLowerCase()} approvals matching your criteria.`
                     : 'No approvals found with the current filters.'}
                 </p>
-                <button 
-                  className="btn primary" 
+                <button
+                  className="btn primary"
                   onClick={resetFilters}
                   disabled={!searchQuery && typeFilter === 'All' && priorityFilter === 'All'}
                 >
@@ -957,33 +958,33 @@ const Approvals = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="pagination">
               <div className="pagination-info">
                 Showing {Math.min(startIdx + 1, totalCount)}-{Math.min(startIdx + pagination.limit, totalCount)} of {totalCount}
               </div>
-              
+
               <div className="pagination-controls">
-                <button 
-                  className="pagination-button" 
+                <button
+                  className="pagination-button"
                   onClick={() => handlePageChange(1)}
                   disabled={pagination.page === 1}
                   aria-label="First page"
                 >
                   <FiChevronsLeft />
                 </button>
-                
-                <button 
-                  className="pagination-button" 
+
+                <button
+                  className="pagination-button"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
                   aria-label="Previous page"
                 >
                   <FiChevronLeft />
                 </button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   // Calculate page numbers to show (current page in the middle if possible)
                   let pageNum;
@@ -996,7 +997,7 @@ const Approvals = () => {
                   } else {
                     pageNum = pagination.page - 2 + i;
                   }
-                  
+
                   return (
                     <button
                       key={pageNum}
@@ -1009,18 +1010,18 @@ const Approvals = () => {
                     </button>
                   );
                 })}
-                
-                <button 
-                  className="pagination-button" 
+
+                <button
+                  className="pagination-button"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page >= totalPages}
                   aria-label="Next page"
                 >
                   <FiChevronRight />
                 </button>
-                
-                <button 
-                  className="pagination-button" 
+
+                <button
+                  className="pagination-button"
                   onClick={() => handlePageChange(totalPages)}
                   disabled={pagination.page >= totalPages}
                   aria-label="Last page"
@@ -1028,10 +1029,10 @@ const Approvals = () => {
                   <FiChevronsRight />
                 </button>
               </div>
-              
+
               <div className="pagination-size">
                 <span>Show:</span>
-                <select 
+                <select
                   value={pagination.limit}
                   onChange={e => {
                     setPagination(prev => ({
@@ -1059,15 +1060,15 @@ const Approvals = () => {
           <div className="modal">
             <div className="modal-header">
               <h3>Approval Details</h3>
-              <button 
-                className="close" 
+              <button
+                className="close"
                 onClick={() => setDetail(null)}
                 aria-label="Close modal"
               >
                 <FiX />
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="detail-grid">
                 <div className="detail-section">
@@ -1097,7 +1098,7 @@ const Approvals = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="detail-section">
                   <h4>Request Details</h4>
                   <div className="detail-row">
@@ -1111,8 +1112,8 @@ const Approvals = () => {
                   <div className="detail-row">
                     <div className="detail-label">Requested On</div>
                     <div className="detail-value">
-                      {detail.createdAt 
-                        ? new Date(detail.createdAt).toLocaleString() 
+                      {detail.createdAt
+                        ? new Date(detail.createdAt).toLocaleString()
                         : 'N/A'}
                     </div>
                   </div>
@@ -1136,7 +1137,7 @@ const Approvals = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {detail.description && (
                   <div className="detail-section full-width">
                     <h4>Description</h4>
@@ -1147,7 +1148,7 @@ const Approvals = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {(detail.notes || detail.reason) && (
                   <div className="detail-section full-width">
                     <h4>{detail.status === 'Approved' ? 'Approval Notes' : 'Rejection Reason'}</h4>
@@ -1166,14 +1167,14 @@ const Approvals = () => {
                     )}
                   </div>
                 )}
-                
+
                 {detail.attachmentUrl && (
                   <div className="detail-section full-width">
                     <h4>Attachments</h4>
                     <div className="attachments">
-                      <a 
-                        href={detail.attachmentUrl} 
-                        target="_blank" 
+                      <a
+                        href={getFullUrl(detail.attachmentUrl)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="attachment"
                       >
@@ -1188,11 +1189,11 @@ const Approvals = () => {
                 )}
               </div>
             </div>
-            
+
             <div className="modal-footer">
               {detail.status === 'Pending' && (
                 <>
-                  <button 
+                  <button
                     className="btn success"
                     onClick={() => {
                       const notes = prompt('Enter approval notes (optional):');
@@ -1205,7 +1206,7 @@ const Approvals = () => {
                   >
                     <FiCheck /> Approve
                   </button>
-                  <button 
+                  <button
                     className="btn danger"
                     onClick={() => {
                       const reason = prompt('Please provide a reason for rejection:');
@@ -1222,10 +1223,10 @@ const Approvals = () => {
                   </button>
                 </>
               )}
-              
+
               <div className="spacer"></div>
-              
-              <button 
+
+              <button
                 className="btn secondary"
                 onClick={() => setDetail(null)}
                 disabled={loading}

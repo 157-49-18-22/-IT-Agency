@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiImage, FiLayers, FiSmartphone, FiDownload, FiEye, FiChevronDown, FiX } from 'react-icons/fi';
 import api from '../../services/api'; // Use centralized api service
+import { getFullUrl } from '../../utils/urlHelper';
 import './ApprovedDesigns.css';
 
 export default function ApprovedDesigns() {
@@ -110,8 +111,8 @@ export default function ApprovedDesigns() {
                 {currentDesigns.map((design) => (
                     <div key={design.id} className="design-card">
                         <div className="design-image">
-                            {design.imageUrl ? (
-                                <img src={design.imageUrl} alt={design.title} />
+                            {design.imageUrl || design.image_url ? (
+                                <img src={getFullUrl(design.imageUrl || design.image_url)} alt={design.title} />
                             ) : (
                                 <div className="image-placeholder">
                                     <FiImage size={48} />
@@ -142,7 +143,7 @@ export default function ApprovedDesigns() {
                             </button>
                             <button
                                 className="action-btn download"
-                                onClick={() => design.imageUrl && window.open(design.imageUrl, '_blank')}
+                                onClick={() => (design.imageUrl || design.image_url) && window.open(getFullUrl(design.imageUrl || design.image_url), '_blank')}
                                 title="Download"
                             >
                                 <FiDownload /> Download
@@ -246,8 +247,8 @@ export default function ApprovedDesigns() {
 
                         <div className="modal-content">
                             <div className="modal-image">
-                                {selectedDesign.imageUrl ? (
-                                    <img src={selectedDesign.imageUrl} alt={selectedDesign.title} />
+                                {selectedDesign.imageUrl || selectedDesign.image_url ? (
+                                    <img src={getFullUrl(selectedDesign.imageUrl || selectedDesign.image_url)} alt={selectedDesign.title} />
                                 ) : (
                                     <div className="image-placeholder-large">
                                         <FiImage size={80} />
@@ -294,7 +295,7 @@ export default function ApprovedDesigns() {
                                 <div className="modal-actions">
                                     <button
                                         className="btn-download"
-                                        onClick={() => selectedDesign.imageUrl && window.open(selectedDesign.imageUrl, '_blank')}
+                                        onClick={() => (selectedDesign.imageUrl || selectedDesign.image_url) && window.open(getFullUrl(selectedDesign.imageUrl || selectedDesign.image_url), '_blank')}
                                     >
                                         <FiDownload /> Download Design
                                     </button>
