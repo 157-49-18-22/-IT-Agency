@@ -9,7 +9,7 @@ import { API_URL } from '../config/endpoints';
  */
 export const getFullUrl = (path) => {
     if (!path) return null;
-
+    path = path.trim();
     // If it's already a full URL or data URL, return it as is
     if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
         return path;
