@@ -474,13 +474,33 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
   border-radius: 16px;
   width: 100%;
   max-width: 650px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
+  position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  /* Prevent modal itself from scrolling, use internal scroll */
+}
+
+/* Custom Scrollbar Styles to ensure visibility */
+.modal ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal ::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.modal ::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 
 @keyframes modalSlideUp {
@@ -501,10 +521,9 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
   background: white;
   z-index: 20;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -514,9 +533,13 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
   font-weight: 700;
 }
 
-.modal form {
+.modal form,
+.modal-body {
   padding: 24px;
   flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f1f1f1;
 }
 
 .form-group {
@@ -567,9 +590,8 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
   padding: 16px 24px;
   background: #f8fafc;
   border-top: 1px solid #edf2f7;
-  position: sticky;
-  bottom: 0;
   z-index: 20;
+  flex-shrink: 0;
 }
 
 /* File Upload inside Modal */
