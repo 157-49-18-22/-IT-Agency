@@ -4,24 +4,24 @@ import './Activity.css';
 import { activityAPI } from '../services/api';
 
 const seed = [
-  { id:'A-2007', type:'Approval', title:'Deliverable approved: Mockups v2', project:'E-commerce Platform', user:'Client Approver', ts:'2025-11-06 18:10' },
-  { id:'A-2006', type:'Task', title:'Task moved to Review: Build checkout UI', project:'E-commerce Platform', user:'Alex Johnson', ts:'2025-11-06 16:45' },
-  { id:'A-2005', type:'Commit', title:'feat(api): add /orders endpoint', project:'API Backend', user:'Jane Smith', ts:'2025-11-06 15:12' },
-  { id:'A-2004', type:'Comment', title:'Left feedback on Wireframes', project:'Website Revamp', user:'Sarah Lee', ts:'2025-11-05 19:34' },
-  { id:'A-2003', type:'Testing', title:'Test run completed: Regression 1.0.3', project:'Mobile App', user:'QA Bot', ts:'2025-11-05 18:05' },
-  { id:'A-2002', type:'Alert', title:'Overdue: UAT feedback pending', project:'Website Revamp', user:'System', ts:'2025-11-05 09:10' },
-  { id:'A-2001', type:'Project', title:'Project created: API Backend', project:'API Backend', user:'Admin User', ts:'2025-11-04 10:00' },
+  { id: 'A-2007', type: 'Approval', title: 'Deliverable approved: Mockups v2', project: 'E-commerce Platform', user: 'Client Approver', ts: '2025-11-06 18:10' },
+  { id: 'A-2006', type: 'Task', title: 'Task moved to Review: Build checkout UI', project: 'E-commerce Platform', user: 'Alex Johnson', ts: '2025-11-06 16:45' },
+  { id: 'A-2005', type: 'Commit', title: 'feat(api): add /orders endpoint', project: 'API Backend', user: 'Jane Smith', ts: '2025-11-06 15:12' },
+  { id: 'A-2004', type: 'Comment', title: 'Left feedback on Wireframes', project: 'Website Revamp', user: 'Sarah Lee', ts: '2025-11-05 19:34' },
+  { id: 'A-2003', type: 'Testing', title: 'Test run completed: Regression 1.0.3', project: 'Mobile App', user: 'QA Bot', ts: '2025-11-05 18:05' },
+  { id: 'A-2002', type: 'Alert', title: 'Overdue: UAT feedback pending', project: 'Website Revamp', user: 'System', ts: '2025-11-05 09:10' },
+  { id: 'A-2001', type: 'Project', title: 'Project created: API Backend', project: 'API Backend', user: 'Admin User', ts: '2025-11-04 10:00' },
 ];
 
 const typeIcon = (t) => {
-  switch(t){
-    case 'Approval': return <FiCheckCircle/>;
-    case 'Task': return <FiClipboard/>;
-    case 'Commit': return <FiGitCommit/>;
-    case 'Comment': return <FiMessageCircle/>;
-    case 'Testing': return <FiFileText/>;
-    case 'Alert': return <FiAlertTriangle/>;
-    default: return <FiGitBranch/>;
+  switch (t) {
+    case 'Approval': return <FiCheckCircle />;
+    case 'Task': return <FiClipboard />;
+    case 'Commit': return <FiGitCommit />;
+    case 'Comment': return <FiMessageCircle />;
+    case 'Testing': return <FiFileText />;
+    case 'Alert': return <FiAlertTriangle />;
+    default: return <FiGitBranch />;
   }
 };
 
@@ -76,13 +76,13 @@ const Activity = () => {
         <div className="title">Activity</div>
         <div className="filters">
           <div className="search">
-            <FiSearch/>
-            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search activity, users, projects"/>
+            <FiSearch />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search activity, users, projects" />
           </div>
           <div className="select">
-            <FiFilter/>
-            <select value={filter} onChange={e=>setFilter(e.target.value)}>
-              {['All','Project','Task','Approval','Commit','Comment','Testing','Alert'].map(t=> <option key={t}>{t}</option>)}
+            <FiFilter />
+            <select value={filter} onChange={e => setFilter(e.target.value)}>
+              {['All', 'Project', 'Task', 'Approval', 'Commit', 'Comment', 'Testing', 'Alert'].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
         </div>
@@ -92,7 +92,7 @@ const Activity = () => {
         <div className="timeline">
           {dates.map(d => (
             <div key={d} className="day">
-              <div className="day-head"><FiCalendar/> {d}</div>
+              <div className="day-head"><FiCalendar /> {d}</div>
               <div className="events">
                 {grouped[d].map(ev => (
                   <div key={ev.id} className={`event type-${ev.type.toLowerCase()}`}>
@@ -100,11 +100,11 @@ const Activity = () => {
                     <div className="content">
                       <div className="row1">
                         <div className="title">{ev.title}</div>
-                        <div className="time"><FiClock/> {ev.ts.split(' ')[1]}</div>
+                        <div className="time"><FiClock /> {ev.ts.split(' ')[1]}</div>
                       </div>
                       <div className="row2">
                         <div className="proj">{ev.project}</div>
-                        <div className="by"><FiUser/> {ev.user}</div>
+                        <div className="by"><FiUser /> {ev.user}</div>
                       </div>
                     </div>
                   </div>
@@ -112,9 +112,9 @@ const Activity = () => {
               </div>
             </div>
           ))}
-          {dates.length===0 && (
+          {dates.length === 0 && (
             <div className="empty">
-              <FiClock/>
+              <FiClock />
               <p>No activity found.</p>
             </div>
           )}

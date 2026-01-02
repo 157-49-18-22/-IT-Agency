@@ -4,12 +4,15 @@
 
 
 .messages {
-  position: static !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  right: 0 !important;
-  left: 280px !important;
-  /* Matches Sidebar Width */
+  /* Ensure full screen fit */
+  position: relative !important;
+  width: 100% !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
 
   /* Use Flexbox for robust 2-column layout */
   display: flex !important;
@@ -17,12 +20,10 @@
   align-items: stretch !important;
 
   background: #f8f9fa;
-  z-index: 800;
-  /* High enough to sit over content, below modals */
+  z-index: 1;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow: hidden;
-  box-shadow: -1px 0 0 rgba(0, 0, 0, 0.1);
-  /* Separator line */
+  box-shadow: none;
 }
 
 /* LEFT SIDEBAR (Thread List) */

@@ -845,103 +845,137 @@ export default function Tracking() {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal enhanced-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingId ? 'Edit Entry' : 'Add Entry'}</h3>
-              <button className="close" onClick={() => setShowModal(false)}>×</button>
+              <div className="header-title-group">
+                <FiClock className="header-icon" />
+                <h3>{editingId ? 'Edit Time Entry' : 'Add New Time Entry'}</h3>
+              </div>
+              <button className="close-btn-round" onClick={() => setShowModal(false)}>×</button>
             </div>
+
             <div className="modal-body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Date *</label>
-                  <div className="date-input">
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label><FiCalendar className="field-icon" /> Date *</label>
+                  <div className="input-with-icon">
                     <input
                       type="date"
                       value={form.date}
                       onChange={e => setForm({ ...form, date: e.target.value })}
                       required
                       max={new Date().toISOString().split('T')[0]}
-                    />
-                    <FiCalendar className="icon" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Project</label>
-                  <select
-                    value={form.project}
-                    onChange={e => setForm({ ...form, project: e.target.value })}
-                  >
-                    {projects.map(project => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Task</label>
-                  <input value={form.task} onChange={e => setForm({ ...form, task: e.target.value })} placeholder="Task name" />
-                </div>
-                <div className="form-group">
-                  <label>Member *</label>
-                  <select
-                    value={form.member}
-                    onChange={e => setForm({ ...form, member: e.target.value })}
-                    required
-                  >
-                    <option value="">Select Member</option>
-                    {members.map(m => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Notes</label>
-                <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional" />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Time Spent *</label>
-                  <div className="time-inputs">
-                    <input
-                      type="number"
-                      min="0"
-                      max="24"
-                      value={form.hours}
-                      onChange={e => setForm({ ...form, hours: Math.min(24, Math.max(0, parseInt(e.target.value) || 0)) })}
-                      placeholder="Hours"
-                      required
-                    />
-                    <span>:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={form.minutes}
-                      onChange={e => setForm({ ...form, minutes: Math.min(59, Math.max(0, parseInt(e.target.value) || 0)) })}
-                      placeholder="Minutes"
-                      required
+                      className="enhanced-input"
                     />
                   </div>
-                  {(form.hours === 0 && form.minutes === 0) && (
-                    <p className="error">Please enter a valid time (greater than 0)</p>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label><FiTag className="field-icon" /> Project *</label>
+                    <div className="select-wrapper">
+                      <select
+                        value={form.project}
+                        onChange={e => setForm({ ...form, project: e.target.value })}
+                        className="enhanced-select"
+                      >
+                        <option value="" disabled>Select a project</option>
+                        {projects.map(project => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                      <FiChevronDown className="select-chevron" />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label><FiPlus className="field-icon" /> Member *</label>
+                    <div className="select-wrapper">
+                      <select
+                        value={form.member}
+                        onChange={e => setForm({ ...form, member: e.target.value })}
+                        required
+                        className="enhanced-select"
+                      >
+                        <option value="" disabled>Select team member</option>
+                        {members.map(m => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                      <FiChevronDown className="select-chevron" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group full-width">
+                  <label><FiEdit2 className="field-icon" /> Task / Activity</label>
+                  <input
+                    value={form.task}
+                    onChange={e => setForm({ ...form, task: e.target.value })}
+                    placeholder="e.g. Design System updates, Bug fixing..."
+                    className="enhanced-input"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label><FiTag className="field-icon" /> Notes</label>
+                  <textarea
+                    value={form.notes}
+                    onChange={e => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Additional details about this time entry (Optional)"
+                    className="enhanced-textarea"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="time-tracking-section">
+                  <label><FiClock className="field-icon" /> Duration *</label>
+                  <div className="duration-picker">
+                    <div className="duration-input-group">
+                      <input
+                        type="number"
+                        min="0"
+                        max="24"
+                        value={form.hours}
+                        onChange={e => setForm({ ...form, hours: Math.min(24, Math.max(0, parseInt(e.target.value) || 0)) })}
+                        className="duration-input"
+                      />
+                      <span className="unit">hrs</span>
+                    </div>
+                    <span className="sep">:</span>
+                    <div className="duration-input-group">
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={form.minutes}
+                        onChange={e => setForm({ ...form, minutes: Math.min(59, Math.max(0, parseInt(e.target.value) || 0)) })}
+                        className="duration-input"
+                      />
+                      <span className="unit">mins</span>
+                    </div>
+                  </div>
+                  {(form.hours === 0 && form.minutes === 0) ? (
+                    <p className="error-text">Please enter the time spent on this task.</p>
+                  ) : (
+                    <p className="helper-text">Total logged: {form.hours}h {form.minutes}m</p>
                   )}
                 </div>
               </div>
             </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+
+            <div className="modal-footer-enhanced">
+              <button className="cancel-btn" onClick={() => setShowModal(false)}>Cancel</button>
               <button
-                className="btn primary"
+                className="save-btn"
                 onClick={saveEntry}
                 disabled={!form.date || !form.project || !form.member || (form.hours === 0 && form.minutes === 0)}
               >
-                {editingId ? 'Update Entry' : 'Add Entry'}
+                {editingId ? 'Update Entry' : 'Add Time Entry'}
               </button>
             </div>
           </div>

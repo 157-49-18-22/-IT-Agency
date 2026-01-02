@@ -86,6 +86,20 @@ const Wireframes = () => {
     fetchProjects();
   }, [projectId]);
 
+  // Helper to construct full image URL
+  const getFullUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('https') || path.startsWith('data:')) return path;
+
+    // Remove '/api' from the end of API_URL to get the base URL
+    const baseUrl = API_URL.replace(/\/api$/, '');
+
+    // Ensure path starts with / if needed, or join correctly
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+    return `${baseUrl}${cleanPath}`;
+  };
+
   // Handle file selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -96,10 +110,9 @@ const Wireframes = () => {
         return;
       }
 
-      // Check file type
-      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-      if (!validTypes.includes(file.type)) {
-        setError('Please upload a valid image file (PNG, JPG, GIF)');
+      // Check file type - Allow all image types
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
         return;
       }
 
@@ -306,7 +319,17 @@ const Wireframes = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this wireframe?')) {
       try {
-        await axios.delete(`${API_URL}/wireframes/${id}`);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication required to delete');
+          return;
+        }
+
+        await axios.delete(`${API_URL}/wireframes/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         fetchWireframes();
       } catch (err) {
         setError('Failed to delete wireframe');

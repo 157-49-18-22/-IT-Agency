@@ -283,11 +283,11 @@ const Prototypes = () => {
               onClick={() => handleViewDetails(prototype)}
               style={{ cursor: 'pointer' }}
             >
-              <div className="prototype-image">
+              <div className="prototype-thumbnail">
                 {prototype.imageUrl ? (
-                  <img src={prototype.imageUrl} alt={prototype.title} />
+                  <img src={prototype.imageUrl} alt={prototype.title} className="prototype-image" />
                 ) : (
-                  <div className="no-image">
+                  <div className="image-placeholder">
                     <FaImage size={32} />
                     <span>No Preview</span>
                   </div>

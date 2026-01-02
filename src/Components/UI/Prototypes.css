@@ -135,8 +135,9 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
 .prototype-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.3s ease;
+  padding: 10px;
 }
 
 .prototype-card:hover .prototype-image {
@@ -227,8 +228,7 @@ body:has(.prototypes-container) .top-bar .page-title h1 {
   background-color: #e9d8fd;
   color: #6b46c1;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: none;
-  /* Hide the status badge */
+  z-index: 2;
 }
 
 .status-approved {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   FiSearch, FiFilter, FiPlus, FiMail, FiPhone, FiUser,
   FiEdit2, FiTrash2, FiChevronDown, FiEye, FiEyeOff,
-  FiCheckSquare, FiClock, FiCalendar, FiType, FiBookmark
+  FiCheckSquare, FiClock, FiCalendar, FiType, FiBookmark, FiAlertCircle, FiFlag
 } from 'react-icons/fi';
 import './Team.css';
 import { userAPI, teamAPI } from '../services/api';
@@ -509,126 +509,162 @@ const Team = () => {
       </div>
 
       {showAddMemberModal && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="modal-overlay" onClick={() => setShowAddMemberModal(false)}>
+          <div className="modal enhanced-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{formData.id ? 'Edit Team Member' : 'Add New Team Member'}</h3>
-              <button className="close-btn" onClick={() => setShowAddMemberModal(false)}>×</button>
+              <div className="header-title-group">
+                <FiUser className="header-icon" />
+                <h3>{formData.id ? 'Update Team Member' : 'Add New Team Member'}</h3>
+              </div>
+              <button className="close-btn-round" onClick={() => setShowAddMemberModal(false)}>×</button>
             </div>
+
             <form onSubmit={formData.id ? handleUpdateMember : handleAddMember}>
-              {error && <div className="error-message">{error}</div>}
-
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter full name"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter email address"
-                  required
-                />
-              </div>
-
-              {!formData.id && (
-                <div className="form-group">
-                  <label>Password *</label>
-                  <div className="password-input">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter password"
-                      required={!formData.id}
-                      minLength="6"
-                    />
-                    <button
-                      type="button"
-                      className="toggle-password"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <FiEyeOff /> : <FiEye />}
-                    </button>
+              <div className="modal-body">
+                {error && (
+                  <div className="error-banner">
+                    <FiAlertCircle className="error-icon" />
+                    <span>{error}</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="form-row">
-                <div className="form-group">
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    required
-                    className="form-control"
-                  >
-                    <option value="">Select Role</option>
-                    <option value="Designer">Designer</option>
-                    <option value="Developer">Developer</option>
-                    <option value="Tester">Tester</option>
-                    <option value="Project Manager">Project Manager</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Client">Client</option>
-                  </select>
-                </div>
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label><FiUser className="field-icon" /> Full Name *</label>
+                    <div className="input-with-icon">
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Enter full name"
+                        required
+                        className="enhanced-input"
+                      />
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <label>Department *</label>
-                  <select
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    <option value="UI/UX">UI/UX</option>
-                    <option value="Development">Development</option>
-                    <option value="Testing">Testing</option>
-                    <option value="Project Management">Project Management</option>
-                  </select>
+                  <div className="form-group full-width">
+                    <label><FiMail className="field-icon" /> Email Address *</label>
+                    <div className="input-with-icon">
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="Enter email address"
+                        required
+                        className="enhanced-input"
+                      />
+                    </div>
+                  </div>
+
+                  {!formData.id && (
+                    <div className="form-group full-width">
+                      <label><FiEye className="field-icon" /> Password *</label>
+                      <div className="password-input-group">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          placeholder="Create a secure password"
+                          required={!formData.id}
+                          minLength="6"
+                          className="enhanced-input"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><FiBookmark className="field-icon" /> Role *</label>
+                      <div className="select-wrapper">
+                        <select
+                          name="role"
+                          value={formData.role}
+                          onChange={handleInputChange}
+                          required
+                          className="enhanced-select"
+                        >
+                          <option value="" disabled>Select Role</option>
+                          <option value="Designer">Designer</option>
+                          <option value="Developer">Developer</option>
+                          <option value="Tester">Tester</option>
+                          <option value="Project Manager">Project Manager</option>
+                          <option value="Admin">Admin</option>
+                          <option value="Client">Client</option>
+                        </select>
+                        <FiChevronDown className="select-chevron" />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label><FiType className="field-icon" /> Department *</label>
+                      <div className="select-wrapper">
+                        <select
+                          name="department"
+                          value={formData.department}
+                          onChange={handleInputChange}
+                          required
+                          className="enhanced-select"
+                        >
+                          <option value="" disabled>Select Department</option>
+                          <option value="UI/UX">UI/UX</option>
+                          <option value="Development">Development</option>
+                          <option value="Testing">Testing</option>
+                          <option value="Project Management">Project Management</option>
+                        </select>
+                        <FiChevronDown className="select-chevron" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label><FiPhone className="field-icon" /> Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="e.g. +1 234 567 890"
+                      className="enhanced-input"
+                    />
+                  </div>
+
+                  {formData.id && (
+                    <div className="form-group full-width">
+                      <label><FiClock className="field-icon" /> Account Status</label>
+                      <div className="status-selector">
+                        <button
+                          type="button"
+                          className={`status-chip active ${formData.status === 'active' ? 'selected' : ''}`}
+                          onClick={() => setFormData(p => ({ ...p, status: 'active' }))}
+                        >
+                          Active
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-chip inactive ${formData.status === 'inactive' ? 'selected' : ''}`}
+                          onClick={() => setFormData(p => ({ ...p, status: 'inactive' }))}
+                        >
+                          Inactive
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Phone Number</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                />
-              </div>
-
-              {formData.id && (
-                <div className="form-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="form-actions">
+              <div className="modal-footer-enhanced">
                 <button
                   type="button"
                   className="cancel-btn"
@@ -637,14 +673,22 @@ const Team = () => {
                     resetForm();
                   }}
                 >
-                  Cancel
+                  Discard
                 </button>
                 <button
                   type="submit"
-                  className="submit-btn"
+                  className="save-btn"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Member'}
+                  {isSubmitting ? (
+                    <div className="btn-loader">
+                      <span className="dot"></span>
+                      <span className="dot"></span>
+                      <span className="dot"></span>
+                    </div>
+                  ) : (
+                    formData.id ? 'Update Profile' : 'Create Member'
+                  )}
                 </button>
               </div>
             </form>

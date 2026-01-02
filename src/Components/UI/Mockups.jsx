@@ -1,82 +1,70 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect } from 'react';
+import { FaUpload, FaTrash, FaEdit, FaSearch, FaPlus, FaTimes, FaImage, FaUser, FaCalendarAlt, FaCheck, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
+import { API_URL } from '../../config/endpoints';
 import './Mockups.css';
 
-// API Configuration
-import { API_URL } from '../../config/endpoints';
-const ASSET_URL = API_URL.replace('/api', '');
-
 const Mockups = () => {
-  const navigate = useNavigate();
-  // Ensure mockups is always an array
+  const [projectId] = useState(null);
   const [mockups, setMockups] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [currentMockup, setCurrentMockup] = useState({
+    id: null,
     title: '',
     description: '',
-    category: 'Web App',
-    projectId: '',
-    image: null
+    image: null,
+    version: '1.0',
+    status: 'draft',
+    category: 'web',
+    projectId: ''
   });
-  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState('');
   const [viewDetailsModal, setViewDetailsModal] = useState(false);
   const [selectedMockup, setSelectedMockup] = useState(null);
 
-  // Function to fetch mockups with improved error handling and response processing
-  const fetchMockups = React.useCallback(async () => {
-    setLoading(true);
+  // Fetch mockups from API
+  const fetchMockups = async () => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem('token');
-      console.log('Fetching mockups with token:', token ? 'Token exists' : 'No token');
+      if (!token) {
+        setError('Authentication required. Please log in.');
+        return;
+      }
 
-      const response = await axios.get(`${API_URL}/mockups`, {
+      // Build the URL with projectId if it exists
+      const url = projectId
+        ? `${API_URL}/mockups?projectId=${projectId}`
+        : `${API_URL}/mockups`;
+
+      const response = await axios.get(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
-      console.log('API Response:', response.data);
-
-      // Handle different response formats
-      let mockupsData = [];
-      if (Array.isArray(response.data)) {
-        mockupsData = response.data;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        mockupsData = response.data.data;
-      } else if (response.data && response.data.mockups) {
-        mockupsData = response.data.mockups;
-      }
-
-      console.log('Processed mockups:', mockupsData);
+      // Check if response.data exists and has a data property
+      const mockupsData = response.data?.data || [];
       setMockups(mockupsData);
-      return mockupsData;
-    } catch (error) {
-      console.error('Error fetching mockups:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      toast.error('Failed to load mockups');
+    } catch (err) {
+      setError('Failed to load mockups');
+      console.error('Error fetching mockups:', err);
       setMockups([]);
-      return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   // Fetch projects from API
-  const fetchProjects = React.useCallback(async () => {
+  const fetchProjects = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) return;
+
       const response = await axios.get(`${API_URL}/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -85,174 +73,280 @@ const Mockups = () => {
       });
       const projectsData = response.data?.data || [];
       setProjects(projectsData);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
     }
-  }, []);
+  };
 
-  // Initial fetch
+  // Fetch mockups and projects on component mount
   useEffect(() => {
     fetchMockups();
     fetchProjects();
-  }, [fetchMockups, fetchProjects]);
+  }, [projectId]);
 
-  // Memoize filtered and sorted mockups
-  const filteredMockups = useMemo(() => {
-    return mockups
-      .filter(mockup => {
-        const matchesSearch = mockup.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          mockup.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = categoryFilter === 'all' || mockup.category === categoryFilter;
-        return matchesSearch && matchesCategory;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'name') return a.title?.localeCompare(b.title);
-        if (sortBy === 'status') return a.status?.localeCompare(b.status);
-        // Default sort by recent (createdAt)
-        return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
-      });
-  }, [mockups, searchTerm, categoryFilter, sortBy]);
+  // Helper to construct full image URL
+  const getFullUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('https') || path.startsWith('data:')) return path;
 
-  // Helper function to get status class
-  const getStatusClass = (status) => {
-    if (!status) return 'status-draft';
-    switch (status.toLowerCase()) {
-      case 'approved': return 'status-approved';
-      case 'pending': return 'status-pending';
-      case 'rejected': return 'status-rejected';
-      default: return 'status-draft';
-    }
+    // Remove '/api' from the end of API_URL to get the base URL
+    const baseUrl = API_URL.replace(/\/api$/, '');
+
+    // Ensure path starts with / if needed, or join correctly
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+    return `${baseUrl}${cleanPath}`;
   };
 
-  // Memoize formatDate to prevent recreation on every render
-  const formatDate = useCallback((dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }, []);
-
-  // Helper function to get thumbnail based on category
-  const getThumbnail = (category) => {
-    if (!category) return '📋';
-    switch (category.toLowerCase()) {
-      case 'web app': return '🌐';
-      case 'mobile': return '📱';
-      case 'dashboard': return '📊';
-      case 'marketing': return '📢';
-      default: return '📋';
-    }
-  };
-
-  // Mockup card click handlers
-  const handleViewDetails = useCallback((mockup) => {
-    setSelectedMockup(mockup);
-    setViewDetailsModal(true);
-  }, []);
-
-  const handleViewMockup = useCallback((id) => {
-    navigate(`/mockups/${id}`);
-  }, [navigate]);
-
-  const handleEditMockup = useCallback((id) => {
-    // Implement edit functionality
-    console.log('Edit mockup:', id);
-    navigate(`/mockups/edit/${id}`);
-  }, [navigate]);
-
-  const handleDelete = useCallback(async (id) => {
-    if (window.confirm('Are you sure you want to delete this mockup?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_URL}/mockups/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        toast.success('Mockup deleted successfully');
-        fetchMockups(); // Refresh the list
-      } catch (error) {
-        console.error('Error deleting mockup:', error);
-        toast.error('Failed to delete mockup');
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size should be less than 10MB');
+        return;
       }
+
+      // Check file type - Allow all image types
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+        setCurrentMockup(prev => ({
+          ...prev,
+          image: file,
+        }));
+        setError(''); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError('Failed to read the file');
+      };
+      reader.readAsDataURL(file);
     }
-  }, [fetchMockups]);
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentMockup({
+      ...currentMockup,
+      [name]: value,
+    });
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setCurrentMockup({
+      id: null,
+      title: '',
+      description: '',
+      image: null,
+      version: '1.0',
+      status: 'draft',
+      category: 'web',
+      projectId: ''
+    });
+    setPreview('');
+    setError('');
+
+    // Reset file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setUploading(true);
+    e.stopPropagation();
 
-    const formDataToSend = new FormData();
-    formDataToSend.append('title', formData.title);
-    formDataToSend.append('description', formData.description);
-    formDataToSend.append('category', formData.category);
-    formDataToSend.append('projectId', formData.projectId);
-    if (formData.image) {
-      formDataToSend.append('image', formData.image);
+    // Clear previous errors
+    setError('');
+
+    // Trim the title and check if it's empty
+    const title = currentMockup.title ? currentMockup.title.trim() : '';
+
+    // Basic validation
+    if (!title) {
+      setError('Title is required');
+      return;
+    }
+
+    // Validate project selection
+    if (!currentMockup.projectId) {
+      setError('Please select a project');
+      return;
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('title', currentMockup.title);
+    formData.append('description', currentMockup.description || '');
+    formData.append('version', currentMockup.version || '1.0');
+    formData.append('status', currentMockup.status || 'draft');
+    formData.append('category', currentMockup.category || 'web');
+    formData.append('projectId', currentMockup.projectId);
+
+    // Add image to form data if it exists
+    if (currentMockup.image) {
+      formData.append('image', currentMockup.image, currentMockup.image.name || 'mockup.jpg');
     }
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/mockups`, formDataToSend, {
+      if (!token) {
+        setError('You need to be logged in to save mockups');
+        return;
+      }
+
+      const config = {
         headers: {
+          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+          'Accept': 'application/json'
+        },
+        withCredentials: true // Ensure cookies are sent with the request
+      };
 
-      toast.success('Mockup created successfully');
+      // Show loading state
+      setError('Saving mockup...');
+
+      if (currentMockup.id) {
+        // Update existing mockup
+        await axios.put(`${API_URL}/mockups/${currentMockup.id}`, formData, config);
+      } else {
+        // Create new mockup
+        await axios.post(`${API_URL}/mockups`, formData, config);
+      }
+
+      // On success - close modal and reset form
+      console.log('Mockup saved successfully');
+      await fetchMockups(); // Wait for the data to be refreshed
+      resetForm();
       setIsModalOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        category: 'Web App',
-        projectId: 1,
-        image: null
-      });
-      fetchMockups(); // Refresh the list
-    } catch (error) {
-      console.error('Error creating mockup:', error);
-      toast.error('Failed to create mockup');
-    } finally {
-      setUploading(false);
-    }
-  }, [formData, fetchMockups]);
 
-  // Handle form input changes
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
-
-  // Handle file input
-  const handleFileChange = useCallback((e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({
-        ...prev,
-        image: e.target.files[0]
-      }));
+    } catch (err) {
+      console.error('Error saving mockup:', err);
+      let errorMessage = 'Failed to save mockup.';
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      setError(errorMessage);
     }
-  }, []);
+  };
+
+  // Handle view mockup details
+  const handleViewDetails = (mockup) => {
+    setSelectedMockup(mockup);
+    setViewDetailsModal(true);
+  };
+
+  // Handle edit mockup
+  const handleEdit = (mockup) => {
+    // Note: mockup object from API uses `project_id` and `image_url`
+    // but the keys might be different depending on how Sequelize returned it.
+    // If we used snake_case model directly, the keys on object are likely snake_case.
+    // But wireframe controller returned mixed case due to model definition.
+    // Our Mockup model defined keys as snake_case.
+    // So we should expect `project_id` and `image_url`.
+
+    // However, we need to map them to the state which uses `projectId`.
+
+    setCurrentMockup({
+      id: mockup.id,
+      title: mockup.title,
+      description: mockup.description,
+      version: mockup.version,
+      status: mockup.status,
+      category: mockup.category,
+      projectId: mockup.project_id || mockup.projectId, // Handle both just in case
+      image: null,
+    });
+    setPreview(getFullUrl(mockup.image_url || mockup.imageUrl) || '');
+    setIsModalOpen(true);
+  };
+
+  // Handle delete mockup
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this mockup?')) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication required to delete');
+          return;
+        }
+
+        await axios.delete(`${API_URL}/mockups/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        fetchMockups();
+      } catch (err) {
+        setError('Failed to delete mockup');
+        console.error('Error deleting mockup:', err);
+      }
+    }
+  };
+
+  // Get status class for styling
+  const getStatusClass = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'status-approved';
+      case 'in_review':
+      case 'in review':
+        return 'status-pending'; // Mockups.css has status-pending
+      case 'rejected':
+        return 'status-rejected';
+      case 'draft':
+      default:
+        return 'status-draft';
+    }
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Filter mockups based on search term
+  const filteredMockups = Array.isArray(mockups)
+    ? mockups.filter(mockup =>
+    (mockup.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mockup.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+    : [];
 
   return (
     <div className="mockups-container">
-      {/* Debug Info - Remove after fixing */}
-      <div style={{ background: '#f0f0f0', padding: '10px', marginBottom: '20px', borderRadius: '4px' }}>
-        <h4>Debug Info:</h4>
-        <p>Total Mockups: {mockups.length}</p>
-        <p>Loading: {loading ? 'Yes' : 'No'}</p>
+      <div className="mockups-header">
+        <div className="header-content">
+          <h2>Mockups</h2>
+          <p>Visualize and manage your project designs</p>
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
+        >
+          <FaPlus className="btn-icon-text" /> New Mockup
+        </button>
       </div>
 
-      {/* Search and Filter Controls */}
       <div className="mockups-toolbar">
         <div className="search-box">
-          <span className="search-icon">🔍</span>
+          <FaSearch className="search-icon" />
           <input
             type="text"
             placeholder="Search mockups..."
@@ -260,338 +354,328 @@ const Mockups = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
         <div className="filter-group">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            <option value="Web App">Web App</option>
-            <option value="Mobile">Mobile</option>
-            <option value="Dashboard">Dashboard</option>
-            <option value="Marketing">Marketing</option>
+          <select className="custom-select">
+            <option>All Categories</option>
+            <option>Web</option>
+            <option>Mobile</option>
+            <option>Tablet</option>
+            <option>Desktop</option>
           </select>
         </div>
-
         <div className="sort-group">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="recent">Sort by: Recent</option>
-            <option value="name">Sort by: Name</option>
-            <option value="status">Sort by: Status</option>
+          <select className="custom-select">
+            <option>Sort by: Recent</option>
+            <option>Sort by: Name (A-Z)</option>
+            <option>Sort by: Status</option>
           </select>
         </div>
-
-        <button
-          className="btn-primary"
-          onClick={() => setIsModalOpen(true)}
-        >
-          + New Mockup
-        </button>
       </div>
 
-      {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading mockups...</p>
-        </div>
-      ) : mockups.length === 0 ? (
-        <div className="no-mockups">
-          <div className="no-mockups-icon">📋</div>
-          <h3>No mockups found</h3>
-          <p>Create your first mockup by clicking the "New Mockup" button</p>
-        </div>
+      {error && <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+
+      {isLoading ? (
+        <div className="loading">Loading mockups...</div>
       ) : (
         <div className="mockups-grid">
-          {filteredMockups.map((mockup) => (
-            <div
-              key={mockup.id}
-              className="mockup-card"
-              onClick={() => handleViewDetails(mockup)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="mockup-header">
-                <div className="mockup-thumbnail">
-                  {mockup.image_url ? (
+          {filteredMockups.length > 0 ? (
+            filteredMockups.map((mockup) => (
+              <div
+                key={mockup.id}
+                className="mockup-card"
+                onClick={() => handleViewDetails(mockup)}
+              >
+                <div className="mockup-frame">
+                  <div className={`status-indicator ${getStatusClass(mockup.status)}`}>
+                    {mockup.status?.replace('_', ' ')}
+                  </div>
+
+                  {(mockup.image_url || mockup.imageUrl) ? (
                     <img
-                      src={`${ASSET_URL}${mockup.image_url}`}
-                      alt={mockup.title || 'Mockup'}
-                      onError={(e) => {
-                        const target = e.target;
-                        target.onerror = null;
-                        target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23e0e0e0"><rect width="100" height="100" rx="8"/><text x="50%" y="50%" font-size="12" text-anchor="middle" dy=".3em" fill="%23999">No Preview</text></svg>';
-                      }}
+                      src={getFullUrl(mockup.image_url || mockup.imageUrl)}
+                      alt={mockup.title}
+                      className="mockup-image"
                     />
                   ) : (
                     <div className="mockup-placeholder">
-                      {getThumbnail(mockup.category)}
+                      <FaImage size={32} />
+                      <span>No Preview</span>
                     </div>
                   )}
+
+                  <div className="mockup-overlay">
+                    <button
+                      className="icon-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(mockup);
+                      }}
+                      title="Edit"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="icon-btn danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(mockup.id);
+                      }}
+                      title="Delete"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
                 </div>
-                <div className="mockup-actions">
-                  <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleViewMockup(mockup.id); }}>👁️</button>
-                  <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEditMockup(mockup.id); }}>✏️</button>
-                  <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); handleDelete(mockup.id); }}>🗑️</button>
+
+                <div className="mockup-content">
+                  <div className="mockup-main-info">
+                    <h3 className="mockup-title">{mockup.title}</h3>
+                    <span className="mockup-category-tag">{mockup.category}</span>
+                  </div>
+
+                  <p className="mockup-description">
+                    {mockup.description || 'No description provided'}
+                  </p>
+
+                  <div className="mockup-meta-info">
+                    <div className="meta-item">
+                      <FaCalendarAlt size={12} />
+                      <span>{formatDate(mockup.createdAt || mockup.created_at)}</span>
+                    </div>
+                    <div className="meta-item">
+                      <FaUser size={12} />
+                      <span>{mockup.creator?.name || 'MAYDIVINFOTECH'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="mockup-body">
-                <h3 className="mockup-title">{mockup.title || 'Untitled Mockup'}</h3>
-                <p className="mockup-description">{mockup.description || 'No description provided'}</p>
-                <div className="mockup-meta">
-                  <span className={`status-badge ${getStatusClass(mockup.status)}`}>
-                    {mockup.status || 'draft'}
-                  </span>
-                  <span className="mockup-category">{mockup.category || 'Uncategorized'}</span>
-                </div>
-                <div className="mockup-footer">
-                  <span className="mockup-date">
-                    {formatDate(mockup.updatedAt || mockup.createdAt)}
-                  </span>
-                  {mockup.creator && (
-                    <span className="mockup-author">
-                      👤 {mockup.creator.name || 'Unknown'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* Add Mockup Modal */}
-      {isModalOpen && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            padding: '20px',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)'
-          }}
-          onClick={(e) => {
-            // Close modal if clicking on overlay
-            if (e.target === e.currentTarget) {
-              setIsModalOpen(false);
-            }
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              background: 'white',
-              borderRadius: '12px',
-              width: '100%',
-              maxWidth: '500px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
-              position: 'relative',
-              zIndex: 1001,
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              transform: 'translateY(0)',
-              opacity: 1,
-              transition: 'all 0.3s ease',
-              padding: '24px'
-            }}
-          >
-            <div className="modal-header" style={{
-              padding: '16px 24px',
-              borderBottom: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h3 style={{ margin: 0, fontSize: '18px', color: '#2d3748' }}>Add New Mockup</h3>
+            ))
+          ) : (
+            <div className="no-mockups">
+              <FaImage className="empty-icon" />
+              <h3>No mockups found</h3>
+              <p>Create your first mockup to get started</p>
               <button
-                className="close-btn"
-                onClick={() => setIsModalOpen(false)}
-                disabled={uploading}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#718096',
-                  padding: '4px',
-                  lineHeight: 1
-                }}
+                className="btn btn-primary"
+                onClick={() => setIsModalOpen(true)}
               >
-                &times;
+                <FaPlus /> New Mockup
               </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="title">Title *</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                  disabled={uploading}
-                />
-              </div>
+          )}
+        </div>
+      )}
 
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="3"
-                  disabled={uploading}
-                />
-              </div>
+      {/* Add/Edit Mockup Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{currentMockup.id ? 'Edit' : 'New'} Mockup</h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-form">
+                <div className="form-group">
+                  <label>Title <span style={{ color: 'red' }}>*</span></label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={currentMockup.title}
+                    onChange={handleInputChange}
+                    placeholder="Enter mockup title"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label htmlFor="projectId">Project *</label>
-                <select
-                  id="projectId"
-                  name="projectId"
-                  value={formData.projectId}
-                  onChange={handleChange}
-                  required
-                  disabled={uploading}
-                >
-                  <option value="">Select a project</option>
-                  {projects.map(project => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    name="description"
+                    value={currentMockup.description}
+                    onChange={handleInputChange}
+                    rows="3"
+                    placeholder="Add a description..."
+                  />
+                </div>
 
-              <div className="form-group">
-                <label htmlFor="category">Category *</label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                  disabled={uploading}
-                >
-                  <option value="Web App">Web App</option>
-                  <option value="Mobile">Mobile</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Dashboard">Dashboard</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="image">Mockup Image *</label>
-                <input
-                  type="file"
-                  id="image"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  required={!formData.image}
-                  disabled={uploading}
-                />
-                {formData.image && (
-                  <div className="file-preview">
-                    Selected: {formData.image.name}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Version</label>
+                    <input
+                      type="text"
+                      name="version"
+                      value={currentMockup.version}
+                      onChange={handleInputChange}
+                    />
                   </div>
-                )}
-              </div>
 
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={uploading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={uploading || !formData.title || !formData.image}
-                >
-                  {uploading ? 'Uploading...' : 'Create Mockup'}
-                </button>
+                  <div className="form-group">
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      value={currentMockup.status}
+                      onChange={handleInputChange}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="in_review">In Review</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Project <span style={{ color: 'red' }}>*</span></label>
+                  <select
+                    name="projectId"
+                    value={currentMockup.projectId}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    name="category"
+                    value={currentMockup.category}
+                    onChange={handleInputChange}
+                  >
+                    <option value="web">Web App</option>
+                    <option value="mobile">Mobile App</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="desktop">Desktop</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Mockup Image</label>
+                  <div className="file-upload-area">
+                    <input
+                      type="file"
+                      id="mockup-image"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="file-input-hidden"
+                    />
+                    <label htmlFor="mockup-image" className="file-upload-label">
+                      {preview ? (
+                        <div className="image-preview" style={{ width: '100%', height: '200px' }}>
+                          <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        </div>
+                      ) : (
+                        <div className="file-placeholder">
+                          <FaUpload size={24} />
+                          <span>Click to upload image</span>
+                          <small>PNG, JPG up to 10MB</small>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSubmit}
+                  >
+                    {currentMockup.id ? 'Update' : 'Save'} Mockup
+                  </button>
+                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* View Details Modal */}
       {viewDetailsModal && selectedMockup && (
-        <div className="modal-overlay" onClick={() => setViewDetailsModal(false)}>
-          <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', padding: '0' }}>
-            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ margin: 0 }}>Mockup Details</h3>
-              <button className="close-btn" onClick={() => setViewDetailsModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#718096' }}>&times;</button>
+        <div className="modal-overlay">
+          <div className="modal-content view-modal">
+            <div className="modal-header">
+              <h3>{selectedMockup.title}</h3>
+              <button
+                className="close-btn"
+                onClick={() => setViewDetailsModal(false)}
+              >
+                <FaTimes />
+              </button>
             </div>
-            <div className="modal-body" style={{ padding: '24px' }}>
-              <div className="details-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {selectedMockup.image_url && (
-                  <div className="details-image-section" style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', overflow: 'hidden' }}>
-                    <img src={`${ASSET_URL}${selectedMockup.image_url}`} alt={selectedMockup.title} style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
-                  </div>
-                )}
-                <div className="details-info-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div className="detail-row">
-                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Title</label>
-                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.title}</div>
-                  </div>
-                  <div className="detail-row">
-                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Description</label>
-                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.description || 'No description provided'}</div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div className="detail-row">
-                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Category</label>
-                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.category}</div>
-                    </div>
-                    <div className="detail-row">
-                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Status</label>
-                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span className={`status-badge ${getStatusClass(selectedMockup.status)}`} style={{ position: 'static', display: 'inline-block' }}>{selectedMockup.status || 'draft'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="detail-row">
-                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Project</label>
-                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{projects.find(p => p.id === selectedMockup.projectId)?.name || 'N/A'}</div>
-                  </div>
-                  <div className="detail-row">
-                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Created At</label>
-                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedMockup.createdAt)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Last Updated</label>
-                    <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{formatDate(selectedMockup.updatedAt)}</div>
-                  </div>
-                  {selectedMockup.creator && (
-                    <div className="detail-row">
-                      <label className="detail-label" style={{ fontSize: '13px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase', marginBottom: '8px' }}>Created By</label>
-                      <div className="detail-value" style={{ padding: '12px 16px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{selectedMockup.creator.name || 'Unknown'}</div>
-                    </div>
-                  )}
+            <div className="modal-body">
+              {(selectedMockup.image_url || selectedMockup.imageUrl) && (
+                <div className="details-image-section">
+                  <img
+                    src={getFullUrl(selectedMockup.image_url || selectedMockup.imageUrl)}
+                    alt={selectedMockup.title}
+                  />
                 </div>
-                <div className="details-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-                  <button className="btn-secondary" onClick={() => { setViewDetailsModal(false); handleEditMockup(selectedMockup.id); }} style={{ padding: '10px 20px', borderRadius: '8px', background: '#f7fafc', border: '1px solid #e2e8f0', cursor: 'pointer' }}>✏️ Edit Mockup</button>
-                  <button className="btn-primary" onClick={() => setViewDetailsModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', background: '#4299e1', color: 'white', border: 'none', cursor: 'pointer' }}>Close</button>
+              )}
+
+              <div className="detail-grid">
+                <div className="detail-row">
+                  <label>Description</label>
+                  <div className="value">{selectedMockup.description || 'No description'}</div>
                 </div>
+                <div className="detail-row">
+                  <label>Project</label>
+                  <div className="value">{projects.find(p => p.id === (selectedMockup.project_id || selectedMockup.projectId))?.name || 'N/A'}</div>
+                </div>
+                <div className="detail-row">
+                  <label>Status</label>
+                  <div className="value">
+                    <span className={`status-badge-large ${getStatusClass(selectedMockup.status)}`}>
+                      {selectedMockup.status?.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+                <div className="detail-row">
+                  <label>Version</label>
+                  <div className="value">{selectedMockup.version}</div>
+                </div>
+              </div>
+
+              <div className="details-actions-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setViewDetailsModal(false);
+                    handleEdit(selectedMockup);
+                  }}
+                >
+                  <FaEdit /> Edit
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setViewDetailsModal(false)}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

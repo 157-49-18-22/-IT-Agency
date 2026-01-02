@@ -869,19 +869,13 @@ const UILayout = ({ projectId, onComplete }) => {
           </div>
           <div className="user-info">
             <span className="user-name">{currentUser?.name || 'John Doe'}</span>
-            <span className="user-email">john.doe@example.com</span>
+
             <span className="user-role">
               <FaPalette className="role-icon" /> UI/UX Team
             </span>
             <div className="user-actions">
-              <button className="icon-btn" title="Notifications" onClick={() => navigate('/notifications')}>
-                <FaBell />
-                <span className="notification-badge">3</span>
-              </button>
-              <button className="icon-btn" title="Messages" onClick={handleMessageClick}>
-                <FaEnvelope />
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
-              </button>
+
+
             </div>
           </div>
         </div>
@@ -939,19 +933,7 @@ const UILayout = ({ projectId, onComplete }) => {
                 <span>Deliverables</span>
               </Link>
             </li>
-            <li className={isActive('/approvals')}>
-              <Link to="/approvals">
-                <FaClipboardCheck className="nav-icon" />
-                <span>Client Approval</span>
-              </Link>
-            </li>
 
-            <li className={isActive('/team')}>
-              <Link to="/team">
-                <FaUsers className="nav-icon" />
-                <span>Team</span>
-              </Link>
-            </li>
             <li className={isActive('/calendar')}>
               <Link to="/calendar">
                 <FaCalendarAlt className="nav-icon" />
