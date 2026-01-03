@@ -11,13 +11,25 @@ const getCategory = (app) => {
   const title = (app.title || app.name || '').toLowerCase();
   const description = (app.description || '').toLowerCase();
 
+  // 0. Handle Stage Transitions (Actionable)
+  // Prioritize these to ensure actionable transition approvals appear in tabs
+  if (type === 'stage transition' || title.includes('stage transition')) {
+    if (stage.includes('design') || title.includes('design')) return 'UI/UX';
+    if (stage.includes('development') || title.includes('development')) return 'Development';
+    return 'Testing'; // Covers 'Final Review', 'Testing', 'UAT', 'Deployment'
+  }
+
   // 1. System/Status items like Stage Transitions should only show in 'All'
   // and not clutter the work-specific tabs (UI/UX, Development, Testing)
   if (
     type.includes('transition') ||
     title.includes('move to') ||
     title.includes('stage transition') ||
-    type === 'status_change'
+    title.includes('phase change') ||
+    title.includes('status update') ||
+    title.includes('started') ||
+    type === 'status_change' ||
+    type === 'system_notification'
   ) {
     return 'Other';
   }
@@ -39,14 +51,22 @@ const getCategory = (app) => {
   }
 
   // 3. Keyword-based fallback for any other items
+  // Strict check for Testing: Avoid generic "Test Project" titles unless explicitly a bug/qa item
   if (
-    stage.includes('test') ||
-    type.includes('test') ||
-    title.includes('test') ||
-    description.includes('test') ||
+    type.includes('test case') ||
+    type.includes('bug') ||
+    type.includes('uat') ||
     type.includes('qa') ||
-    title.includes('bug') ||
-    title.includes('uat')
+    description.includes('test report') ||
+    title.includes('bug fix')
+  ) {
+    return 'Testing';
+  }
+
+  // Broader Testing check (only if not caught by system filter above)
+  if (
+    (stage.includes('test') || title.includes('test')) &&
+    !title.includes('project')
   ) {
     return 'Testing';
   }

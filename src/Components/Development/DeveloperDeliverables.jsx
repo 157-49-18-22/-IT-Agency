@@ -156,7 +156,7 @@ const DeveloperDeliverables = () => {
                 name: submitData.title || `Development Deliverable - ${selectedProject.projectName || selectedProject.name}`,
                 description: submitData.description,
                 notes: submitData.notes,
-                status: 'In Review', // Set to 'In Review' so it appears for the client
+                status: 'Pending Approval', // Matches DB ENUM 'Pending Approval'
                 type: 'Code',
                 fileUrl: submitData.repositoryUrl || '#repository',
                 fileName: 'Repository Code',
@@ -429,7 +429,7 @@ const DeveloperDeliverables = () => {
                                 <button type="button" onClick={() => setShowSubmitModal(false)} className="btn-secondary">
                                     Cancel
                                 </button>
-                                <button type="button" onClick={handleSubmit} className="btn-primary" style={{ background: '#667eea' }}>
+                                <button type="submit" className="btn-primary" style={{ background: '#667eea' }}>
                                     <FiSend /> Submit for Review
                                 </button>
                             </div>
