@@ -189,7 +189,9 @@ export const projectsAPI = {
   updateProject: (id, data) => api.put(`/projects/${id}`, data),
   deleteProject: (id) => api.delete(`/projects/${id}`),
   getClientProjects: (clientId) => api.get(`/clients/${clientId}/projects`),
-  getProjectsByUser: (userId) => api.get('/projects', { params: { userId } })
+  getProjectsByUser: (userId) => api.get('/projects', { params: { userId } }),
+  // Alias for compatibility
+  update: (id, data) => api.put(`/projects/${id}`, data)
 };
 
 // Deliverables APIs
@@ -225,7 +227,7 @@ export const timeTrackingAPI = {
 // Client APIs
 export const clientAPI = {
   getAll: () => api.get('/clients'),
-  getDashboard: () => api.get('/clients/dashboard'),
+  getDashboard: (params) => api.get('/clients/dashboard', { params }),
   getStats: (clientId) => api.get(`/client/${clientId}/stats`)
 };
 
@@ -381,6 +383,7 @@ export const projectAPI = {
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`)
 };
+
 
 // Blocker APIs
 export const blockerAPI = {

@@ -8,7 +8,7 @@ import {
   FaTimes,
   FaSpinner
 } from 'react-icons/fa';
-import { projectStagesAPI, stageTransitionsAPI } from '../../services/api';
+import { projectStagesAPI, stageTransitionsAPI, projectsAPI } from '../../services/api';
 import './StageTransition.css';
 
 const StageTransition = () => {
@@ -17,6 +17,7 @@ const StageTransition = () => {
 
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
+  const [projectsList, setProjectsList] = useState([]);
   const [stages, setStages] = useState([]);
   const [currentStage, setCurrentStage] = useState(null);
   const [nextStage, setNextStage] = useState(null);
@@ -27,21 +28,28 @@ const StageTransition = () => {
   const [transitioning, setTransitioning] = useState(false);
 
   useEffect(() => {
-    // If we have a projectId, fetch data.
-    // If not, we'll load mock data for demonstration purposes.
-    fetchStageData();
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    if (projectId) {
+      fetchStageData();
+    }
   }, [projectId]);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await projectsAPI.getProjects();
+      const list = response.data?.data || response.data || [];
+      setProjectsList(list);
+    } catch (err) {
+      console.error('Error fetching projects list:', err);
+    }
+  };
 
   const fetchStageData = async () => {
     try {
       setLoading(true);
-
-      // If no projectId, simulate a fetch and use mock data
-      if (!projectId) {
-        // Wait a small amount to simulate network
-        await new Promise(resolve => setTimeout(resolve, 800));
-        throw new Error('No project ID - switching to mock data');
-      }
 
       const [stagesRes, canTransRes] = await Promise.all([
         projectStagesAPI.getStages(projectId),
@@ -62,6 +70,18 @@ const StageTransition = () => {
       setNextStage(next);
       setCanTransition(canTransRes.data?.canTransition || false);
       setTransitionChecklist(canTransRes.data?.checklist || []);
+
+      // Also set current project details if available
+      const projectDetails = projectsList.find(p => String(p.id) === String(projectId));
+      if (projectDetails) setProject(projectDetails);
+      else {
+        // Fetch specific project if not in list
+        try {
+          const pRes = await projectsAPI.getProject(projectId);
+          setProject(pRes.data?.data || pRes.data);
+        } catch (e) { }
+      }
+
     } catch (error) {
       console.log('Using mock data for Stage Transition preview');
 
@@ -85,6 +105,13 @@ const StageTransition = () => {
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProjectChange = (e) => {
+    const newId = e.target.value;
+    if (newId) {
+      navigate(`/stage-transition/${newId}`);
     }
   };
 
@@ -131,7 +158,7 @@ const StageTransition = () => {
     }
   };
 
-  if (loading) {
+  if (loading && projectId) {
     return (
       <div className="stage-transition-loading">
         <FaSpinner className="spinner" />
@@ -144,52 +171,34 @@ const StageTransition = () => {
     <div className="stage-transition-container">
       {/* Header */}
       <div className="stage-transition-header">
-        <h1>Stage Transition Management</h1>
-        <p>Manage project progression through different stages</p>
-      </div>
-
-      {/* Stage Timeline */}
-      <div className="stage-timeline">
-        {stages.map((stage, index) => (
-          <div key={stage.id} className="stage-timeline-item">
-            <div
-              className={`stage-circle ${stage.status}`}
-              style={{ borderColor: getStageColor(stage.status) }}
-            >
-              <span className="stage-icon">{getStageIcon(stage.stageName)}</span>
-              {stage.status === 'completed' && (
-                <FaCheckCircle className="completed-icon" />
-              )}
-            </div>
-            <div className="stage-info">
-              <h3>{stage.stageName}</h3>
-              <span className={`status-badge ${stage.status}`}>
-                {stage.status.replace('_', ' ')}
-              </span>
-              <div className="stage-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${stage.progressPercentage || 0}%`,
-                      backgroundColor: getStageColor(stage.status)
-                    }}
-                  ></div>
-                </div>
-                <span className="progress-text">{stage.progressPercentage || 0}%</span>
-              </div>
-            </div>
-            {index < stages.length - 1 && (
-              <div className="stage-connector">
-                <FaArrowRight />
-              </div>
-            )}
+        <div className="header-top">
+          <div>
+            <h1>Stage Transition Management</h1>
+            <p>Manage project progression through different stages</p>
           </div>
-        ))}
+          <div className="project-selector">
+            <label>Select Project:</label>
+            <select value={projectId || ''} onChange={handleProjectChange}>
+              <option value="">Select a project...</option>
+              {projectsList.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Current Stage Details */}
-      {currentStage && (
+      {!projectId && !loading && (
+        <div className="no-project-selected">
+          <FaExclamationTriangle size={40} color="#f39c12" />
+          <h3>No Project Selected</h3>
+          <p>Please select a project from the dropdown to manage its stage transitions.</p>
+        </div>
+      )}
+
+      {projectId && (
         <div className="current-stage-section">
           <h2>Current Stage: {currentStage.stageName}</h2>
 

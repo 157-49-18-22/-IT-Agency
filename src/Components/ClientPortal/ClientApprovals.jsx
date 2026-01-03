@@ -5,30 +5,74 @@ import { approvalAPI, deliverablesAPI, projectsAPI, testCasesAPI, bugsAPI, uatAP
 
 // Helper to categorize approvals (Moved outside component for access)
 const getCategory = (app) => {
-  const type = (app.type || '').toLowerCase();
-  const stage = (app.stage || app.phase || '').toLowerCase();
+  const source = app.source;
+  const type = (app.type || app.approvalType || '').toLowerCase();
+  const stage = (app.stage || app.phase || app.stageName || '').toLowerCase();
   const title = (app.title || app.name || '').toLowerCase();
+  const description = (app.description || '').toLowerCase();
 
-  // Check strict Design keywords
-  if (stage.includes('design') || type.includes('design') || title.includes('design') ||
-    type.includes('wireframe') || type.includes('mockup') || type.includes('prototype') || type.includes('ui/ux')) {
-    return 'UI/UX';
+  // 1. System/Status items like Stage Transitions should only show in 'All'
+  // and not clutter the work-specific tabs (UI/UX, Development, Testing)
+  if (
+    type.includes('transition') ||
+    title.includes('move to') ||
+    title.includes('stage transition') ||
+    type === 'status_change'
+  ) {
+    return 'Other';
   }
 
-  if (stage.includes('development') || type.includes('code') || type === 'development' || stage.includes('implementation')) {
+  // 2. Deliverables (Items specifically sent by employees/PMs as work products)
+  if (source === 'deliverable') {
+    // Check stage/phase first
+    if (stage.includes('design') || type.includes('ui/ux')) return 'UI/UX';
+    if (stage.includes('development') || type.includes('code')) return 'Development';
+    if (stage.includes('test') || stage.includes('uat')) return 'Testing';
+
+    // Then check type/content if stage is generic
+    if (type.includes('wireframe') || type.includes('mockup') || type.includes('prototype')) return 'UI/UX';
+    if (type.includes('code') || title.includes('code') || title.includes('implementation')) return 'Development';
+    if (type.includes('uat') || type.includes('qa') || title.includes('test') || title.includes('bug')) return 'Testing';
+
+    // Default to Development for deliverables if unknown phase (most common work type)
     return 'Development';
   }
 
-  if (stage.includes('test') || type.includes('test') || type.includes('qa')) {
+  // 3. Keyword-based fallback for any other items
+  if (
+    stage.includes('test') ||
+    type.includes('test') ||
+    title.includes('test') ||
+    description.includes('test') ||
+    type.includes('qa') ||
+    title.includes('bug') ||
+    title.includes('uat')
+  ) {
     return 'Testing';
   }
 
-  // Fallback based on source if available
-  if (app.source === 'deliverable' && (app.phase === 'Development' || app.type === 'Code')) return 'Development';
+  if (
+    stage.includes('design') ||
+    type.includes('design') ||
+    title.includes('design') ||
+    description.includes('design') ||
+    type.includes('wireframe') ||
+    type.includes('mockup') ||
+    type.includes('prototype') ||
+    type.includes('ui/ux')
+  ) {
+    return 'UI/UX';
+  }
 
-  // Legacy approval default fallback
-  if (!app.source && !stage && !type) return 'UI/UX';
-  if (!stage) return 'UI/UX';
+  if (
+    stage.includes('development') ||
+    type.includes('code') ||
+    type === 'development' ||
+    stage.includes('implementation') ||
+    title.includes('code')
+  ) {
+    return 'Development';
+  }
 
   return 'Other';
 };
@@ -234,17 +278,18 @@ export default function ClientApprovals() {
         }
       }
 
-      // Refresh both lists logic is in fetchApprovals, so verify triggering re-fetch?
-      // For now, let's manually update local state or reload.
-      // Ideally call fetchApprovals() again, but it's inside useEffect.
-      // We can move fetch logic outside useEffect or essentially just reload window or filter local state.
+      const category = getCategory(approval);
+      const finalStatus = category === 'Testing' ? 'Completed' : 'Approved';
 
+      // Update local state to show immediately
       setApprovals(prev => prev.map(app =>
-        app.id === id ? { ...app, status: 'Approved' } : app
+        app.id === id ? { ...app, status: finalStatus } : app
       ));
 
       // Reload page to refresh data from database
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
 
     } catch (error) {
       console.error('Approval error:', error);
@@ -281,19 +326,26 @@ export default function ClientApprovals() {
 
 
   const filteredApprovals = approvals.filter(app => {
-    const statusMatch = filter === 'All' ||
-      app.status.includes(filter) ||
-      (filter === 'Pending' && (app.status === 'Pending Approval' || app.status === 'In Review')) ||
-      (filter === 'Completed' && app.status === 'Completed');
+    const status = (app.status || '').toLowerCase();
+    const activeSubTab = (filter || 'All').toLowerCase();
+
+    const statusMatch = activeSubTab === 'all' ||
+      (activeSubTab === 'pending' && (status.includes('pending') || status === 'in review')) ||
+      (activeSubTab === 'approved' && status.includes('approved') && status !== 'completed') ||
+      (activeSubTab === 'rejected' && status.includes('rejected')) ||
+      (activeSubTab === 'completed' && status === 'completed');
+
     const categoryMatch = categoryFilter === 'All' || getCategory(app) === categoryFilter;
     return statusMatch && categoryMatch;
   });
 
+  const categoryApprovals = approvals.filter(app => categoryFilter === 'All' || getCategory(app) === categoryFilter);
+
   const counts = {
-    Pending: approvals.filter(a => a.status.includes('Pending') || a.status === 'In Review').length,
-    Approved: approvals.filter(a => a.status.includes('Approved') && a.status !== 'Completed').length,
-    Rejected: approvals.filter(a => a.status.includes('Rejected')).length,
-    Completed: approvals.filter(a => a.status === 'Completed').length
+    Pending: categoryApprovals.filter(a => (a.status || '').toLowerCase().includes('pending') || (a.status || '').toLowerCase() === 'in review').length,
+    Approved: categoryApprovals.filter(a => (a.status || '').toLowerCase().includes('approved') && (a.status || '').toLowerCase() !== 'completed').length,
+    Rejected: categoryApprovals.filter(a => (a.status || '').toLowerCase().includes('rejected')).length,
+    Completed: categoryApprovals.filter(a => (a.status || '').toLowerCase() === 'completed').length
   };
 
   return (
@@ -376,7 +428,7 @@ export default function ClientApprovals() {
             <div className="approval-details">
               <div className="detail-item">
                 <span className="detail-label">Stage:</span>
-                <span className="detail-value">{approval.stage || approval.phase || 'Design Review'}</span>
+                <span className="detail-value">{approval.stage || approval.phase || approval.stageName || 'Final Review'}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Requested by:</span>
@@ -592,8 +644,8 @@ export default function ClientApprovals() {
                 <div className="modal-section">
                   <h3>Details</h3>
                   <div className="modal-details-grid">
-                    <div><strong>Type:</strong> {selectedApproval.type}</div>
-                    <div><strong>Stage:</strong> {selectedApproval.stage || selectedApproval.phase}</div>
+                    <div><strong>Type:</strong> {selectedApproval.type || selectedApproval.approvalType}</div>
+                    <div><strong>Stage:</strong> {selectedApproval.stage || selectedApproval.phase || selectedApproval.stageName || 'Final Review'}</div>
                     <div><strong>Priority:</strong> {selectedApproval.priority || 'Normal'}</div>
                     <div><strong>Status:</strong> {selectedApproval.status}</div>
                     <div><strong>Requested by:</strong> {selectedApproval.requestedBy?.name || selectedApproval.requestedBy || 'N/A'}</div>

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaClock, FaExclamationTriangle, FaDownload, FaEye } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { clientAPI } from '../../services/api';
-import './ClientPortal.css';
+import { clientAPI, projectsAPI } from '../../services/api';
 
 const ClientDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [projectData, setProjectData] = useState(null);
+    const [projectsList, setProjectsList] = useState([]);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [recentActivity, setRecentActivity] = useState([]);
     const [quickStats, setQuickStats] = useState({
         totalDeliverables: 0,
@@ -17,38 +18,71 @@ const ClientDashboard = () => {
     });
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                const response = await clientAPI.getDashboard();
-                if (response.data.success) {
-                    const data = response.data.data;
-                    setProjectData({
-                        projectName: data.projectName,
-                        currentStage: data.currentStage,
-                        overallProgress: data.overallProgress,
-                        stages: data.stages,
-                        nextMilestone: data.nextMilestone
-                    });
-                    setQuickStats(data.quickStats);
-                    setRecentActivity(data.recentActivity);
-                } else {
-                    setError('Failed to load dashboard data');
-                }
-            } catch (err) {
-                console.error('Error fetching client dashboard:', err);
-                // Try to get specific message from backend
-                const errorMsg = err.response?.data?.message || 'Error connecting to server. Please try again later.';
-                setError(errorMsg);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
+        fetchProjects();
     }, []);
 
+    useEffect(() => {
+        fetchDashboardData(selectedProjectId);
+    }, [selectedProjectId]);
+
+    const fetchProjects = async () => {
+        try {
+            // For clients, projectsAPI.getProjects() should ideally only return their projects
+            // Or we could pass a clientId if we had it, but the backend is handling auth-based filtering anyway
+            const response = await projectsAPI.getProjects();
+            const list = response.data?.data || response.data || [];
+            setProjectsList(list);
+
+            // Set initial selection if list exists
+            if (list.length > 0 && !selectedProjectId) {
+                // We'll let the dashboard fetch the "default" first if we don't set it explicitly
+                // or we can set it to the first one
+            }
+        } catch (err) {
+            console.error('Error fetching projects list:', err);
+        }
+    };
+
+    const fetchDashboardData = async (projectId = null) => {
+        try {
+            setLoading(true);
+            const params = projectId ? { projectId } : {};
+            const response = await clientAPI.getDashboard(params);
+
+            if (response.data.success) {
+                const data = response.data.data;
+                setProjectData({
+                    projectName: data.projectName,
+                    currentStage: data.currentStage,
+                    overallProgress: data.overallProgress,
+                    stages: data.stages,
+                    nextMilestone: data.nextMilestone
+                });
+                setQuickStats(data.quickStats);
+                setRecentActivity(data.recentActivity);
+
+                // If we didn't have a projectId, use the one returned from the auto-selected project
+                if (!projectId && data.id) {
+                    // Note: Ensure the backend returns ID too if we want to sync the dropdown
+                }
+            } else {
+                setError('Failed to load dashboard data');
+            }
+        } catch (err) {
+            console.error('Error fetching client dashboard:', err);
+            const errorMsg = err.response?.data?.message || 'Error connecting to server. Please try again later.';
+            setError(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleProjectChange = (e) => {
+        setSelectedProjectId(e.target.value);
+    };
+
     const formatTimeAgo = (dateString) => {
+        if (!dateString) return '';
         const date = new Date(dateString);
         const now = new Date();
         const seconds = Math.floor((now - date) / 1000);
@@ -62,7 +96,7 @@ const ClientDashboard = () => {
         return `${days} days ago`;
     };
 
-    if (loading) {
+    if (loading && !projectData) {
         return (
             <div className="client-dashboard loading-container">
                 <div className="loader"></div>
@@ -82,22 +116,22 @@ const ClientDashboard = () => {
         );
     }
 
-    if (!projectData) {
-        return (
-            <div className="client-dashboard empty-container">
-                <h3>No Active Project Found</h3>
-                <p>Please contact your administrator if you believe this is an error.</p>
-            </div>
-        );
-    }
-
     return (
         <div className="client-dashboard">
             {/* Page Header */}
             <div className="page-header">
-                <div>
+                <div className="header-info">
                     <h1>Welcome Back!</h1>
                     <p>Here's what's happening with your project</p>
+                </div>
+                <div className="project-selector">
+                    <label>View Project:</label>
+                    <select value={selectedProjectId || ''} onChange={handleProjectChange}>
+                        {projectsList.length === 0 && <option value="">No Active Projects</option>}
+                        {projectsList.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 

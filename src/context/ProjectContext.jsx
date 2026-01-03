@@ -175,12 +175,12 @@ export const ProjectProvider = ({ children }) => {
 
   const getActiveProjects = () => {
     if (!Array.isArray(projects)) return [];
-    return projects.filter(project => project.status === 'in-progress');
+    return projects.filter(project => (project.status || '').toLowerCase() === 'in progress' || (project.status || '').toLowerCase() === 'in-progress');
   };
 
   const getCompletedProjects = () => {
     if (!Array.isArray(projects)) return [];
-    return projects.filter(project => project.status === 'completed');
+    return projects.filter(project => (project.status || '').toLowerCase() === 'completed');
   };
 
   // Get projects by department

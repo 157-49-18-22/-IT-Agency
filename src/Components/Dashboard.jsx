@@ -20,6 +20,7 @@ import './Dashboard.css';
 
 // Utility function to generate a consistent color from a string
 const stringToColor = (str) => {
+  if (!str) return '#ccc'; // Fallback color for empty/null strings
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -45,11 +46,11 @@ const Dashboard = () => {
   const safeUserProjects = Array.isArray(userProjects) ? userProjects : [];
 
   const activeProjects = currentUser?.role === 'developer'
-    ? safeUserProjects.filter(project => project.status === 'in-progress')
+    ? safeUserProjects.filter(project => (project.status || '').toLowerCase() === 'in progress' || (project.status || '').toLowerCase() === 'in-progress')
     : getActiveProjects();
 
   const completedProjects = currentUser?.role === 'developer'
-    ? safeUserProjects.filter(project => project.status === 'completed')
+    ? safeUserProjects.filter(project => (project.status || '').toLowerCase() === 'completed')
     : getCompletedProjects();
 
   const totalProjects = safeUserProjects.length;
@@ -106,10 +107,16 @@ const Dashboard = () => {
 
   // Get status color
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'in-progress': return '#3498db';
-      case 'completed': return '#2ecc71';
-      case 'on-hold': return '#f39c12';
+    const s = (status || '').toLowerCase();
+    switch (s) {
+      case 'in progress':
+      case 'in-progress':
+        return '#3498db';
+      case 'completed':
+        return '#2ecc71';
+      case 'on-hold':
+      case 'on hold':
+        return '#f39c12';
       default: return '#95a5a6';
     }
   };
@@ -218,8 +225,8 @@ const Dashboard = () => {
                           <div
                             key={member.id || idx}
                             className="team-avatar"
-                            title={member.name}
-                            style={{ backgroundColor: stringToColor(member.name) }}
+                            title={member.name || 'Unknown Member'}
+                            style={{ backgroundColor: stringToColor(member.name || 'Unknown') }}
                           >
                             {member.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
@@ -255,7 +262,7 @@ const Dashboard = () => {
                 <div key={member.id || index} className="team-member">
                   <div
                     className="member-avatar"
-                    style={{ backgroundColor: stringToColor(member.name) }}
+                    style={{ backgroundColor: stringToColor(member.name || 'Unknown') }}
                   >
                     {member.name?.charAt(0).toUpperCase() || 'U'}
                     <span className="status-dot online"></span>
