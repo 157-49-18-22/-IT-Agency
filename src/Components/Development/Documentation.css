@@ -1,8 +1,14 @@
 .documentation-container {
-    padding: 2rem;
+    padding: 2.5rem;
     max-width: 1400px;
-    margin: 0 auto;
-    animation: fadeIn 0.5s ease-in;
+    margin: 2rem auto;
+    background: #0f172a !important;
+    /* Force deep dark background */
+    border-radius: 24px;
+    min-height: 90vh;
+    animation: fadeIn 0.5s ease-out;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 @keyframes fadeIn {
@@ -46,23 +52,24 @@
     font-size: 1.1rem;
 }
 
-.stats-grid {
+.documentation-container .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.stat-card {
-    background: linear-gradient(135deg, rgba(255, 236, 210, 0.1) 0%, rgba(252, 182, 159, 0.1) 100%);
-    backdrop-filter: blur(10px);
+.documentation-container .stat-card {
+    background: #1e293b !important;
+    /* Solid dark background */
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 20px;
+    padding: 1.75rem;
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .stat-card:hover {
@@ -71,7 +78,16 @@
 }
 
 .stat-icon {
-    font-size: 3rem;
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .stat-content h3 {
@@ -99,20 +115,20 @@
 }
 
 .filter-btn {
-    padding: 0.75rem 1.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.85rem 1.75rem;
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     color: #94a3b8;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    font-size: 1rem;
     font-weight: 600;
 }
 
 .filter-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: #334155 !important;
+    color: #ffffff;
     border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -339,12 +355,12 @@
 
 .empty-state h3 {
     font-size: 1.5rem;
-    color: black;
+    color: #ffffff;
     margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-    color: black;
+    color: rgba(255, 255, 255, 0.6);
     margin-bottom: 1.5rem;
 }
 
@@ -415,12 +431,12 @@
     transform: rotate(90deg);
 }
 
-.form-group {
+.modal-overlay .form-group {
     margin-bottom: 2rem !important;
     display: block !important;
 }
 
-.form-group label {
+.modal-overlay .form-group label {
     display: block !important;
     color: #ffffff !important;
     margin-bottom: 0.75rem !important;
@@ -430,9 +446,9 @@
     opacity: 1 !important;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.modal-overlay .form-group input,
+.modal-overlay .form-group select,
+.modal-overlay .form-group textarea {
     width: 100% !important;
     padding: 1.25rem !important;
     background: #1e1e2f !important;
@@ -445,14 +461,14 @@
     opacity: 1 !important;
 }
 
-.form-group input::placeholder,
-.form-group textarea::placeholder {
+.modal-overlay .form-group input::placeholder,
+.modal-overlay .form-group textarea::placeholder {
     color: rgba(255, 255, 255, 0.3) !important;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.modal-overlay .form-group input:focus,
+.modal-overlay .form-group select:focus,
+.modal-overlay .form-group textarea:focus {
     outline: none !important;
     border-color: #6366f1 !important;
     background: #252545 !important;

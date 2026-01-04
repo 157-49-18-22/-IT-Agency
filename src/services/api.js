@@ -368,7 +368,7 @@ export const deliverableAPI = {
 
 // Upload APIs
 export const uploadAPI = {
-  uploadFile: (formData, config) => api.post('/upload', formData, {
+  uploadFile: (formData, config) => api.post('/upload/single', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     ...config
   }),

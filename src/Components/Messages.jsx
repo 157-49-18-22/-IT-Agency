@@ -1,7 +1,10 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiSend, FiPaperclip, FiUser, FiCheckCircle, FiPlus, FiX } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiSend, FiPaperclip, FiUser, FiCheckCircle, FiPlus, FiX, FiCornerUpLeft, FiTrash2 } from 'react-icons/fi';
 import './Messages.css';
-import { messageAPI, teamAPI, userAPI } from '../services/api';
+import { messageAPI, teamAPI, userAPI, uploadAPI } from '../services/api';
+
+const BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://itbackend-p8k1.onrender.com/api');
+const STATIC_URL = BASE_URL.replace('/api', '');
 
 export default function Messages() {
     // State hooks at the top
@@ -13,7 +16,10 @@ export default function Messages() {
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [replyTo, setReplyTo] = useState(null);
     const endRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // Memoized values
     const filteredThreads = useMemo(() =>
@@ -25,7 +31,11 @@ export default function Messages() {
 
     // Effects after all state and memos
     useEffect(() => {
-        fetchMessages();
+        fetchMessages(true);
+
+        // Auto-refresh every 10 seconds to get new messages
+        const timer = setInterval(() => fetchMessages(false), 10000);
+        return () => clearInterval(timer);
     }, []);
 
     useEffect(() => {
@@ -33,60 +43,43 @@ export default function Messages() {
     }, [activeId, activeMsgs.length]);
 
     // Handler functions
-    const fetchMessages = async () => {
+    const fetchMessages = async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial) setLoading(true);
             const response = await messageAPI.getMessages();
             console.log('📨 Fetched messages response:', response.data);
 
-            // Backend returns { success: true, data: [...] }
             const messages = response.data?.data || [];
-            console.log('📨 Total messages:', messages.length);
-
-            // Group messages by thread ID to Create unique conversation entries
             const groupedThreads = {};
             const groupedMessages = {};
 
-            const rawMessages = Array.isArray(messages) ? messages : [];
-
-            // We need to know current user ID to determine 'me'
             const storedUser = localStorage.getItem('user');
-            const currentUserId = storedUser ? JSON.parse(storedUser).id : null;
-            console.log('👤 Current user ID:', currentUserId);
+            const currentUser = storedUser ? JSON.parse(storedUser) : null;
+            const currentUserId = currentUser?.id;
 
-            rawMessages.forEach(msg => {
-                console.log('Processing message:', {
-                    id: msg.id,
-                    thread: msg.thread,
-                    sender: msg.sender?.name,
-                    senderId: msg.senderId,
-                    content: msg.content?.substring(0, 50),
-                    recipientDetails: msg.recipientDetails
-                });
+            // Normalize currentUserId for comparison
+            const myId = currentUserId ? parseInt(currentUserId) : null;
 
-                // Thread Grouping - update last message to show most recent
+            (Array.isArray(messages) ? messages : []).forEach(msg => {
+                const sId = parseInt(msg.senderId);
+                const isMe = myId === sId;
+
+                // Thread Grouping
                 if (!groupedThreads[msg.thread]) {
-                    // Determine who to show in the thread title
-                    // If I sent this message, show the recipient's name
-                    // If I received this message, show the sender's name
                     let threadTitle = 'Unknown';
                     let threadParticipants = [];
 
-                    if (msg.senderId === currentUserId) {
-                        // I sent this message, so show recipient(s)
+                    if (isMe) {
                         if (msg.recipientDetails && msg.recipientDetails.length > 0) {
-                            // Show the first recipient's name (for 1-on-1 chats)
                             threadTitle = msg.recipientDetails[0].name;
                             threadParticipants = ['You', msg.recipientDetails[0].name];
                         } else if (msg.recipients && msg.recipients.length > 0) {
-                            // Fallback if recipientDetails not available
                             threadTitle = `User ${msg.recipients[0]}`;
                             threadParticipants = ['You', `User ${msg.recipients[0]}`];
                         }
                     } else {
-                        // I received this message, so show sender
                         threadTitle = msg.sender?.name || 'Unknown';
-                        threadParticipants = [msg.sender?.name, 'You'];
+                        threadParticipants = [msg.sender?.name || 'User', 'You'];
                     }
 
                     groupedThreads[msg.thread] = {
@@ -96,15 +89,11 @@ export default function Messages() {
                         unread: 0,
                         participants: threadParticipants,
                         ts: msg.createdAt,
-                        recipientIds: msg.recipients || [] // Store recipient IDs for later use
+                        recipientIds: msg.recipients || []
                     };
-                } else {
-                    // Update to show latest message
-                    const existingThread = groupedThreads[msg.thread];
-                    if (new Date(msg.createdAt) > new Date(existingThread.ts)) {
-                        existingThread.last = msg.content;
-                        existingThread.ts = msg.createdAt;
-                    }
+                } else if (new Date(msg.createdAt) > new Date(groupedThreads[msg.thread].ts)) {
+                    groupedThreads[msg.thread].last = msg.content;
+                    groupedThreads[msg.thread].ts = msg.createdAt;
                 }
 
                 // Message Store Grouping
@@ -114,74 +103,170 @@ export default function Messages() {
 
                 groupedMessages[msg.thread].push({
                     id: msg.id,
-                    who: msg.sender?.name || 'Unknown',
-                    me: currentUserId ? (msg.senderId === currentUserId) : false,
+                    who: msg.sender?.name || (isMe ? (currentUser?.name || 'Me') : 'Other'),
+                    me: isMe,
                     text: msg.content,
                     ts: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    rawTs: msg.createdAt // Store for sorting
+                    rawTs: msg.createdAt,
+                    attachments: msg.attachments || [],
+                    replyTo: msg.replyTo || null
                 });
             });
 
-            // Sort messages in each thread by time (Oldest First)
-            Object.keys(groupedMessages).forEach(threadId => {
-                groupedMessages[threadId].sort((a, b) => new Date(a.rawTs) - new Date(b.rawTs));
+            // Sort messages
+            Object.keys(groupedMessages).forEach(tid => {
+                groupedMessages[tid].sort((a, b) => new Date(a.rawTs) - new Date(b.rawTs));
             });
 
-            console.log('📋 Grouped threads:', Object.keys(groupedThreads).length);
-            console.log('💬 Grouped messages:', groupedMessages);
-
-            setThreads(Object.values(groupedThreads));
+            setThreads(Object.values(groupedThreads).sort((a, b) => new Date(b.ts) - new Date(a.ts)));
             setStore(groupedMessages);
 
-            // If we have threads and no active selection, select first
             const threadList = Object.values(groupedThreads);
             if (threadList.length > 0 && !activeId) {
                 setActiveId(threadList[0].id);
-                console.log('✅ Auto-selected first thread:', threadList[0].id);
             }
         } catch (error) {
             console.error('❌ Error fetching messages:', error);
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
     };
 
-    const send = async () => {
-        if (!text.trim()) return;
+    const send = async (attachments = []) => {
+        if (!text.trim() && attachments.length === 0) return;
+        if (!activeId) return;
 
-        console.log('📤 Sending message...', {
-            activeId,
-            text: text.substring(0, 50),
-            threadCount: threads.length
-        });
+        const messageText = text;
+        const tempId = `temp-${Date.now()}`;
+        const storedUser = localStorage.getItem('user');
+        const user = storedUser ? JSON.parse(storedUser) : { name: 'Me' };
+
+        // 1. Optimistic UI Update - Show message immediately
+        const optimisticMsg = {
+            id: tempId,
+            who: user.name || 'Me',
+            me: true,
+            text: messageText,
+            ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            rawTs: new Date().toISOString(),
+            attachments: attachments,
+            replyTo: replyTo ? { id: replyTo.id, content: replyTo.text, sender: replyTo.who } : null
+        };
+
+        setStore(prev => ({
+            ...prev,
+            [activeId]: [...(prev[activeId] || []), optimisticMsg]
+        }));
+        setText('');
+        setReplyTo(null);
 
         try {
-            // Prepare Payload
-            let payload = { content: text, thread: activeId };
+            let payload = {
+                content: messageText || (attachments.length > 0 ? 'Sent a file' : ''),
+                thread: activeId,
+                attachments: attachments,
+                parentMessageId: optimisticMsg.replyTo?.id
+            };
             const currentThread = threads.find(t => t.id === activeId);
 
-            // If this is a new local thread (not in DB yet), send recipientId instead of thread ID
             if (typeof activeId === 'string' && activeId.startsWith('new-')) {
                 if (currentThread && currentThread.recipientId) {
-                    payload = { content: text, recipient: currentThread.recipientId };
-                    console.log('📤 New thread - sending to recipient:', currentThread.recipientId);
+                    payload.recipient = currentThread.recipientId;
                 }
-            } else {
-                console.log('📤 Existing thread:', activeId);
             }
 
-            console.log('📤 Payload:', payload);
             const response = await messageAPI.sendMessage(payload);
-            console.log('✅ Message sent successfully:', response.data);
+            const newMessage = response.data?.data;
 
-            // Re-fetch to get real ID and persistence
-            await fetchMessages();
-            setText('');
+            if (newMessage && newMessage.thread) {
+                // If it was a new temporary thread, transition to real thread
+                if (String(activeId).startsWith('new-')) {
+                    const realThreadId = newMessage.thread;
+
+                    setStore(prev => {
+                        const newStore = { ...prev };
+                        const existingMsgs = newStore[activeId] || [];
+                        delete newStore[activeId];
+                        newStore[realThreadId] = existingMsgs;
+                        return newStore;
+                    });
+
+                    setActiveId(realThreadId);
+                }
+            }
+
+            // Silent refetch to sync everything
+            await fetchMessages(false);
 
         } catch (error) {
             console.error('❌ Error sending message:', error);
-            alert('Error sending message: ' + (error.response?.data?.message || error.message));
+            // Rollback optimistic update on error
+            setStore(prev => {
+                const newStore = { ...prev };
+                if (newStore[activeId]) {
+                    newStore[activeId] = newStore[activeId].filter(m => m.id !== tempId);
+                }
+                return newStore;
+            });
+            setText(messageText);
+            alert('Failed to send message. Please check your connection.');
         }
+    };
+
+    const deleteMessage = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this message?')) return;
+        try {
+            await messageAPI.deleteMessage(id);
+            setStore(prev => {
+                const newStore = { ...prev };
+                if (newStore[activeId]) {
+                    newStore[activeId] = newStore[activeId].filter(m => m.id !== id);
+                }
+                return newStore;
+            });
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Could not delete message');
+        }
+    };
+
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const onFileSelected = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setUploading(true);
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await uploadAPI.uploadFile(formData);
+            if (res.data?.success) {
+                const fileData = res.data.file;
+                // Auto-send the file as a message
+                await send([{
+                    name: fileData.originalName,
+                    url: fileData.path,
+                    type: fileData.mimetype,
+                    size: fileData.size
+                }]);
+            }
+        } catch (err) {
+            console.error("Upload failed", err);
+            alert("File upload failed");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const getFullUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return `${STATIC_URL}${path}`;
     };
 
     // Fetch users when modal opens
@@ -220,8 +305,12 @@ export default function Messages() {
     };
 
     const startChat = (user) => {
-        // Check if we already have a thread with this user (by name for now, ideally by ID)
-        const existing = threads.find(t => t.title === user.name || t.participants.includes(user.name));
+        // Check if we already have a thread with this specific user ID
+        // (threads.recipientIds is an array of IDs)
+        const existing = threads.find(t =>
+            t.recipientIds.map(id => parseInt(id)).includes(parseInt(user.id)) ||
+            t.title === user.name
+        );
 
         if (existing) {
             setActiveId(existing.id);
@@ -232,14 +321,16 @@ export default function Messages() {
             const newThread = {
                 id: newThreadId,
                 title: user.name,
-                last: 'Start a conversation',
+                last: 'Start a conversation...',
                 unread: 0,
                 participants: ['You', user.name],
-                recipientId: user.id // Store ID to send first message
+                recipientId: user.id,
+                recipientIds: [user.id],
+                ts: new Date().toISOString()
             };
-            setThreads([newThread, ...threads]);
+            setThreads(prev => [newThread, ...prev]);
             setActiveId(newThreadId);
-            setStore(prev => ({ ...prev, [newThreadId]: [] })); // Init empty messages
+            setStore(prev => ({ ...prev, [newThreadId]: [] }));
             setShowModal(false);
         }
     };
@@ -314,18 +405,102 @@ export default function Messages() {
 
                         <div className="chat-body">
                             {activeMsgs.map(m => (
-                                <div key={m.id} className={`bubble ${m.me ? 'me' : 'them'}`}>
-                                    <div className="text">{m.text}</div>
-                                    <div className="meta">{m.who} • {m.ts}</div>
+                                <div key={m.id} className={`bubble-container ${m.me ? 'me' : 'them'}`}>
+                                    <div className={`bubble ${m.me ? 'me' : 'them'}`}>
+                                        {/* Reply Context */}
+                                        {m.replyTo && (
+                                            <div className="reply-preview-bubble">
+                                                <div className="reply-sender">{m.replyTo.sender}</div>
+                                                <div className="reply-content">{m.replyTo.content}</div>
+                                            </div>
+                                        )}
+
+                                        {m.attachments && m.attachments.map((file, idx) => (
+                                            <div key={idx} className="attachment-preview">
+                                                {file.type?.startsWith('image/') ? (
+                                                    <img
+                                                        src={getFullUrl(file.url)}
+                                                        alt={file.name}
+                                                        className="chat-img"
+                                                        onClick={() => window.open(getFullUrl(file.url), '_blank')}
+                                                    />
+                                                ) : (
+                                                    <a href={getFullUrl(file.url)} download={file.name} className="file-box" target="_blank" rel="noopener noreferrer">
+                                                        <FiPaperclip />
+                                                        <div className="file-info">
+                                                            <span className="file-name">{file.name}</span>
+                                                            <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+                                                        </div>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {m.text && <div className="text">{m.text}</div>}
+                                        <div className="meta">{m.who} • {m.ts}</div>
+
+                                        {/* Hover Actions */}
+                                        <div className="bubble-actions">
+                                            <button
+                                                className="action-btn reply"
+                                                title="Reply"
+                                                onClick={() => {
+                                                    setReplyTo(m);
+                                                    // Focus input
+                                                    document.querySelector('.composer input[type="text"]')?.focus();
+                                                }}
+                                            >
+                                                <FiCornerUpLeft />
+                                            </button>
+                                            {m.me && (
+                                                <button
+                                                    className="action-btn delete"
+                                                    title="Delete"
+                                                    onClick={() => deleteMessage(m.id)}
+                                                >
+                                                    <FiTrash2 />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
+                            {uploading && (
+                                <div className="bubble me uploading">
+                                    <div className="loading-dots">Uploading file...</div>
+                                </div>
+                            )}
                             <div ref={endRef}></div>
                         </div>
 
-                        <div className="composer">
-                            <button className="attach"><FiPaperclip /></button>
-                            <input value={text} onChange={e => setText(e.target.value)} placeholder="Type a message..." onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
-                            <button className="send" onClick={send}><FiSend /> Send</button>
+                        <div className="composer-wrapper">
+                            {replyTo && (
+                                <div className="reply-bar">
+                                    <div className="reply-details">
+                                        <div className="reply-title">Replying to {replyTo.who}</div>
+                                        <div className="reply-text">{replyTo.text || 'File'}</div>
+                                    </div>
+                                    <button className="close-reply" onClick={() => setReplyTo(null)}><FiX /></button>
+                                </div>
+                            )}
+                            <div className="composer">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }}
+                                    onChange={onFileSelected}
+                                />
+                                <button className="attach" onClick={handleFileClick} disabled={uploading}>
+                                    <FiPaperclip />
+                                </button>
+                                <input
+                                    type="text"
+                                    value={text}
+                                    onChange={e => setText(e.target.value)}
+                                    placeholder="Type a message..."
+                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                                />
+                                <button className="send" onClick={() => send()} disabled={uploading}><FiSend /> Send</button>
+                            </div>
                         </div>
                     </>
                 ) : (

@@ -46,14 +46,14 @@
 }
 
 /* Stats Grid */
-.stats-grid {
+.code-review-container .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.stat-card {
+.code-review-container .stat-card {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -465,19 +465,19 @@
     transform: rotate(90deg);
 }
 
-.form-group {
+.modal-overlay .form-group {
     margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.modal-overlay .form-group label {
     display: block;
     color: rgba(255, 255, 255, 0.9);
     margin-bottom: 0.5rem;
     font-weight: 500;
 }
 
-.form-group input,
-.form-group textarea {
+.modal-overlay .form-group input,
+.modal-overlay .form-group textarea {
     width: 100%;
     padding: 0.875rem;
     background: rgba(255, 255, 255, 0.05);
