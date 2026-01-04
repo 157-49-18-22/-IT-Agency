@@ -389,18 +389,18 @@ const CodingStandards = () => {
                         </div>
                         <div className="health-info">
                             <h3>Code Statistics</h3>
-                            <div className="stats-grid">
-                                <div className="stat-item">
-                                    <span className="stat-val">{stats.stats.linesOfCode.toLocaleString()}</span>
-                                    <span className="stat-lbl">Lines</span>
+                            <div className="coding-stats-grid">
+                                <div className="coding-stat-item">
+                                    <span className="coding-stat-val">{stats.stats?.linesOfCode?.toLocaleString() || '0'}</span>
+                                    <span className="coding-stat-lbl">Lines</span>
                                 </div>
-                                <div className="stat-item">
-                                    <span className="stat-val">{stats.stats.components}</span>
-                                    <span className="stat-lbl">Components</span>
+                                <div className="coding-stat-item">
+                                    <span className="coding-stat-val">{stats.stats?.components || '0'}</span>
+                                    <span className="coding-stat-lbl">Components</span>
                                 </div>
-                                <div className="stat-item">
-                                    <span className="stat-val">{stats.stats.totalFiles}</span>
-                                    <span className="stat-lbl">Files</span>
+                                <div className="coding-stat-item">
+                                    <span className="coding-stat-val">{stats.stats?.totalFiles || '0'}</span>
+                                    <span className="coding-stat-lbl">Files</span>
                                 </div>
                             </div>
                         </div>
@@ -413,9 +413,9 @@ const CodingStandards = () => {
                         <div className="health-info">
                             <h3>Active Rules</h3>
                             <div className="active-rules-list">
-                                {stats.config.eslint && <span className="rule-badge">ESLint</span>}
-                                {stats.config.activeRules.includes('no-unused-vars') && <span className="rule-badge">No Unused Vars</span>}
-                                {stats.config.activeRules.includes('react-hooks/rules-of-hooks') && <span className="rule-badge">React Hooks</span>}
+                                {stats.config?.eslint && <span className="rule-badge">ESLint</span>}
+                                {stats.config?.activeRules?.includes('no-unused-vars') && <span className="rule-badge">No Unused Vars</span>}
+                                {stats.config?.activeRules?.includes('react-hooks/rules-of-hooks') && <span className="rule-badge">React Hooks</span>}
                                 <span className="rule-badge">Strict Mode</span>
                             </div>
                         </div>

@@ -70,11 +70,11 @@ import { ProjectContext } from '../../context/ProjectContext';
 import './DeveloperLayout.css';
 import { Box, Button } from '@mui/material';
 import { getFileIcon, formatFileSize, formatRelativeTime, getStatusColor, getPriorityColor } from '../../utils/fileHelpers';
-import { tasksAPI, bugsAPI, timeLogsAPI, messageAPI, activityAPI, testingAPI } from '../../services/api';
+import api, { tasksAPI, bugsAPI, timeLogsAPI, messageAPI, activityAPI, testingAPI, approvalAPI, projectsAPI } from '../../services/api';
 
 const DeveloperLayout = ({ projectId, onComplete }) => {
   const { logout, currentUser } = useAuth();
-  const { getProjectsByUser } = useContext(ProjectContext);
+  const { getProjectsByUser, getProjectById } = useContext(ProjectContext);
   const [myProjects, setMyProjects] = useState([]);
   const [activeTab, setActiveTab] = useState('sprints');
   const [phaseCompleted, setPhaseCompleted] = useState(false);
@@ -83,6 +83,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedProjectId, setSelectedProjectId] = useState('all');
 
   // Fetch unread messages
   useEffect(() => {
@@ -196,21 +197,54 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
 
   // Load projects and tasks for the current user
   useEffect(() => {
-    if (currentUser?.id) {
-      const projects = getProjectsByUser(currentUser.id);
-      setMyProjects(projects);
-      // Load time logs from localStorage or API
-      const savedTimeLogs = localStorage.getItem(`timeLogs_${currentUser.id}`);
-      if (savedTimeLogs) {
-        setTimeLogs(JSON.parse(savedTimeLogs));
+    const fetchMyApprovedProjects = async () => {
+      if (!currentUser?.id) return;
+
+      try {
+        // Fetch approved approvals to identify projects ready for development
+        // This strictly matches the logic on the Approved Projects page (/projects/approved)
+        const res = await api.get('/approvals?status=Approved');
+        const approvedApprovals = res.data?.data || res.data || [];
+
+        // Group by project
+        const projectMap = new Map();
+        approvedApprovals.forEach(approval => {
+          if (approval.projectId && !projectMap.has(approval.projectId)) {
+            // Try to get full project info from context for better data
+            const contextProject = getProjectById(approval.projectId);
+
+            projectMap.set(approval.projectId, {
+              ...contextProject,
+              id: approval.projectId,
+              projectName: approval.project?.name || contextProject?.projectName || contextProject?.name || `Project ${approval.projectId}`,
+              status: approval.project?.status || contextProject?.status || 'Approved'
+            });
+          }
+        });
+
+        const approvedList = Array.from(projectMap.values());
+        setMyProjects(approvedList);
+
+        // Load time logs from localStorage or API
+        const savedTimeLogs = localStorage.getItem(`timeLogs_${currentUser.id}`);
+        if (savedTimeLogs) {
+          setTimeLogs(JSON.parse(savedTimeLogs));
+        }
+      } catch (error) {
+        console.error('Error fetching approved projects for dashboard:', error);
+        // Fallback to assigned projects if any error
+        const assigned = getProjectsByUser(currentUser.id);
+        setMyProjects(assigned);
       }
-    }
+    };
+
+    fetchMyApprovedProjects();
 
     // Cleanup interval on unmount
     return () => {
       if (timerInterval) clearInterval(timerInterval);
     };
-  }, [currentUser, getProjectsByUser]);
+  }, [currentUser, getProjectsByUser, getProjectById]);
 
   // Save time logs when they change
   useEffect(() => {
@@ -275,8 +309,19 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
       if (!currentUser?.id) return;
 
       try {
+        // Build filters with correct param names for backend
+        const taskFilter = { assignedTo: currentUser.id };
+        const bugFilter = { assigned_to: currentUser.id }; // Backend expects assigned_to for bugs
+        const logFilter = { userId: currentUser.id };
+
+        if (selectedProjectId !== 'all') {
+          taskFilter.project = selectedProjectId; // Task API expects 'project'
+          bugFilter.project_id = selectedProjectId; // Bug API expects 'project_id'
+          logFilter.projectId = selectedProjectId; // Time logs expect 'projectId'
+        }
+
         // Fetch Tasks (for Deadlines and Stats)
-        const tasksRes = await tasksAPI.getTasks({ assignedTo: currentUser.id });
+        const tasksRes = await tasksAPI.getTasks(taskFilter);
         const tasks = tasksRes.data?.data || [];
         const completedTasks = tasks.filter(t => t.status === 'Completed').length;
 
@@ -299,7 +344,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
         let bugs = [];
         let fixedBugs = 0;
         try {
-          const bugsRes = await bugsAPI.getBugs({ assignedTo: currentUser.id });
+          const bugsRes = await bugsAPI.getBugs(bugFilter);
           bugs = bugsRes.data?.data || [];
           fixedBugs = bugs.filter(b => b.status === 'Resolved' || b.status === 'Closed' || b.status === 'Fixed').length;
         } catch (e) {
@@ -309,7 +354,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
         // Fetch Time Logs
         let logs = [];
         try {
-          const logsRes = await timeLogsAPI.getLogs({ userId: currentUser.id });
+          const logsRes = await timeLogsAPI.getLogs(logFilter);
           logs = logsRes.data?.data || [];
           setTimeLogs(logs);
         } catch (e) {
@@ -318,9 +363,10 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
 
         // Fetch Activities (Real)
         try {
-          // Using activityAPI if available, otherwise fallback to logs
-          // Assuming activityAPI.getActivities supports userId filter
-          const activitiesRes = await activityAPI.getActivities({ userId: currentUser.id, limit: 5 });
+          const activityFilter = { userId: currentUser.id, limit: 10 };
+          if (selectedProjectId !== 'all') activityFilter.projectId = selectedProjectId;
+
+          const activitiesRes = await activityAPI.getActivities(activityFilter);
           const realActivities = activitiesRes.data?.data || [];
           if (realActivities.length > 0) {
             setRecentActivities(realActivities);
@@ -346,7 +392,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
         // Fetch Testing Stats (Code Coverage)
         let coverage = 78; // Default
         try {
-          const testStats = await testingAPI.getDashboardStats();
+          const testStats = await testingAPI.getDashboardStats(selectedProjectId !== 'all' ? { projectId: selectedProjectId } : {});
           if (testStats.data?.coverage) {
             coverage = testStats.data.coverage;
           }
@@ -370,7 +416,7 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
     };
 
     fetchDashboardData();
-  }, [currentUser]);
+  }, [currentUser, selectedProjectId]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -704,8 +750,27 @@ const DeveloperLayout = ({ projectId, onComplete }) => {
                 <h1>Welcome back, {currentUser?.name || 'Developer'}! 👋</h1>
                 <p>Here's what's happening with your projects today.</p>
               </div>
-              <div className="date-display">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+              <div className="banner-actions">
+                <div className="project-selector">
+                  <FaProjectDiagram className="selector-icon" />
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="project-dropdown"
+                  >
+                    <option value="all">All Projects</option>
+                    {myProjects.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.projectName || project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="date-display">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
               </div>
             </div>
 

@@ -39,6 +39,7 @@
     font-weight: 700;
     background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 0 0.5rem 0;
 }
@@ -541,17 +542,18 @@
     transition: width 1s ease;
 }
 
-.stats-grid {
+.coding-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
 }
 
-.stat-item {
+.coding-stat-item {
     text-align: center;
+    background: transparent !important;
 }
 
-.stat-val {
+.coding-stat-val {
     display: block;
     font-size: 1.25rem;
     font-weight: 700;
@@ -559,7 +561,7 @@
     margin-bottom: 0.25rem;
 }
 
-.stat-lbl {
+.coding-stat-lbl {
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.5);
     text-transform: uppercase;

@@ -486,7 +486,11 @@ export const discussionsAPI = {
 // Documentation APIs
 export const documentationAPI = {
   getAll: () => api.get('/documentation'),
-  create: (data) => api.post('/documentation', data)
+  create: (data) => api.post('/documentation', data),
+  get: (id) => api.get(`/documentation/${id}`),
+  update: (id, data) => api.put(`/documentation/${id}`, data),
+  incrementViews: (id) => api.patch(`/documentation/${id}/views`),
+  delete: (id) => api.delete(`/documentation/${id}`)
 };
 
 // End of APIs

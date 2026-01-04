@@ -688,10 +688,49 @@ body,
   font-size: 0.95rem;
 }
 
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.project-selector {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.project-selector:hover {
+  border-color: #4361ee;
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.1);
+}
+
+.selector-icon {
+  color: #4361ee;
+  margin-right: 12px;
+  font-size: 1rem;
+}
+
+.project-dropdown {
+  border: none;
+  background: transparent;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  min-width: 150px;
+}
+
 .date-display {
   background: #f1f5f9;
   padding: 8px 16px;
-  border-radius: 30px;
+  border-radius: 12px;
   color: #475569;
   font-weight: 500;
   font-size: 0.9rem;
