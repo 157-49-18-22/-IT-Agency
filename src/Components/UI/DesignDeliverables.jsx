@@ -24,22 +24,30 @@ export default function DesignDeliverables() {
             const projectsResponse = await api.get('/projects');
             const allProjects = projectsResponse.data?.data || [];
 
-            // Fetch wireframes, mockups, and prototypes
-            const [wireframesRes, mockupsRes, prototypesRes] = await Promise.all([
+            // Fetch wireframes, mockups, prototypes, and approvals
+            const [wireframesRes, mockupsRes, prototypesRes, approvalsRes] = await Promise.all([
                 api.get('/wireframes'),
                 api.get('/mockups'),
-                api.get('/prototypes')
+                api.get('/prototypes'),
+                api.get('/approvals?type=Design&limit=100')
             ]);
 
             const wireframes = wireframesRes.data?.data || [];
             const mockups = mockupsRes.data?.data || [];
             const prototypes = prototypesRes.data?.data || [];
+            const designApprovals = approvalsRes.data?.data || [];
 
-            // Group designs by project
+            // Group designs by project and check for active submissions
             const projectsWithDesigns = allProjects.map(project => {
                 const projectWireframes = wireframes.filter(w => w.projectId === project.id);
                 const projectMockups = mockups.filter(m => m.projectId === project.id);
                 const projectPrototypes = prototypes.filter(p => p.projectId === project.id);
+
+                // Check if this project already has a pending or approved design approval
+                const activeApproval = designApprovals.find(a => 
+                    String(a.projectId) === String(project.id) && 
+                    (a.status === 'Pending' || a.status === 'Approved')
+                );
 
                 return {
                     ...project,
@@ -47,9 +55,10 @@ export default function DesignDeliverables() {
                     mockups: projectMockups,
                     prototypes: projectPrototypes,
                     totalDesigns: projectWireframes.length + projectMockups.length + projectPrototypes.length,
-                    hasDesigns: projectWireframes.length > 0 || projectMockups.length > 0 || projectPrototypes.length > 0
+                    hasDesigns: projectWireframes.length > 0 || projectMockups.length > 0 || projectPrototypes.length > 0,
+                    isSubmitted: !!activeApproval
                 };
-            }).filter(p => p.hasDesigns); // Only show projects with designs
+            }).filter(p => p.hasDesigns && !p.isSubmitted); // Only show projects with designs that aren't submitted yet
 
             setProjects(projectsWithDesigns);
         } catch (error) {
