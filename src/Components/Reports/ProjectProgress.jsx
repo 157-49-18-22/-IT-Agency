@@ -139,9 +139,18 @@ export default function ProjectProgress() {
               <div className="m"><FiFlag/> {p.manager}</div>
               <div className="m"><FiCalendar/> Due {format(new Date(p.due), 'MMM dd, yyyy')}</div>
             </div>
-            <div className="progress">
-              <div className="bar"><div className="fill" style={{width: `${p.progress}%`}} /></div>
-              <div className="pct">{p.progress}%</div>
+            <div className="progress-section">
+              <div className="progress-header">
+                <span className="progress-label">Progress</span>
+                <span className="pct">{p.progress}%</span>
+              </div>
+              <div className="bar-container">
+                <div className="bar">
+                  <div className="fill" style={{ width: `${p.progress}%` }}>
+                    <div className="glimmer"></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="timeline">
               {p.milestones && p.milestones.length > 0 ? (

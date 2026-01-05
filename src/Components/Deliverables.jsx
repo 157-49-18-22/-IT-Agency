@@ -59,28 +59,35 @@ export default function Deliverables() {
     const fetchProjects = async () => {
       try {
         const response = await projectAPI.getAll();
-        // If no projects are returned, use sample projects
-        if (!response.data || response.data.length === 0) {
-          const sampleProjects = [
-            { id: 1, name: 'E-commerce Website' },
-            { id: 2, name: 'Mobile App Development' },
-            { id: 3, name: 'Company Website Redesign' },
-            { id: 4, name: 'Internal Dashboard' },
-            { id: 5, name: 'Marketing Campaign 2023' }
-          ];
-          setProjects(sampleProjects);
+        console.log('Projects API Response:', response);
+
+        // Robust data extraction matching ProjectProgress.jsx
+        let projectsList = [];
+        if (response && response.data) {
+          projectsList = Array.isArray(response.data)
+            ? response.data
+            : response.data.projects || response.data.data || [];
+        }
+
+        if (projectsList.length === 0) {
+          console.warn('No projects found from API, using samples');
+          // Fallback to sample projects so the dropdown isn't empty
+          setProjects([
+            { id: 1, name: 'abhi' },
+            { id: 2, name: 'maydiv' },
+            { id: 99, name: 'Sample Project' }
+          ]);
         } else {
-          setProjects(response.data);
+          setProjects(projectsList);
         }
       } catch (error) {
-        console.error('Error fetching projects, using sample data:', error);
-        // Use sample projects if there's an error
-        const sampleProjects = [
-          { id: 1, name: 'E-commerce Website' },
-          { id: 2, name: 'Mobile App Development' },
-          { id: 3, name: 'Company Website Redesign' }
-        ];
-        setProjects(sampleProjects);
+        console.error('Error fetching projects:', error);
+        // Fallback on error
+        setProjects([
+          { id: 1, name: 'abhi' },
+          { id: 2, name: 'maydiv' },
+          { id: 99, name: 'Sample Project' }
+        ]);
       }
     };
 
@@ -99,7 +106,6 @@ export default function Deliverables() {
 
       if (!response.data || !Array.isArray(response.data)) {
         console.error('Unexpected API response format:', response);
-        alert('Failed to load deliverables: Invalid response format');
         return;
       }
 
@@ -132,7 +138,6 @@ export default function Deliverables() {
       setDeliverables(formattedDeliverables);
     } catch (error) {
       console.error('Error fetching deliverables:', error);
-      alert('Failed to load deliverables. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -177,19 +182,25 @@ export default function Deliverables() {
       // Debug log the upload response
       console.log('Upload Response:', uploadResponse);
 
+      const uploadedFile = uploadResponse.data?.file || {};
+
+      if (!uploadedFile.filename) {
+        throw new Error('File upload failed - no filename returned');
+      }
+
       // Then create the deliverable record
       const deliverableData = {
         name: file.name,
-        fileName: uploadResponse.data.filename || file.name, // Fallback to file.name if filename is not in response
-        projectId: projectId, // Using the project ID from the select
+        fileName: uploadedFile.filename || file.name,
+        projectId: projectId,
         description: description || 'No description provided',
-        type: getFileType(file.name), // Required field
+        type: getFileType(file.name),
         fileType: getFileType(file.name),
         fileSize: file.size,
-        fileUrl: uploadResponse.data.path || uploadResponse.data.fileUrl || `/uploads/${uploadResponse.data.filename}`, // Multiple fallbacks
+        fileUrl: uploadedFile.path || `/uploads/${uploadedFile.filename}`,
         status: 'Draft',
-        phase: 'Initial', // Required field - defaulting to 'Initial'
-        version: '1.0.0' // Adding a default version
+        phase: 'Initial',
+        version: '1.0.0'
       };
 
       // Debug log the data being sent

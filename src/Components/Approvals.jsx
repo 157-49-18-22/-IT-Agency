@@ -50,11 +50,6 @@ const Approvals = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    fetchApprovals();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, activeTab]);
-
   const fetchApprovals = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
@@ -74,28 +69,54 @@ const Approvals = () => {
 
       const response = await approvalAPI.getAll(params);
 
+      // Check for valid response structure
+      // Some APIs return { success: true, data: { items: [], total: 0 } }
+      // Others might return { items: [], total: 0 } directly or arrays
+      let items = [];
+      let total = 0;
+      let totalPages = 1;
+
       if (response && response.data) {
-        setApprovals(response.data.items || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.total || 0,
-          totalPages: response.data.totalPages || 1
-        }));
-      } else {
-        throw new Error('Invalid response format from server');
+        if (Array.isArray(response.data)) {
+          items = response.data;
+          total = items.length;
+        } else if (response.data.items) {
+          items = response.data.items;
+          total = response.data.total || 0;
+          totalPages = response.data.totalPages || 1;
+        } else if (response.data.data) { // Handle { success: true, data: [...] } generic wrapper
+          if (Array.isArray(response.data.data)) {
+            items = response.data.data;
+            total = items.length;
+          } else if (response.data.data.items) {
+            items = response.data.data.items;
+            total = response.data.data.total;
+            totalPages = response.data.data.totalPages;
+          }
+        }
       }
+
+      setApprovals(items || []);
+      setPagination(prev => ({
+        ...prev,
+        total: total || 0,
+        totalPages: totalPages || 1
+      }));
 
     } catch (err) {
       console.error('Error fetching approvals:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to load approvals. Please try again.';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setApprovals([]); // Reset approvals on error
+      // Only show error if it's not a cancellation or expected interference
+      const errorMessage = 'Failed to load approvals.';
+      if (err.response && err.response.status !== 304) {
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
+      setApprovals([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activeTab, searchQuery, typeFilter, priorityFilter, pagination, user?.id, refreshing]);
+  }, [activeTab, searchQuery, typeFilter, priorityFilter, pagination.page, pagination.limit, pagination.sortField, pagination.sortOrder, user?.id, refreshing]);
 
   // Effect to fetch approvals when dependencies change
   useEffect(() => {
@@ -334,51 +355,7 @@ const Approvals = () => {
       });
   }, [approvals, searchQuery, typeFilter, priorityFilter, activeTab, pagination.sortField, pagination.sortOrder]);
 
-  if (loading && !refreshing) {
-    return (
-      <div className="loading-overlay">
-        <div className="spinner"></div>
-        <p>Loading approvals...</p>
-      </div>
-    );
-  }
-
-  // Render empty state
-  if (!loading && approvals.length === 0) {
-    return (
-      <div className="empty-state">
-        <FiInfo className="empty-icon" />
-        <h3>No approvals found</h3>
-        <p>There are no pending approvals at the moment.</p>
-        <button
-          className="btn primary"
-          onClick={refreshApprovals}
-          disabled={refreshing}
-        >
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
-    );
-  }
-
-  // Render error state
-  if (error && !refreshing) {
-    return (
-      <div className="error-state">
-        <FiAlertCircle className="error-icon" />
-        <h3>Error loading approvals</h3>
-        <p>{error}</p>
-        <button
-          className="btn primary"
-          onClick={refreshApprovals}
-          disabled={refreshing}
-        >
-          {refreshing ? 'Retrying...' : 'Retry'}
-        </button>
-      </div>
-    );
-  }
-
+  // Move 'selected' logic callbacks UP before any early returns
   const toggleSelect = useCallback((id) => {
     setSelected(prev =>
       prev.includes(id)
@@ -419,46 +396,6 @@ const Approvals = () => {
       toast.warning('Rejection reason cannot be empty');
     }
   }, [handleReject]);
-
-  const renderStatusBadge = (status) => {
-    const statusMap = {
-      'Pending': { color: 'var(--warning)', icon: <FiClock /> },
-      'Approved': { color: 'var(--success)', icon: <FiCheckCircle /> },
-      'Rejected': { color: 'var(--danger)', icon: <FiXCircle /> }
-    };
-
-    const statusInfo = statusMap[status] || { color: 'var(--gray)', icon: <FiInfo /> };
-
-    return (
-      <span
-        className="status-badge"
-        style={{
-          backgroundColor: `${statusInfo.color}15`,
-          color: statusInfo.color,
-          borderColor: statusInfo.color
-        }}
-      >
-        {statusInfo.icon}
-        <span>{status}</span>
-      </span>
-    );
-  };
-
-  const renderPriorityBadge = (priority) => {
-    const priorityMap = {
-      'High': 'danger',
-      'Medium': 'warning',
-      'Low': 'info'
-    };
-
-    const priorityClass = priorityMap[priority] || 'default';
-
-    return (
-      <span className={`priority-badge ${priorityClass}`}>
-        {priority || 'N/A'}
-      </span>
-    );
-  };
 
   const batchUpdateStatus = useCallback(async (status) => {
     if (!selected.length) {
@@ -507,14 +444,96 @@ const Approvals = () => {
     }
   }, [selected, user, handleApprove, handleReject, fetchApprovals]);
 
-  // Calculate pagination
+  // View helpers
+  const renderStatusBadge = (status) => {
+    const statusMap = {
+      'Pending': <FiClock />,
+      'Approved': <FiCheckCircle />,
+      'Rejected': <FiXCircle />
+    };
+
+    const icon = statusMap[status] || <FiInfo />;
+
+    return (
+      <span className={`status-badge ${status.toLowerCase()}`}>
+        {icon}
+        <span>{status}</span>
+      </span>
+    );
+  };
+
+  const renderPriorityBadge = (priority) => {
+    const priorityMap = {
+      'High': 'danger',
+      'Medium': 'warning',
+      'Low': 'info'
+    };
+
+    const priorityClass = priorityMap[priority] || 'default';
+
+    return (
+      <span className={`priority-badge ${priorityClass}`}>
+        {priority || 'N/A'}
+      </span>
+    );
+  };
+
+  // Calculate pagination helpers after hooks but before conditional returns
   const totalPages = Math.ceil(filteredApprovals.length / pagination.limit);
   const startIdx = (pagination.page - 1) * pagination.limit;
   const paginatedItems = filteredApprovals.slice(startIdx, startIdx + pagination.limit);
   const totalCount = filteredApprovals.length;
 
+  // IMPORTANT: NOW we can do conditional rendering safely
+
+  if (loading && !refreshing) {
+    return (
+      <div className="loading-overlay">
+        <div className="spinner"></div>
+        <p>Loading approvals...</p>
+      </div>
+    );
+  }
+
+  // Render empty state
+  if (!loading && approvals.length === 0) {
+    return (
+      <div className="empty-state">
+        <FiInfo className="empty-icon" />
+        <h3>No approvals found</h3>
+        <p>There are no pending approvals at the moment.</p>
+        <button
+          className="btn primary"
+          onClick={refreshApprovals}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error && !refreshing) {
+    return (
+      <div className="error-state">
+        <FiAlertCircle className="error-icon" />
+        <h3>Error loading approvals</h3>
+        <p>{error}</p>
+        <button
+          className="btn primary"
+          onClick={refreshApprovals}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Retrying...' : 'Retry'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="approvals">
+
       <div className="approvals-header">
         <div className="header-left">
           <h1 className="title">Approvals</h1>
@@ -845,8 +864,8 @@ const Approvals = () => {
 
                   <div className="cell w-20">
                     <div className="project-cell">
-                      <span className="text-ellipsis" title={item.project || 'N/A'}>
-                        {item.project || 'N/A'}
+                      <span className="text-ellipsis" title={item.project?.name || item.project || 'N/A'}>
+                        {item.project?.name || item.project || 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -858,17 +877,15 @@ const Approvals = () => {
                   <div className="cell w-15">
                     <div className="requester-info">
                       <div className="requester-avatar">
-                        {item.requestedBy
-                          ? item.requestedBy
-                            .split(' ')
-                            .map(n => n[0])
-                            .join('')
-                            .toUpperCase()
-                            .substring(0, 2)
-                          : 'NA'}
+                        {(() => {
+                          const name = item.requestedBy?.name || item.requestedBy || 'NA';
+                          return typeof name === 'string'
+                            ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                            : 'NA';
+                        })()}
                       </div>
-                      <span className="requester-name text-ellipsis" title={item.requestedBy || 'N/A'}>
-                        {item.requestedBy || 'N/A'}
+                      <span className="requester-name text-ellipsis" title={item.requestedBy?.name || item.requestedBy || 'N/A'}>
+                        {item.requestedBy?.name || item.requestedBy || 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -1089,7 +1106,7 @@ const Approvals = () => {
                   </div>
                   <div className="detail-row">
                     <div className="detail-label">Project</div>
-                    <div className="detail-value">{detail.project || 'N/A'}</div>
+                    <div className="detail-value">{detail.project?.name || detail.project || 'N/A'}</div>
                   </div>
                   <div className="detail-row">
                     <div className="detail-label">Priority</div>
@@ -1103,11 +1120,11 @@ const Approvals = () => {
                   <h4>Request Details</h4>
                   <div className="detail-row">
                     <div className="detail-label">Requested By</div>
-                    <div className="detail-value">{detail.requestedBy || 'N/A'}</div>
+                    <div className="detail-value">{detail.requestedBy?.name || detail.requestedBy || 'N/A'}</div>
                   </div>
                   <div className="detail-row">
                     <div className="detail-label">Assigned To</div>
-                    <div className="detail-value">{detail.assignedTo || 'N/A'}</div>
+                    <div className="detail-value">{detail.assignedTo?.name || detail.assignedTo || 'N/A'}</div>
                   </div>
                   <div className="detail-row">
                     <div className="detail-label">Requested On</div>
